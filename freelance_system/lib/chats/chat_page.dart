@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:freelance_system/chats/chatroom_screen.dart';
 import 'package:freelance_system/providers/userProvider.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -22,12 +23,22 @@ class _ChatPageState extends State<ChatPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("Chats"),
+        title: const Text("Chats"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add, size: 28), // Plus Icon
+            onPressed: () {
+              // Add action here
+              print("Add button clicked");
+            },
+          ),
+        ],
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: db
             .collection("chatrooms")
-            .where("sender_id", isEqualTo: user!.uid)
+            .where(Filter.or(Filter("sender_id", isEqualTo: user!.uid),
+                Filter("receiver_id", isEqualTo: user!.uid)))
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -56,6 +67,9 @@ class _ChatPageState extends State<ChatPage> {
               String receiverId = data?['receiver_id'] ?? '';
               String senderName = data?['sender_name'] ?? '';
               String receiverName = data?['receiver_name'] ?? '';
+              String lastmessage = data?['last_message'] ?? '';
+              Timestamp? lastmessageTimestamp =
+                  data?['last_message_timestamp'] as Timestamp?;
 
               // Determine the chatroom title based on the current user
               String chatroomTitle = '';
@@ -67,8 +81,14 @@ class _ChatPageState extends State<ChatPage> {
                 } else if (user!.uid == receiverId) {
                   chatroomTitle =
                       senderName; // Show the sender's name if current user is the receiver
+                } else if (user!.uid == senderId) {
+                  lastmessage =
+                      lastmessage; // Show the lastmessage if current user is the sender
                 }
               }
+              String formattedTimestamp = lastmessageTimestamp != null
+                  ? DateFormat('HH:mm').format(lastmessageTimestamp.toDate())
+                  : 'No timestamp';
 
               return Dismissible(
                 key: Key(chatroomId),
@@ -96,6 +116,7 @@ class _ChatPageState extends State<ChatPage> {
                             chatroomId: chatroomId,
                             receiverId: receiverId,
                             receiverName: receiverName,
+                            lastmessage: lastmessage,
                           );
                         },
                       ),
@@ -107,7 +128,10 @@ class _ChatPageState extends State<ChatPage> {
                     ),
                   ),
                   title: Text(chatroomTitle),
-                  subtitle: Text("Tap to enter the chatroom"),
+                  subtitle: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [Text(lastmessage), Text(formattedTimestamp)],
+                  ),
                 ),
               );
             },

@@ -16,6 +16,7 @@ class ChatroomScreen extends StatefulWidget {
     required this.chatroomName,
     required this.receiverId,
     required this.receiverName,
+    required String lastmessage,
   });
 
   @override
@@ -35,10 +36,12 @@ class _ChatroomScreenState extends State<ChatroomScreen> {
         Provider.of<Userprovider>(context, listen: false).userName;
 
     final receiverId = widget.receiverId;
-
+    // Store message before clearing the text field
+    final String messageContent = messageText.text.trim();
+    messageText.clear();
     // Create the message data to send to Firestore
     Map<String, dynamic> messageToSend = {
-      "text": messageText.text.trim(),
+      "text": messageContent,
       "sender_name": currentUserName,
       "sender_id": currentUserId,
       "receiver_name": widget.receiverName,
@@ -47,20 +50,19 @@ class _ChatroomScreenState extends State<ChatroomScreen> {
       "timestamp": FieldValue.serverTimestamp(),
     };
 
-    messageText.clear();
-
     try {
       // Add the message to the messages collection
       await db.collection("messages").add(messageToSend);
 
       // Update the chatroom with the latest message
       await db.collection("chatrooms").doc(widget.chatroomId).update({
-        "last_message": messageText.text.trim(),
+        "last_message": messageContent,
         "last_message_timestamp": FieldValue.serverTimestamp(),
       });
     } catch (e) {
       print("Error sending message: $e");
     }
+    messageText.clear();
   }
 
   // Display individual message

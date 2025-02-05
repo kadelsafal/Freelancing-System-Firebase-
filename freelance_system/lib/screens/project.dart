@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:googleapis/admob/v1.dart';
 
 class ProjectScreen extends StatefulWidget {
   const ProjectScreen({super.key});
@@ -10,6 +11,10 @@ class ProjectScreen extends StatefulWidget {
 class _ProjectScreenState extends State<ProjectScreen> {
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Project"),
+      ),
+    );
   }
 }

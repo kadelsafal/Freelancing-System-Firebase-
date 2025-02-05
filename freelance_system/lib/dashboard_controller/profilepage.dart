@@ -27,6 +27,7 @@ class _ProfilepageState extends State<Profilepage> {
   void initState() {
     super.initState();
     fetchInitialData();
+    fetchLastMessage();
   }
 
   Future<void> fetchInitialData() async {
@@ -312,16 +313,16 @@ class _ProfilepageState extends State<Profilepage> {
 
                               // Navigate to the ChatroomScreen
                               Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ChatroomScreen(
-                                    chatroomId: chatroomId,
-                                    chatroomName: widget.userName,
-                                    receiverId: widget.userId,
-                                    receiverName: widget.userName,
-                                  ),
-                                ),
-                              );
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ChatroomScreen(
+                                      chatroomId: chatroomId,
+                                      chatroomName: widget.userName,
+                                      receiverId: widget.userId,
+                                      receiverName: widget.userName,
+                                      lastmessage: lastMessage,
+                                    ),
+                                  ));
                             } catch (e) {
                               print("Error opening chatroom: $e");
                               ScaffoldMessenger.of(context).showSnackBar(

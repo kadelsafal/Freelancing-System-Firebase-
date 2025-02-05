@@ -17,21 +17,7 @@ class _MyDrawerState extends State<MyDrawer> {
   @override
   void initState() {
     super.initState();
-    _loadToggleState(); // Load the saved toggle state when the drawer is created
-  }
-
-  // Load the toggle state from SharedPreferences
-  Future<void> _loadToggleState() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      isToggleOn = prefs.getBool('isFreelancing') ?? false;
-    });
-  }
-
-  // Save the toggle state to SharedPreferences
-  Future<void> _saveToggleState(bool value) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setBool('isFreelancing', value);
+    // Load the saved toggle state when the drawer is created
   }
 
   // Method to handle the logout functionality
@@ -44,22 +30,6 @@ class _MyDrawerState extends State<MyDrawer> {
       context,
       MaterialPageRoute(builder: (context) => SplashScreen()),
       (route) => false,
-    );
-  }
-
-  // Method to handle the mode toggle and force refresh
-  void _handleToggle(bool value) async {
-    setState(() {
-      isToggleOn = value;
-    });
-
-    // Save the toggle state in SharedPreferences
-    await _saveToggleState(value);
-
-    // Restart the app to apply the changes
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => SplashScreen()),
     );
   }
 
@@ -149,34 +119,6 @@ class _MyDrawerState extends State<MyDrawer> {
           ),
 
           // Switch at the Bottom
-          Padding(
-            padding: const EdgeInsets.only(bottom: 16.0),
-            child: Column(
-              children: [
-                Text(
-                  "Toggle Option",
-                  style: TextStyle(fontSize: 16),
-                ),
-                Switch(
-                  value: isToggleOn,
-                  onChanged: (value) {
-                    _handleToggle(
-                        value); // Handle the toggle and refresh the app
-                  },
-                  activeColor: Colors.blue,
-                  inactiveThumbColor: Colors.grey,
-                ),
-                // Display the mode beside the switch
-                Text(
-                  isToggleOn ? 'Freelancing Mode' : 'Client Mode',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: isToggleOn ? Colors.blue : Colors.green,
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
