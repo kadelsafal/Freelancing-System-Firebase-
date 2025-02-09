@@ -36,8 +36,9 @@ class _SelectTemplatesState extends State<SelectTemplates> {
                   setState(() {
                     selectedTemplate = templates[index];
                   });
+
                   // Navigate to preview screen and pass selected template
-                  Navigator.push(
+                  Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(
                       builder: (context) => PdfGenerator(
@@ -45,6 +46,7 @@ class _SelectTemplatesState extends State<SelectTemplates> {
                         selectedTemplate: selectedTemplate,
                       ),
                     ),
+                    (route) => false,
                   );
                 },
                 title: Text(templates[index]),

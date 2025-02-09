@@ -22,28 +22,40 @@ class _ResumeScreenState extends State<ResumeScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchResume();
+    _fetchResume(); // Fetch the resume when the screen is initialized
   }
 
   // Fetch Resume File from Firestore
   Future<void> _fetchResume() async {
     String userId = FirebaseAuth.instance.currentUser!.uid;
 
-    DocumentSnapshot userDoc =
-        await FirebaseFirestore.instance.collection('users').doc(userId).get();
-    if (userDoc.exists && userDoc['resume_file'] != null) {
-      setState(() {
-        _resumeUrl = userDoc['resume_file'];
-      });
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      if (userDoc.exists && userDoc['resume_file'] != null) {
+        setState(() {
+          _resumeUrl = userDoc['resume_file'];
+        });
+        print(
+            "Fetched resume URL: $_resumeUrl"); // Display fetched URL in console
+      } else {
+        print("No resume URL found in Firestore.");
+      }
+    } catch (e) {
+      print("Error fetching resume: $e");
     }
   }
 
+  // Upload Resume to Cloudinary and Save to Firestore
   Future<void> _uploadResume() async {
-    //Pick up file
+    // Pick file
     FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom, allowedExtensions: ['pdf', 'doc', 'docx']);
 
-    if (result == null) return; //User cancelled
+    if (result == null) return; // User canceled the file picker
 
     File file = File(result.files.single.path!);
 
@@ -52,15 +64,19 @@ class _ResumeScreenState extends State<ResumeScreen> {
     });
 
     try {
-      //Upload to Cloudinary
+      // Upload to Cloudinary
       String cloudinaryUrl = await _uploadToCloudinary(file);
 
-      //Store to Firestore
+      // Store the URL in Firestore
       await _saveToFirestore(cloudinaryUrl);
 
+      // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Resume uploaded successfully!")),
       );
+
+      // Fetch the updated resume URL after saving
+      _fetchResume();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Upload failed: $e")),
@@ -72,34 +88,54 @@ class _ResumeScreenState extends State<ResumeScreen> {
     }
   }
 
+  // Upload the file to Cloudinary and get the file URL
   Future<String> _uploadToCloudinary(File file) async {
     const cloudinaryUploadUrl =
-        "https://api.cloudinary.com/v1_1/dnebaumu9/upload/fl_attachment";
-    const uploadPreset = "Resum_files"; // Set this in Cloudinary settings
+        "https://api.cloudinary.com/v1_1/dnebaumu9/upload"; // Cloudinary upload URL
+    const uploadPreset = "Resum_files"; // Cloudinary upload preset
 
     var request = http.MultipartRequest("POST", Uri.parse(cloudinaryUploadUrl))
       ..fields['upload_preset'] = uploadPreset
       ..fields['resource_type'] = 'auto' // Ensures correct file type handling
-      ..fields['access_mode'] = 'public' // Makes it publicly accessible
       ..files.add(await http.MultipartFile.fromPath('file', file.path));
 
-    var response = await request.send();
-    if (response.statusCode == 200) {
-      var jsonResponse = json.decode(await response.stream.bytesToString());
-      return jsonResponse['secure_url']; // Cloudinary file URL
-    } else {
+    try {
+      var response = await request.send();
+
+      if (response.statusCode == 200) {
+        var jsonResponse = json.decode(await response.stream.bytesToString());
+        return jsonResponse['secure_url']; // Cloudinary file URL
+      } else {
+        // Log the response body and status code if upload fails
+        final responseBody = await response.stream.bytesToString();
+        print(
+            "Cloudinary upload failed: ${response.statusCode} - $responseBody");
+        throw Exception("Failed to upload resume to Cloudinary.");
+      }
+    } catch (e) {
+      // Handle any other exceptions
+      print("Error uploading to Cloudinary: $e");
       throw Exception("Failed to upload resume to Cloudinary.");
     }
   }
 
+  // Save the Cloudinary URL to Firestore for the current user
   Future<void> _saveToFirestore(String fileUrl) async {
     String userId = FirebaseAuth.instance.currentUser!.uid;
-    await FirebaseFirestore.instance.collection('users').doc(userId).update({
-      'resume_file': fileUrl,
-    });
+
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(userId).update({
+        'resume_file': fileUrl,
+      });
+
+      print("Resume URL saved to Firestore: $fileUrl");
+    } catch (e) {
+      print("Error saving resume URL to Firestore: $e");
+      throw Exception("Failed to save resume URL to Firestore.");
+    }
   }
 
-  // Open PDF File
+  // Open the PDF file in an external application
   Future<void> _openPdf(String url) async {
     final Uri pdfUri = Uri.parse(url);
 
@@ -141,9 +177,7 @@ class _ResumeScreenState extends State<ResumeScreen> {
                             ],
                           ),
                   ),
-                  SizedBox(
-                    width: 10,
-                  ),
+                  SizedBox(width: 10),
                   ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color.fromARGB(255, 46, 0, 106),
