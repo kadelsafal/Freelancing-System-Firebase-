@@ -155,8 +155,9 @@ class _MyPostState extends State<MyPost> {
                                       Icons.handshake,
                                       color: isLiked
                                           ? const Color.fromARGB(
-                                              255, 243, 199, 4)
-                                          : Colors.grey,
+                                              255, 101, 45, 255)
+                                          : const Color.fromARGB(
+                                              255, 86, 86, 86),
                                       size: 38,
                                     ),
                                     onPressed: () async {

@@ -56,17 +56,28 @@ class _DashboardState extends State<Dashboard> {
               const Spacer(),
               IconButton(
                 onPressed: () {},
-                icon: const Icon(Icons.notifications_active_outlined, size: 35),
+                icon: const Icon(
+                  Icons.notifications_active_outlined,
+                  size: 35,
+                  color: Colors.white,
+                ),
               ),
               IconButton(
                 onPressed: () {
                   Navigator.push(context,
                       MaterialPageRoute(builder: (context) => ChatPage()));
                 },
-                icon: const Icon(Icons.telegram, size: 35),
+                icon: const Icon(
+                  Icons.telegram,
+                  size: 40,
+                  color: Colors.white,
+                ),
               ),
             ],
           ),
+          backgroundColor: Colors.deepPurple,
+          foregroundColor: Colors.white,
+          toolbarHeight: 90,
         ),
         drawer: Drawer(
           child: Container(
@@ -93,12 +104,16 @@ class _DashboardState extends State<Dashboard> {
                       },
                       icon: Container(
                         decoration: BoxDecoration(
-                          color: Colors.amber[600],
+                          color: const Color.fromARGB(255, 36, 0, 134),
                           borderRadius: BorderRadius.circular(20.0),
                         ),
                         child: const Padding(
-                          padding: EdgeInsets.all(4.0),
-                          child: Icon(Icons.search, size: 30),
+                          padding: EdgeInsets.all(6.0),
+                          child: Icon(
+                            Icons.search,
+                            size: 30,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),

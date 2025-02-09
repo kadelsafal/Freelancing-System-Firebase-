@@ -19,7 +19,7 @@ class _NavigationMenuState extends State<NavigationMenu> {
   final List<Widget> screens = [
     const Dashboard(),
     const ProjectScreen(),
-    const ResumeBuilder(),
+    const ResumeScreen(),
     const LearningHub(),
     const PaymentSystem(),
   ];

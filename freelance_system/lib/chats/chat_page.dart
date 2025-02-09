@@ -116,7 +116,6 @@ class _ChatPageState extends State<ChatPage> {
                             chatroomId: chatroomId,
                             receiverId: receiverId,
                             receiverName: receiverName,
-                            lastmessage: lastmessage,
                           );
                         },
                       ),

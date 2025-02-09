@@ -320,7 +320,6 @@ class _ProfilepageState extends State<Profilepage> {
                                       chatroomName: widget.userName,
                                       receiverId: widget.userId,
                                       receiverName: widget.userName,
-                                      lastmessage: lastMessage,
                                     ),
                                   ));
                             } catch (e) {

@@ -92,7 +92,16 @@ class _MyDrawerState extends State<MyDrawer> {
               padding: EdgeInsets.zero,
               children: [
                 ListTile(
-                  leading: Icon(Icons.person, color: Colors.blue),
+                  leading: Container(
+                      padding: EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                          color: Colors.deepPurple,
+                          borderRadius: BorderRadius.circular(20)),
+                      child: Icon(
+                        Icons.person,
+                        color: Colors.white,
+                        size: 35,
+                      )),
                   title: Text(
                     "Profile",
                     style: TextStyle(fontSize: 20),
@@ -105,7 +114,14 @@ class _MyDrawerState extends State<MyDrawer> {
                   },
                 ),
                 ListTile(
-                  leading: Icon(Icons.logout, color: Colors.red),
+                  leading: Container(
+                    padding: EdgeInsets.all(8),
+                    child: Icon(
+                      Icons.logout,
+                      color: Colors.red,
+                      size: 40,
+                    ),
+                  ),
                   title: Text(
                     "Logout",
                     style: TextStyle(fontSize: 20),
