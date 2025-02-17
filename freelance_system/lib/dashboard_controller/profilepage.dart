@@ -111,8 +111,30 @@ class _ProfilepageState extends State<Profilepage> {
     }
   }
 
+  Future<void> sendFollowNotification(
+      String currentUserId, String currentUserName) async {
+    try {
+      final db = FirebaseFirestore.instance;
+      await db
+          .collection('users')
+          .doc(widget.userId)
+          .collection('notifications')
+          .add({
+        "type": "follow",
+        "fromUserId": currentUserId,
+        "fromUserName": currentUserName,
+        "timestamp": FieldValue.serverTimestamp(),
+        "seen": false, // Mark as unread
+      });
+    } catch (e) {
+      print("Error sending follow notification: $e");
+    }
+  }
+
   Future<void> handleFollow() async {
     final currentUserId = FirebaseAuth.instance.currentUser!.uid;
+    final currentUserName =
+        Provider.of<Userprovider>(context, listen: false).userName;
     final db = FirebaseFirestore.instance;
 
     if (isFollowing) {
@@ -129,16 +151,18 @@ class _ProfilepageState extends State<Profilepage> {
           .collection('followers')
           .doc(currentUserId)
           .delete();
-      await db.collection('users').doc(currentUserId).update({
-        "followed": FieldValue.increment(-1),
-      });
-      await db.collection('users').doc(widget.userId).update({
-        "followers": FieldValue.increment(-1),
-      });
+      await db
+          .collection('users')
+          .doc(currentUserId)
+          .update({"followed": FieldValue.increment(-1)});
+      await db
+          .collection('users')
+          .doc(widget.userId)
+          .update({"followers": FieldValue.increment(-1)});
 
       setState(() {
         isFollowing = false;
-        followers--; // Decrement followers count in the UI
+        followers--;
       });
     } else {
       // Follow logic
@@ -154,16 +178,21 @@ class _ProfilepageState extends State<Profilepage> {
           .collection('followers')
           .doc(currentUserId)
           .set({"timestamp": FieldValue.serverTimestamp()});
-      await db.collection('users').doc(currentUserId).update({
-        "followed": FieldValue.increment(1),
-      });
-      await db.collection('users').doc(widget.userId).update({
-        "followers": FieldValue.increment(1),
-      });
+      await db
+          .collection('users')
+          .doc(currentUserId)
+          .update({"followed": FieldValue.increment(1)});
+      await db
+          .collection('users')
+          .doc(widget.userId)
+          .update({"followers": FieldValue.increment(1)});
+
+      // Send Follow Notification
+      await sendFollowNotification(currentUserId, currentUserName);
 
       setState(() {
         isFollowing = true;
-        followers++; // Increment followers count in the UI
+        followers++;
       });
     }
   }

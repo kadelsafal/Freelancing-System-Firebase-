@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:freelance_system/learning/addcourse.dart';
+import 'package:freelance_system/learning/courses.dart';
 import 'package:freelance_system/screens/profile.dart';
 import 'package:freelance_system/screens/splash_screen.dart';
 import 'package:provider/provider.dart';
@@ -89,46 +91,37 @@ class _MyDrawerState extends State<MyDrawer> {
           // Drawer Items
           Expanded(
             child: ListView(
-              padding: EdgeInsets.zero,
+              padding: EdgeInsets.symmetric(
+                  vertical: 10), // Overall spacing for the list
               children: [
-                ListTile(
-                  leading: Container(
-                      padding: EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                          color: Colors.deepPurple,
-                          borderRadius: BorderRadius.circular(20)),
-                      child: Icon(
-                        Icons.person,
-                        color: Colors.white,
-                        size: 35,
-                      )),
-                  title: Text(
-                    "Profile",
-                    style: TextStyle(fontSize: 20),
+                _buildListTile(
+                  icon: Icons.person,
+                  iconColor: Colors.white,
+                  bgColor: Colors.deepPurple,
+                  title: "Profile",
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => ProfileScreen()),
                   ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => ProfileScreen()),
-                    );
-                  },
                 ),
-                ListTile(
-                  leading: Container(
-                    padding: EdgeInsets.all(8),
-                    child: Icon(
-                      Icons.logout,
-                      color: Colors.red,
-                      size: 40,
-                    ),
+                SizedBox(height: 15), // Uniform gap between tiles
+                _buildListTile(
+                  icon: Icons.book_online_outlined,
+                  iconColor: Colors.deepPurple,
+                  bgColor: Colors.transparent, // No background for this icon
+                  title: "Courses",
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => Courses()),
                   ),
-                  title: Text(
-                    "Logout",
-                    style: TextStyle(fontSize: 20),
-                  ),
-                  onTap: () {
-                    _handleLogout(context);
-                  },
+                ),
+                SizedBox(height: 15), // Uniform gap
+                _buildListTile(
+                  icon: Icons.logout,
+                  iconColor: Colors.red,
+                  bgColor: Colors.transparent, // No background for logout
+                  title: "Logout",
+                  onTap: () => _handleLogout(context),
                 ),
               ],
             ),
@@ -137,6 +130,30 @@ class _MyDrawerState extends State<MyDrawer> {
           // Switch at the Bottom
         ],
       ),
+    );
+  }
+
+  Widget _buildListTile({
+    required IconData icon,
+    required Color iconColor,
+    required Color bgColor,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      leading: Container(
+        padding: EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Icon(icon, color: iconColor, size: 35), // Standardized icon size
+      ),
+      title: Text(
+        title,
+        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+      ),
+      onTap: onTap,
     );
   }
 }

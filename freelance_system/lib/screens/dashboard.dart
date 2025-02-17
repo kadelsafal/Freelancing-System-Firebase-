@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:freelance_system/chats/chat_page.dart';
 import 'package:freelance_system/dashboard_controller/Mypost.dart';
 import 'package:freelance_system/dashboard_controller/mydrawer.dart';
+import 'package:freelance_system/dashboard_controller/notifications.dart';
 import 'package:freelance_system/providers/userProvider.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,6 +20,7 @@ class Dashboard extends StatefulWidget {
 class _DashboardState extends State<Dashboard> {
   TextEditingController searchController = TextEditingController();
   String searchQuery = '';
+  int notificationCount = 0;
 
   @override
   void initState() {
@@ -28,6 +30,26 @@ class _DashboardState extends State<Dashboard> {
         searchQuery = searchController.text.trim().toLowerCase();
       });
     });
+  }
+
+  String currentUserId = FirebaseAuth.instance.currentUser!.uid;
+// Function to mark notifications as read
+  Future<void> markNotificationAsRead(String notificationId) async {
+    final db = FirebaseFirestore.instance;
+
+    try {
+      await db
+          .collection('users')
+          .doc(currentUserId)
+          .collection('notifications')
+          .doc(notificationId)
+          .update({
+        'read': true, // Mark the notification as read
+      });
+      print("Notification marked as read.");
+    } catch (e) {
+      print("Error marking notification as read: $e");
+    }
   }
 
   @override
@@ -54,13 +76,56 @@ class _DashboardState extends State<Dashboard> {
             children: [
               const Text("Swatantra Pesa"),
               const Spacer(),
-              IconButton(
-                onPressed: () {},
-                icon: const Icon(
-                  Icons.notifications_active_outlined,
-                  size: 35,
-                  color: Colors.white,
-                ),
+              Stack(
+                children: [
+                  IconButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => Notifications()),
+                      );
+                    },
+                    icon: const Icon(Icons.notifications_active_outlined,
+                        size: 35, color: Colors.white),
+                  ),
+                  // Real-time Unread Notifications Count
+                  StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(currentUserId)
+                        .collection('notifications')
+                        .where('read',
+                            isEqualTo: false) // Only unread notifications
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                        // If no notifications are found in the subcollection
+                        print("No unread notifications found.");
+                        return SizedBox.shrink();
+                      }
+
+                      int unreadCount = snapshot.data!.docs.length;
+
+                      return Positioned(
+                        right: 8,
+                        top: 8,
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: const BoxDecoration(
+                              color: Colors.red, shape: BoxShape.circle),
+                          child: Text(
+                            '$unreadCount',
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
               IconButton(
                 onPressed: () {

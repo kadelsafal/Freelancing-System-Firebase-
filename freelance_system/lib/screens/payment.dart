@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:freelance_system/learning/chapterDetailsPage.dart';
 
 class PaymentSystem extends StatefulWidget {
   const PaymentSystem({super.key});
@@ -10,6 +11,6 @@ class PaymentSystem extends StatefulWidget {
 class _PaymentSystemState extends State<PaymentSystem> {
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    return Text("payment");
   }
 }

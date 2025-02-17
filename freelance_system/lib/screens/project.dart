@@ -30,7 +30,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
             ),
             Row(
               mainAxisSize: MainAxisSize
-                  .min, // Ensure the column only takes as much space as needed
+                  .min, // Ensuring that the row takes only required space
               children: [
                 Text(
                   isClient ? "Client Mode" : "Freelancing Mode",
@@ -57,48 +57,46 @@ class _ProjectScreenState extends State<ProjectScreen> {
           ],
         ),
       ),
-      body: SingleChildScrollView(
-        child: Stack(children: [
-          isClient
-              ? Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Container(
-                            padding: EdgeInsets.all(2),
-                            decoration: BoxDecoration(
-                              color: Color.fromARGB(
-                                  255, 57, 0, 98), // Purple color
-                              borderRadius:
-                                  BorderRadius.circular(50), // Circular border
-                            ),
-                            child: IconButton(
-                              onPressed: () {
-                                Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) => AddProject()));
-                              },
-                              icon: Icon(Icons.add, color: Colors.white),
-                              iconSize: 30,
-                            ),
-                          )
-                        ],
-                      ),
+      body: isClient
+          ? SingleChildScrollView(
+              child: Column(
+                children: [
+                  // Show AddProject button only if in Client Mode
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color:
+                                Color.fromARGB(255, 57, 0, 98), // Purple color
+                            borderRadius:
+                                BorderRadius.circular(50), // Circular border
+                          ),
+                          child: IconButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => AddProject(),
+                                ),
+                              );
+                            },
+                            icon: Icon(Icons.add, color: Colors.white),
+                            iconSize: 30,
+                          ),
+                        ),
+                      ],
                     ),
-                    Center(
-                      child: Projectpost(
-                        userId: userProvider.userId,
-                      ),
-                    )
-                  ],
-                )
-              : FreelancedProjects(),
-        ]),
-      ),
+                  ),
+                  // Show Projectpost for Client mode
+                  Center(child: Projectpost(userId: userProvider.userId)),
+                ],
+              ),
+            )
+          : FreelancedProjects(), // Show FreelancedProjects for Freelancer mode
     );
   }
 }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:freelance_system/resume/pdf_page.dart';
 import 'package:freelance_system/resume/resume_modal.dart';
 import 'package:freelance_system/resume/select_templates.dart';
-import './resume_preview.dart';
 
 class SkillsSummaryScreen extends StatefulWidget {
   final Resume resume; // Accept Resume object in the constructor
@@ -60,7 +59,7 @@ class _SkillsSummaryScreenState extends State<SkillsSummaryScreen> {
       );
 
       // Navigate to Preview screen
-      Navigator.push(
+      Navigator.pushReplacement(
         context,
         MaterialPageRoute(
             builder: (context) => SelectTemplates(resume: widget.resume)
@@ -74,59 +73,61 @@ class _SkillsSummaryScreenState extends State<SkillsSummaryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text("Add Skills and Summary")),
-      body: Padding(
-        padding: EdgeInsets.all(12.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Summary Field
-              _buildInputField(
-                label: "Summary",
-                controller: _summaryController,
-                icon: Icons.description,
-                maxLines: 3,
-                validatorMessage: "Please enter a summary",
-              ),
-              SizedBox(height: 20),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.all(12.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Summary Field
+                _buildInputField(
+                  label: "Summary",
+                  controller: _summaryController,
+                  icon: Icons.description,
+                  maxLines: 3,
+                  validatorMessage: "Please enter a summary",
+                ),
+                SizedBox(height: 20),
 
-              // Skills Fields
-              Text(
-                "Skills",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-              ),
-              SizedBox(height: 10),
-              ..._buildSkillFields(),
-              SizedBox(height: 20),
-              Center(
-                child: IconButton(
-                    onPressed: _addSkillField,
-                    icon: Icon(
-                      Icons.add,
-                      size: 40,
-                      color: Colors.deepPurple,
-                    )),
-              ),
-              SizedBox(height: 20),
-              Center(
-                child: ElevatedButton(
-                  onPressed: _submitSkills,
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color.fromARGB(255, 66, 1, 107),
-                      foregroundColor:
-                          Colors.white // Set the background color to purple
+                // Skills Fields
+                Text(
+                  "Skills",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                ),
+                SizedBox(height: 10),
+                ..._buildSkillFields(),
+                SizedBox(height: 20),
+                Center(
+                  child: IconButton(
+                      onPressed: _addSkillField,
+                      icon: Icon(
+                        Icons.add,
+                        size: 40,
+                        color: Colors.deepPurple,
+                      )),
+                ),
+                SizedBox(height: 20),
+                Center(
+                  child: ElevatedButton(
+                    onPressed: _submitSkills,
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color.fromARGB(255, 66, 1, 107),
+                        foregroundColor:
+                            Colors.white // Set the background color to purple
+                        ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(10.0),
+                      child: Text(
+                        "Save Resume",
+                        style: TextStyle(fontSize: 20),
                       ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(10.0),
-                    child: Text(
-                      "Save Resume",
-                      style: TextStyle(fontSize: 20),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
