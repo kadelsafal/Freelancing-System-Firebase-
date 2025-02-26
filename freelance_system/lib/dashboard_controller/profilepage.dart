@@ -171,13 +171,19 @@ class _ProfilepageState extends State<Profilepage> {
           .doc(currentUserId)
           .collection('following')
           .doc(widget.userId)
-          .set({"timestamp": FieldValue.serverTimestamp()});
+          .set({
+        "timestamp": FieldValue.serverTimestamp(),
+        "fullName": widget.userName,
+      });
       await db
           .collection('users')
           .doc(widget.userId)
           .collection('followers')
           .doc(currentUserId)
-          .set({"timestamp": FieldValue.serverTimestamp()});
+          .set({
+        "timestamp": FieldValue.serverTimestamp(),
+        "fullName": currentUserName,
+      });
       await db
           .collection('users')
           .doc(currentUserId)
@@ -186,9 +192,6 @@ class _ProfilepageState extends State<Profilepage> {
           .collection('users')
           .doc(widget.userId)
           .update({"followers": FieldValue.increment(1)});
-
-      // Send Follow Notification
-      await sendFollowNotification(currentUserId, currentUserName);
 
       setState(() {
         isFollowing = true;
