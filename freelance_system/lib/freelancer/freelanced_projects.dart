@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:freelance_system/freelancer/appliedproject.dart';
 import 'package:freelance_system/freelancer/projectscreen.dart';
+import 'package:freelance_system/freelancer/teambuilding.dart';
 
 class FreelancedProjects extends StatefulWidget {
   const FreelancedProjects({super.key});
@@ -16,7 +17,7 @@ class _FreelancedProjectsState extends State<FreelancedProjects>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -31,10 +32,12 @@ class _FreelancedProjectsState extends State<FreelancedProjects>
       appBar: AppBar(
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: Colors.white,
+          isScrollable: true,
+          indicatorColor: Colors.deepPurple,
           tabs: const [
             Tab(text: "Projects"),
             Tab(text: "Applied Projects"),
+            Tab(text: "Team Building"),
           ],
         ),
       ),
@@ -43,6 +46,7 @@ class _FreelancedProjectsState extends State<FreelancedProjects>
         children: [
           FreelancerProjectscreen(), // Projects tab content
           Appliedproject(), // Applied Projects tab content
+          Teambuilding(), //Team Building
         ],
       ),
     );

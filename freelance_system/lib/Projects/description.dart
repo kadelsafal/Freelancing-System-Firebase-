@@ -16,7 +16,7 @@ class _DescriptionWidgetState extends State<DescriptionWidget> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 245, 233, 247),
+        color: const Color.fromARGB(255, 250, 231, 254),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
@@ -26,8 +26,8 @@ class _DescriptionWidgetState extends State<DescriptionWidget> {
             final textSpan = TextSpan(
               text: widget.description,
               style: const TextStyle(
-                color: Color.fromARGB(255, 0, 0, 0),
-                fontSize: 18,
+                color: Color.fromARGB(255, 35, 35, 35),
+                fontSize: 14,
                 fontWeight: FontWeight.normal,
               ),
             );
@@ -51,7 +51,7 @@ class _DescriptionWidgetState extends State<DescriptionWidget> {
                       : _getTruncatedText(widget.description, 5),
                   style: const TextStyle(
                     color: Color.fromARGB(255, 0, 0, 0),
-                    fontSize: 18,
+                    fontSize: 14,
                     fontWeight: FontWeight.normal,
                   ),
                 ),

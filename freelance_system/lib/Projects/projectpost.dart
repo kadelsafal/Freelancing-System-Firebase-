@@ -93,7 +93,7 @@ class _ProjectpostState extends State<Projectpost> {
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10)),
                           color: isCompleted || isPending
-                              ? Colors.deepPurple
+                              ? const Color.fromARGB(255, 255, 255, 255)
                               : Colors.white,
                           child: Padding(
                             padding: EdgeInsets.all(8),
@@ -116,9 +116,9 @@ class _ProjectpostState extends State<Projectpost> {
                                               title,
                                               style: TextStyle(
                                                 color: isCompleted || isPending
-                                                    ? Colors.white
+                                                    ? Colors.deepPurple
                                                     : Colors.deepPurple[900],
-                                                fontSize: 20,
+                                                fontSize: 16,
                                                 fontWeight: FontWeight.bold,
                                               ),
                                               overflow: isExpanded
@@ -151,7 +151,7 @@ class _ProjectpostState extends State<Projectpost> {
                                             icon: Icon(
                                               Icons.edit_note_outlined,
                                               color: isCompleted || isPending
-                                                  ? Colors.white
+                                                  ? Colors.deepPurple
                                                   : Colors.deepPurple,
                                               size: 40,
                                             )),
@@ -224,9 +224,10 @@ class _ProjectpostState extends State<Projectpost> {
                                             "Deadline : $deadline",
                                             style: TextStyle(
                                                 color: isPending
-                                                    ? Colors.white
+                                                    ? const Color.fromARGB(
+                                                        255, 255, 19, 19)
                                                     : Colors.red,
-                                                fontSize: 19),
+                                                fontSize: 14),
                                           ),
                                         ],
                                       ),
@@ -234,21 +235,21 @@ class _ProjectpostState extends State<Projectpost> {
                                         "Description",
                                         style: TextStyle(
                                             color: isPending
-                                                ? Colors.white
+                                                ? Colors.deepPurple
                                                 : const Color.fromARGB(
                                                     255, 0, 0, 0),
-                                            fontSize: 18,
+                                            fontSize: 16,
                                             fontWeight: FontWeight.bold),
                                       ),
                                       SizedBox(
-                                        height: 8,
+                                        height: 4,
                                       ),
                                       DescriptionWidget(
                                           description: description),
-                                      SizedBox(
-                                        height: 10,
-                                      ),
                                       if (!isPending) ...[
+                                        SizedBox(
+                                          height: 15,
+                                        ),
                                         Row(
                                           children: [
                                             Text(
@@ -256,7 +257,7 @@ class _ProjectpostState extends State<Projectpost> {
                                               style: TextStyle(
                                                   color: const Color.fromARGB(
                                                       255, 144, 143, 143),
-                                                  fontSize: 16,
+                                                  fontSize: 13,
                                                   fontWeight: FontWeight.bold),
                                             ),
                                             SizedBox(width: 5),
@@ -265,7 +266,7 @@ class _ProjectpostState extends State<Projectpost> {
                                               style: TextStyle(
                                                   color: const Color.fromARGB(
                                                       255, 0, 0, 0),
-                                                  fontSize: 20,
+                                                  fontSize: 16,
                                                   fontWeight: FontWeight.bold),
                                             ),
                                             Icon(
@@ -288,15 +289,12 @@ class _ProjectpostState extends State<Projectpost> {
                                                           MainAxisAlignment.end,
                                                       children: [
                                                         Text(
-                                                          "Budget :",
+                                                          "Budget : ",
                                                           style: TextStyle(
                                                               color: const Color
                                                                   .fromARGB(
-                                                                  255,
-                                                                  255,
-                                                                  255,
-                                                                  255),
-                                                              fontSize: 20,
+                                                                  255, 0, 0, 0),
+                                                              fontSize: 14,
                                                               fontWeight:
                                                                   FontWeight
                                                                       .bold),
@@ -304,13 +302,9 @@ class _ProjectpostState extends State<Projectpost> {
                                                         Text(
                                                           "${NumberFormat("#,##0", "en_US").format(budget)} Rs",
                                                           style: TextStyle(
-                                                              color: const Color
-                                                                  .fromARGB(
-                                                                  255,
-                                                                  255,
-                                                                  255,
-                                                                  255),
-                                                              fontSize: 22,
+                                                              color: Colors
+                                                                  .deepPurple,
+                                                              fontSize: 16,
                                                               fontWeight:
                                                                   FontWeight
                                                                       .bold),
@@ -323,15 +317,12 @@ class _ProjectpostState extends State<Projectpost> {
                                                           MainAxisAlignment.end,
                                                       children: [
                                                         Text(
-                                                          "Budget :",
+                                                          "Budget : ",
                                                           style: TextStyle(
                                                               color: const Color
                                                                   .fromARGB(
-                                                                  255,
-                                                                  144,
-                                                                  143,
-                                                                  143),
-                                                              fontSize: 16,
+                                                                  255, 0, 0, 0),
+                                                              fontSize: 14,
                                                               fontWeight:
                                                                   FontWeight
                                                                       .bold),
@@ -342,7 +333,7 @@ class _ProjectpostState extends State<Projectpost> {
                                                               color: const Color
                                                                   .fromARGB(255,
                                                                   106, 0, 148),
-                                                              fontSize: 20,
+                                                              fontSize: 16,
                                                               fontWeight:
                                                                   FontWeight
                                                                       .bold),
@@ -355,7 +346,7 @@ class _ProjectpostState extends State<Projectpost> {
                                       if (!isPending) ...[
                                         Text("Preferences",
                                             style: TextStyle(
-                                                fontSize: 18,
+                                                fontSize: 16,
                                                 fontWeight: FontWeight.bold)),
                                         SizedBox(height: 5),
                                         Wrap(
@@ -369,7 +360,7 @@ class _ProjectpostState extends State<Projectpost> {
                                               label: Text(
                                                 preference,
                                                 style: TextStyle(
-                                                    fontSize: 16,
+                                                    fontSize: 13,
                                                     fontWeight:
                                                         FontWeight.bold),
                                               ),
@@ -390,9 +381,10 @@ class _ProjectpostState extends State<Projectpost> {
                                       ? 'Posted on: ${DateFormat('yyyy-MM-dd HH:mm:ss').format((project['createdAt'] as Timestamp).toDate())}'
                                       : 'Posted on: N/A', // Handle null values gracefully
                                   style: TextStyle(
-                                      fontSize: 16,
+                                      fontSize: 13,
                                       color: isCompleted || isPending
-                                          ? Colors.white
+                                          ? const Color.fromARGB(
+                                              255, 80, 80, 80)
                                           : const Color.fromARGB(
                                               255, 139, 139, 139)),
                                 ),
@@ -403,21 +395,17 @@ class _ProjectpostState extends State<Projectpost> {
                                       mainAxisAlignment: MainAxisAlignment.end,
                                       children: [
                                         Text(
-                                          "Completed",
+                                          "Completed  ",
                                           style: TextStyle(
-                                              fontSize: 18,
-                                              fontStyle: FontStyle.italic,
-                                              color: Colors.white,
-                                              decoration:
-                                                  TextDecoration.underline,
-                                              decorationColor: Colors.white,
-                                              decorationThickness: 3.0),
+                                            fontSize: 14,
+                                            fontStyle: FontStyle.italic,
+                                            color: Colors.deepPurple,
+                                          ),
                                         ),
                                         Icon(
                                           Icons.check_circle,
-                                          color: const Color.fromARGB(
-                                              255, 11, 215, 0),
-                                          size: 35,
+                                          color: Colors.deepPurple,
+                                          size: 25,
                                         ),
                                       ],
                                     ),
@@ -429,18 +417,18 @@ class _ProjectpostState extends State<Projectpost> {
                                       mainAxisAlignment: MainAxisAlignment.end,
                                       children: [
                                         Text(
-                                          "Pending",
+                                          "Pending ",
                                           style: TextStyle(
-                                            fontSize: 20,
+                                            fontSize: 13,
                                             fontStyle: FontStyle.italic,
-                                            color: Colors.white,
+                                            color: const Color.fromARGB(
+                                                255, 0, 0, 0),
                                           ),
                                         ),
                                         Icon(
                                           Icons.pending_actions,
-                                          color: const Color.fromARGB(
-                                              255, 251, 255, 12),
-                                          size: 40,
+                                          color: Colors.deepPurple,
+                                          size: 25,
                                         ),
                                       ],
                                     ),
