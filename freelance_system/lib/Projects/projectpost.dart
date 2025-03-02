@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:freelance_system/Projects/projectview.dart';
 import 'package:googleapis/compute/v1.dart';
 import 'package:http/http.dart';
 import 'package:intl/intl.dart';
@@ -80,6 +81,7 @@ class _ProjectpostState extends State<Projectpost> {
                       String deadline = project['deadline'] ?? '';
                       String projectId = project['projectId'] ?? '';
                       String status = project['status'];
+                      String appoint = project['appointedFreelancer'] ?? '';
                       List<dynamic> appliedIndividuals =
                           project['appliedIndividuals'] ?? [];
                       int appliedCount = appliedIndividuals.length;
@@ -88,352 +90,424 @@ class _ProjectpostState extends State<Projectpost> {
                       bool isPending = status == "Pending";
                       return Padding(
                         padding: EdgeInsets.all(8.0),
-                        child: Card(
-                          elevation: 5,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
-                          color: isCompleted || isPending
-                              ? const Color.fromARGB(255, 255, 255, 255)
-                              : Colors.white,
-                          child: Padding(
-                            padding: EdgeInsets.all(8),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    SizedBox(
-                                      width: 220,
-                                      child: Row(
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => Projectview(
+                                  projectId: projectId,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Card(
+                            elevation: 5,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10)),
+                            color: isCompleted || isPending
+                                ? const Color.fromARGB(255, 255, 255, 255)
+                                : Colors.white,
+                            child: Padding(
+                              padding: EdgeInsets.all(8),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      SizedBox(
+                                        width: 220,
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            SizedBox(width: 4),
+                                            Expanded(
+                                              child: Text(
+                                                title,
+                                                style: TextStyle(
+                                                  color: isCompleted ||
+                                                          isPending
+                                                      ? Colors.deepPurple
+                                                      : Colors.deepPurple[900],
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                                overflow: isExpanded
+                                                    ? TextOverflow.visible
+                                                    : TextOverflow.ellipsis,
+                                                maxLines: isExpanded ? null : 5,
+                                                softWrap: true,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 20,
+                                      ),
+                                      Row(
                                         mainAxisAlignment:
                                             MainAxisAlignment.center,
                                         children: [
-                                          SizedBox(width: 4),
-                                          Expanded(
-                                            child: Text(
-                                              title,
-                                              style: TextStyle(
+                                          IconButton(
+                                              onPressed: () {
+                                                Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            EditProject(
+                                                                projectId:
+                                                                    projectId)));
+                                              },
+                                              icon: Icon(
+                                                Icons.edit_note_outlined,
                                                 color: isCompleted || isPending
                                                     ? Colors.deepPurple
-                                                    : Colors.deepPurple[900],
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                              overflow: isExpanded
-                                                  ? TextOverflow.visible
-                                                  : TextOverflow.ellipsis,
-                                              maxLines: isExpanded ? null : 5,
-                                              softWrap: true,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      width: 20,
-                                    ),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        IconButton(
-                                            onPressed: () {
-                                              Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          EditProject(
-                                                              projectId:
-                                                                  projectId)));
+                                                    : Colors.deepPurple,
+                                                size: 40,
+                                              )),
+                                          SizedBox(width: 0),
+                                          IconButton(
+                                            onPressed: () async {
+                                              bool confirmDelete =
+                                                  await showDialog(
+                                                context: context,
+                                                builder:
+                                                    (BuildContext context) {
+                                                  return AlertDialog(
+                                                    title:
+                                                        Text("Confirm Delete"),
+                                                    content: Text(
+                                                        "Are you sure you want to delete this project?"),
+                                                    actions: [
+                                                      TextButton(
+                                                        onPressed: () {
+                                                          Navigator.of(context).pop(
+                                                              false); // No, don't delete
+                                                        },
+                                                        child: Text("No",
+                                                            style: TextStyle(
+                                                                color: Colors
+                                                                    .grey)),
+                                                      ),
+                                                      TextButton(
+                                                        onPressed: () {
+                                                          Navigator.of(context).pop(
+                                                              true); // Yes, delete
+                                                        },
+                                                        child: Text("Yes",
+                                                            style: TextStyle(
+                                                                color: Colors
+                                                                    .red)),
+                                                      ),
+                                                    ],
+                                                  );
+                                                },
+                                              );
+
+                                              if (confirmDelete == true) {
+                                                await FirebaseFirestore.instance
+                                                    .collection("projects")
+                                                    .doc(project.id)
+                                                    .delete();
+                                              }
                                             },
                                             icon: Icon(
-                                              Icons.edit_note_outlined,
-                                              color: isCompleted || isPending
-                                                  ? Colors.deepPurple
-                                                  : Colors.deepPurple,
+                                              Icons.delete_forever,
+                                              color: const Color.fromARGB(
+                                                  255, 255, 3, 3),
                                               size: 40,
-                                            )),
-                                        SizedBox(width: 0),
-                                        IconButton(
-                                          onPressed: () async {
-                                            bool confirmDelete =
-                                                await showDialog(
-                                              context: context,
-                                              builder: (BuildContext context) {
-                                                return AlertDialog(
-                                                  title: Text("Confirm Delete"),
-                                                  content: Text(
-                                                      "Are you sure you want to delete this project?"),
-                                                  actions: [
-                                                    TextButton(
-                                                      onPressed: () {
-                                                        Navigator.of(context).pop(
-                                                            false); // No, don't delete
-                                                      },
-                                                      child: Text("No",
-                                                          style: TextStyle(
-                                                              color:
-                                                                  Colors.grey)),
-                                                    ),
-                                                    TextButton(
-                                                      onPressed: () {
-                                                        Navigator.of(context).pop(
-                                                            true); // Yes, delete
-                                                      },
-                                                      child: Text("Yes",
-                                                          style: TextStyle(
-                                                              color:
-                                                                  Colors.red)),
-                                                    ),
-                                                  ],
-                                                );
-                                              },
-                                            );
-
-                                            if (confirmDelete == true) {
-                                              await FirebaseFirestore.instance
-                                                  .collection("projects")
-                                                  .doc(project.id)
-                                                  .delete();
-                                            }
-                                          },
-                                          icon: Icon(
-                                            Icons.delete_forever,
-                                            color: const Color.fromARGB(
-                                                255, 255, 3, 3),
-                                            size: 40,
-                                          ),
-                                        ),
-                                      ],
-                                    )
-                                  ],
-                                ),
-                                SizedBox(height: 15),
-                                if (!isCompleted) ...[
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.end,
-                                        children: [
-                                          Text(
-                                            "Deadline : $deadline",
-                                            style: TextStyle(
-                                                color: isPending
-                                                    ? const Color.fromARGB(
-                                                        255, 255, 19, 19)
-                                                    : Colors.red,
-                                                fontSize: 14),
+                                            ),
                                           ),
                                         ],
-                                      ),
-                                      Text(
-                                        "Description",
-                                        style: TextStyle(
-                                            color: isPending
-                                                ? Colors.deepPurple
-                                                : const Color.fromARGB(
-                                                    255, 0, 0, 0),
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold),
-                                      ),
-                                      SizedBox(
-                                        height: 4,
-                                      ),
-                                      DescriptionWidget(
-                                          description: description),
-                                      if (!isPending) ...[
-                                        SizedBox(
-                                          height: 15,
-                                        ),
+                                      )
+                                    ],
+                                  ),
+                                  SizedBox(height: 15),
+                                  if (!isCompleted) ...[
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
                                         Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.end,
                                           children: [
                                             Text(
-                                              "Applied By : ",
+                                              "Deadline : $deadline",
                                               style: TextStyle(
-                                                  color: const Color.fromARGB(
-                                                      255, 144, 143, 143),
-                                                  fontSize: 13,
-                                                  fontWeight: FontWeight.bold),
+                                                  color: isPending
+                                                      ? const Color.fromARGB(
+                                                          255, 255, 19, 19)
+                                                      : Colors.red,
+                                                  fontSize: 14),
                                             ),
-                                            SizedBox(width: 5),
-                                            Text(
-                                              '$appliedCount',
-                                              style: TextStyle(
-                                                  color: const Color.fromARGB(
-                                                      255, 0, 0, 0),
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold),
-                                            ),
-                                            Icon(
-                                              Icons.person,
-                                              color: Colors.deepPurple,
-                                            )
                                           ],
                                         ),
-                                      ],
-                                      Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.end,
-                                        children: [
-                                          Padding(
-                                              padding:
-                                                  EdgeInsets.only(right: 10),
-                                              child: isPending
-                                                  ? Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment.end,
-                                                      children: [
-                                                        Text(
-                                                          "Budget : ",
-                                                          style: TextStyle(
-                                                              color: const Color
-                                                                  .fromARGB(
-                                                                  255, 0, 0, 0),
-                                                              fontSize: 14,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold),
-                                                        ),
-                                                        Text(
-                                                          "${NumberFormat("#,##0", "en_US").format(budget)} Rs",
-                                                          style: TextStyle(
-                                                              color: Colors
-                                                                  .deepPurple,
-                                                              fontSize: 16,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold),
-                                                        ),
-                                                      ],
-                                                    )
-                                                  : // If not in Pending Status
-                                                  Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment.end,
-                                                      children: [
-                                                        Text(
-                                                          "Budget : ",
-                                                          style: TextStyle(
-                                                              color: const Color
-                                                                  .fromARGB(
-                                                                  255, 0, 0, 0),
-                                                              fontSize: 14,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold),
-                                                        ),
-                                                        Text(
-                                                          "${NumberFormat("#,##0", "en_US").format(budget)} Rs",
-                                                          style: TextStyle(
-                                                              color: const Color
-                                                                  .fromARGB(255,
-                                                                  106, 0, 148),
-                                                              fontSize: 16,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold),
-                                                        ),
-                                                      ],
-                                                    )),
-                                        ],
-                                      ),
-                                      SizedBox(height: 10),
-                                      if (!isPending) ...[
-                                        Text("Preferences",
-                                            style: TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold)),
-                                        SizedBox(height: 5),
-                                        Wrap(
-                                          spacing:
-                                              4.0, // Space between each item
-                                          runSpacing:
-                                              4.0, // Space between lines when wrapping
-                                          children:
-                                              preferences.map((preference) {
-                                            return Chip(
-                                              label: Text(
-                                                preference,
+                                        Text(
+                                          "Description",
+                                          style: TextStyle(
+                                              color: isPending
+                                                  ? Colors.deepPurple
+                                                  : const Color.fromARGB(
+                                                      255, 0, 0, 0),
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                        SizedBox(
+                                          height: 4,
+                                        ),
+                                        DescriptionWidget(
+                                            description: description),
+                                        if (!isPending) ...[
+                                          SizedBox(
+                                            height: 15,
+                                          ),
+                                          Row(
+                                            children: [
+                                              Text(
+                                                "Applied By : ",
                                                 style: TextStyle(
+                                                    color: const Color.fromARGB(
+                                                        255, 144, 143, 143),
                                                     fontSize: 13,
                                                     fontWeight:
                                                         FontWeight.bold),
                                               ),
-                                              padding: EdgeInsets.all(2),
-                                              backgroundColor: Colors.deepPurple
-                                                  .shade100, // Optional: Change color
-                                            );
-                                          }).toList(),
+                                              SizedBox(width: 5),
+                                              Text(
+                                                '$appliedCount',
+                                                style: TextStyle(
+                                                    color: const Color.fromARGB(
+                                                        255, 0, 0, 0),
+                                                    fontSize: 16,
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                              Icon(
+                                                Icons.person,
+                                                color: Colors.deepPurple,
+                                              )
+                                            ],
+                                          ),
+                                        ],
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.end,
+                                          children: [
+                                            Padding(
+                                                padding:
+                                                    EdgeInsets.only(right: 10),
+                                                child: isPending
+                                                    ? Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .end,
+                                                        children: [
+                                                          Text(
+                                                            "Budget : ",
+                                                            style: TextStyle(
+                                                                color: const Color
+                                                                    .fromARGB(
+                                                                    255,
+                                                                    0,
+                                                                    0,
+                                                                    0),
+                                                                fontSize: 14,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold),
+                                                          ),
+                                                          Text(
+                                                            "${NumberFormat("#,##0", "en_US").format(budget)} Rs",
+                                                            style: TextStyle(
+                                                                color: Colors
+                                                                    .deepPurple,
+                                                                fontSize: 16,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold),
+                                                          ),
+                                                        ],
+                                                      )
+                                                    : // If not in Pending Status
+                                                    Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .end,
+                                                        children: [
+                                                          Text(
+                                                            "Budget : ",
+                                                            style: TextStyle(
+                                                                color: const Color
+                                                                    .fromARGB(
+                                                                    255,
+                                                                    0,
+                                                                    0,
+                                                                    0),
+                                                                fontSize: 14,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold),
+                                                          ),
+                                                          Text(
+                                                            "${NumberFormat("#,##0", "en_US").format(budget)} Rs",
+                                                            style: TextStyle(
+                                                                color: const Color
+                                                                    .fromARGB(
+                                                                    255,
+                                                                    106,
+                                                                    0,
+                                                                    148),
+                                                                fontSize: 16,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold),
+                                                          ),
+                                                        ],
+                                                      )),
+                                          ],
                                         ),
+                                        SizedBox(height: 10),
+                                        if (!isPending) ...[
+                                          Text("Preferences",
+                                              style: TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold)),
+                                          SizedBox(height: 5),
+                                          Wrap(
+                                            spacing:
+                                                4.0, // Space between each item
+                                            runSpacing:
+                                                4.0, // Space between lines when wrapping
+                                            children:
+                                                preferences.map((preference) {
+                                              return Chip(
+                                                label: Text(
+                                                  preference,
+                                                  style: TextStyle(
+                                                      fontSize: 13,
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                ),
+                                                padding: EdgeInsets.all(2),
+                                                backgroundColor: Colors
+                                                    .deepPurple
+                                                    .shade100, // Optional: Change color
+                                              );
+                                            }).toList(),
+                                          ),
+                                        ],
+                                        SizedBox(height: 20),
+                                        if (appoint.isNotEmpty) ...[
+                                          Text("Appointed Freelancer",
+                                              style: TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.bold)),
+                                          SizedBox(height: 10),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              CircleAvatar(
+                                                backgroundColor:
+                                                    Colors.deepPurple,
+                                                child: Text(
+                                                  appoint.isNotEmpty
+                                                      ? appoint[0]
+                                                      : '?',
+                                                  style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 18),
+                                                ),
+                                              ),
+                                              SizedBox(width: 10),
+                                              Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    appoint,
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ],
+                                              )
+                                            ],
+                                          ),
+                                          SizedBox(height: 24),
+                                        ],
                                       ],
-                                      SizedBox(height: 10),
-                                    ],
-                                  )
-                                ],
-                                Text(
-                                  project['createdAt'] != null &&
-                                          project['createdAt'] is Timestamp
-                                      ? 'Posted on: ${DateFormat('yyyy-MM-dd HH:mm:ss').format((project['createdAt'] as Timestamp).toDate())}'
-                                      : 'Posted on: N/A', // Handle null values gracefully
-                                  style: TextStyle(
-                                      fontSize: 13,
-                                      color: isCompleted || isPending
-                                          ? const Color.fromARGB(
-                                              255, 80, 80, 80)
-                                          : const Color.fromARGB(
-                                              255, 139, 139, 139)),
-                                ),
-                                if (isCompleted) // Show checkmark when completed
-                                  Align(
-                                    alignment: Alignment.centerRight,
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      children: [
-                                        Text(
-                                          "Completed  ",
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontStyle: FontStyle.italic,
+                                    )
+                                  ],
+                                  Text(
+                                    project['createdAt'] != null &&
+                                            project['createdAt'] is Timestamp
+                                        ? 'Posted on: ${DateFormat('yyyy-MM-dd HH:mm:ss').format((project['createdAt'] as Timestamp).toDate())}'
+                                        : 'Posted on: N/A', // Handle null values gracefully
+                                    style: TextStyle(
+                                        fontSize: 13,
+                                        color: isCompleted || isPending
+                                            ? const Color.fromARGB(
+                                                255, 80, 80, 80)
+                                            : const Color.fromARGB(
+                                                255, 139, 139, 139)),
+                                  ),
+                                  if (isCompleted) // Show checkmark when completed
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.end,
+                                        children: [
+                                          Text(
+                                            "Completed  ",
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontStyle: FontStyle.italic,
+                                              color: Colors.deepPurple,
+                                            ),
+                                          ),
+                                          Icon(
+                                            Icons.check_circle,
                                             color: Colors.deepPurple,
+                                            size: 25,
                                           ),
-                                        ),
-                                        Icon(
-                                          Icons.check_circle,
-                                          color: Colors.deepPurple,
-                                          size: 25,
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                if (isPending) // Show checkmark when completed
-                                  Align(
-                                    alignment: Alignment.centerRight,
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      children: [
-                                        Text(
-                                          "Pending ",
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            fontStyle: FontStyle.italic,
-                                            color: const Color.fromARGB(
-                                                255, 0, 0, 0),
+                                  if (isPending) // Show checkmark when completed
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.end,
+                                        children: [
+                                          Text(
+                                            "Pending ",
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontStyle: FontStyle.italic,
+                                              color: const Color.fromARGB(
+                                                  255, 0, 0, 0),
+                                            ),
                                           ),
-                                        ),
-                                        Icon(
-                                          Icons.pending_actions,
-                                          color: Colors.deepPurple,
-                                          size: 25,
-                                        ),
-                                      ],
+                                          Icon(
+                                            Icons.pending_actions,
+                                            color: Colors.deepPurple,
+                                            size: 25,
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),

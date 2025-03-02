@@ -30,23 +30,42 @@ class _FreelancedProjectsState extends State<FreelancedProjects>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          indicatorColor: Colors.deepPurple,
-          tabs: const [
-            Tab(text: "Projects"),
-            Tab(text: "Applied Projects"),
-            Tab(text: "Team Building"),
-          ],
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(0), // Ensures proper spacing
+          child: TabBar(
+            controller: _tabController,
+            isScrollable: true,
+            indicatorColor: Colors.deepPurple,
+            tabs: const [
+              Tab(text: "Projects"),
+              Tab(text: "Applied Projects"),
+              Tab(text: "Team Building"),
+            ],
+          ),
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
+      body: Column(
         children: [
-          FreelancerProjectscreen(), // Projects tab content
-          Appliedproject(), // Applied Projects tab content
-          Teambuilding(), //Team Building
+          Expanded(
+            // Ensures TabBarView takes up remaining space
+            child: Align(
+              alignment: Alignment.center,
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  SingleChildScrollView(
+                    child: FreelancerProjectscreen(),
+                  ),
+                  SingleChildScrollView(
+                    child: Appliedproject(),
+                  ),
+                  SingleChildScrollView(
+                    child: Teambuilding(),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
