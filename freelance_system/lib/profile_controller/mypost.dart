@@ -22,7 +22,7 @@ class _MyPostState extends State<MyPost> {
         children: [
           Text(
             "My Posts",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
           SizedBox(height: 10),
           StreamBuilder<QuerySnapshot>(

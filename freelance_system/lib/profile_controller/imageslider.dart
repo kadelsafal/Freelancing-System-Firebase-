@@ -45,11 +45,11 @@ class _ImagesliderState extends State<Imageslider> {
             itemCount: widget.imageUrls.length,
             itemBuilder: (context, index) {
               return ClipRRect(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(2),
                 child: Image.network(
                   widget.imageUrls[index],
                   width: double.infinity,
-                  fit: BoxFit.cover, // Ensures the entire image is visible
+                  fit: BoxFit.contain, // Ensures the entire image is visible
                 ),
               );
             },
@@ -67,7 +67,8 @@ class _ImagesliderState extends State<Imageslider> {
                 height: 10, // Slightly larger indicators
                 width: _currentPage == index ? 20 : 10,
                 decoration: BoxDecoration(
-                  color: _currentPage == index ? Colors.blue : Colors.grey,
+                  color:
+                      _currentPage == index ? Colors.deepPurple : Colors.grey,
                   borderRadius: BorderRadius.circular(5),
                 ),
               ),

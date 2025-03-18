@@ -1,0 +1,36 @@
+ child: imageBytes == null
+                ? Center(child: CircularProgressIndicator()) // Wait for image
+                : FutureBuilder<Uint8List>(
+                    future: pdf.save(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(child: CircularProgressIndicator());
+                      } else if (snapshot.hasError) {
+                        return Center(child: Text("Error generating PDF"));
+                      } else {
+                        return Center(
+                          // Center the PDF preview
+                          child: ColoredBox(
+                            color: const Color.fromARGB(0, 222, 2,
+                                2), // Ensure no extra background color
+                            child: PdfPreview(
+                              build: (format) => snapshot.data!,
+                              allowSharing: false,
+                              allowPrinting: false,
+                              canChangePageFormat: false,
+                              useActions: false,
+                              enableScrollToPage: false,
+                              padding: EdgeInsets.all(
+                                  0), // Remove padding around the PDFPreview
+                              pdfPreviewPageDecoration: BoxDecoration(
+                                color: Colors
+                                    .white, // Set the page background color to white
+                                borderRadius: BorderRadius
+                                    .zero, // Ensure no rounded corners
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                  ),

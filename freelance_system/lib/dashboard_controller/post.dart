@@ -4,16 +4,16 @@ import 'package:freelance_system/profile_controller/imageslider.dart';
 import 'package:intl/intl.dart';
 import 'package:freelance_system/dashboard_controller/jobpost.dart'; // Assuming JobPost is the widget for your job post box.
 
-class MyPost extends StatefulWidget {
+class Post extends StatefulWidget {
   final String userId;
 
-  const MyPost({Key? key, required this.userId}) : super(key: key);
+  const Post({Key? key, required this.userId}) : super(key: key);
 
   @override
-  _MyPostState createState() => _MyPostState();
+  _PostState createState() => _PostState();
 }
 
-class _MyPostState extends State<MyPost> {
+class _PostState extends State<Post> {
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -126,7 +126,7 @@ class _MyPostState extends State<MyPost> {
                                 ],
                               ),
                               Text(
-                                'Posted on: ${DateFormat('yyyy-MM-dd HH:mm:ss').format((post['timestamp'] as Timestamp).toDate())}',
+                                'Posted on: ${DateFormat('yyyy-MM-dd').format((post['timestamp'] as Timestamp).toDate())}',
                                 style: TextStyle(
                                     fontSize: 12,
                                     color:

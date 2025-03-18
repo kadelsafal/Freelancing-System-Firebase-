@@ -476,7 +476,8 @@ class _ProjectpostState extends State<Projectpost> {
                                           ),
                                           Icon(
                                             Icons.check_circle,
-                                            color: Colors.deepPurple,
+                                            color: const Color.fromARGB(
+                                                255, 0, 192, 42),
                                             size: 25,
                                           ),
                                         ],

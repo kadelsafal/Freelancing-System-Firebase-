@@ -1,0 +1,28 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "freelance_system",
+            "cwd": "freelance_system",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "freelance_system (profile mode)",
+            "cwd": "freelance_system",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "freelance_system (release mode)",
+            "cwd": "freelance_system",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        }
+    ]
+}

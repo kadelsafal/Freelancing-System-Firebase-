@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:freelance_system/chats/chat_page.dart';
-import 'package:freelance_system/dashboard_controller/Mypost.dart';
+import 'package:freelance_system/dashboard_controller/post.dart';
 import 'package:freelance_system/dashboard_controller/mydrawer.dart';
 import 'package:freelance_system/dashboard_controller/notifications.dart';
 import 'package:freelance_system/providers/userProvider.dart';
@@ -87,7 +87,7 @@ class _DashboardState extends State<Dashboard> {
                       );
                     },
                     icon: const Icon(Icons.notifications_active_outlined,
-                        size: 35, color: Colors.white),
+                        size: 30, color: Color.fromARGB(255, 0, 0, 0)),
                   ),
                   // Real-time Unread Notifications Count
                   StreamBuilder<QuerySnapshot>(
@@ -135,13 +135,13 @@ class _DashboardState extends State<Dashboard> {
                 icon: const Icon(
                   Icons.telegram,
                   size: 40,
-                  color: Colors.white,
+                  color: Color.fromARGB(255, 0, 0, 0),
                 ),
               ),
             ],
           ),
-          backgroundColor: Colors.deepPurple,
-          foregroundColor: Colors.white,
+          backgroundColor: const Color.fromARGB(0, 255, 255, 255),
+          foregroundColor: const Color.fromARGB(255, 0, 0, 0),
           toolbarHeight: 90,
         ),
         drawer: Drawer(
@@ -159,7 +159,31 @@ class _DashboardState extends State<Dashboard> {
                 child: TextField(
                   controller: searchController,
                   decoration: InputDecoration(
+                    labelStyle: TextStyle(
+                      color: const Color.fromARGB(
+                          255, 103, 103, 103), // Set label text color to purple
+                    ),
                     labelText: "Search here",
+                    contentPadding: EdgeInsets.symmetric(
+                        vertical: 10, horizontal: 20), // Adjust padding
+                    border: OutlineInputBorder(
+                      borderRadius:
+                          BorderRadius.circular(50.0), // Fully rounded border
+                      borderSide: BorderSide(
+                          color: Colors.grey), // Optional border color
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(50.0),
+                      borderSide: BorderSide(
+                          color: const Color.fromARGB(255, 102, 99, 99),
+                          width: 2.5),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(50.0),
+                      borderSide: BorderSide(
+                          color: Colors.deepPurple,
+                          width: 2.0), // Highlight color on focus
+                    ),
                     suffixIcon: IconButton(
                       onPressed: () {
                         setState(() {
@@ -169,8 +193,9 @@ class _DashboardState extends State<Dashboard> {
                       },
                       icon: Container(
                         decoration: BoxDecoration(
-                          color: const Color.fromARGB(255, 36, 0, 134),
-                          borderRadius: BorderRadius.circular(20.0),
+                          color: Colors.deepPurple,
+                          borderRadius: BorderRadius.circular(
+                              50.0), // Fully rounded icon button
                         ),
                         child: const Padding(
                           padding: EdgeInsets.all(6.0),
@@ -251,7 +276,7 @@ class _DashboardState extends State<Dashboard> {
                     );
                   },
                 ),
-              if (searchQuery.isEmpty) MyPost(userId: userProvider.userId),
+              if (searchQuery.isEmpty) Post(userId: userProvider.userId),
             ],
           ),
         ),

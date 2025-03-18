@@ -34,7 +34,8 @@ class _FreelancedProjectsState extends State<FreelancedProjects>
           preferredSize: Size.fromHeight(0), // Ensures proper spacing
           child: TabBar(
             controller: _tabController,
-            isScrollable: true,
+            isScrollable: false,
+            labelPadding: const EdgeInsets.symmetric(horizontal: 4),
             indicatorColor: Colors.deepPurple,
             tabs: const [
               Tab(text: "Projects"),
