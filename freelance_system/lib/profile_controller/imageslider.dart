@@ -32,7 +32,7 @@ class _ImagesliderState extends State<Imageslider> {
 
     return Column(
       children: [
-        Container(
+        SizedBox(
           height: screenHeight *
               0.4, // Adjust height as a percentage of the screen height
           child: PageView.builder(

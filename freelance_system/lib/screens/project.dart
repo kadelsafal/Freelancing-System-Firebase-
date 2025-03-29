@@ -46,7 +46,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
                   },
                   activeTrackColor: Color.fromARGB(255, 57, 0, 98),
                   inactiveTrackColor: Color.fromARGB(255, 57, 0, 98),
-                  thumbColor: MaterialStateProperty.resolveWith(
+                  thumbColor: WidgetStateProperty.resolveWith(
                     (states) {
                       return Colors.white;
                     },

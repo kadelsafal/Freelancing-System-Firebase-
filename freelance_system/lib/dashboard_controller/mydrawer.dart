@@ -9,6 +9,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/userProvider.dart';
 
 class MyDrawer extends StatefulWidget {
+  const MyDrawer({super.key});
+
   @override
   _MyDrawerState createState() => _MyDrawerState();
 }
@@ -44,13 +46,14 @@ class _MyDrawerState extends State<MyDrawer> {
           // Drawer Header
           Padding(
             padding: const EdgeInsets.all(12.0),
-            child: Container(
+            child: SizedBox(
               height: 300, // Increase the height of the header as required
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   CircleAvatar(
                     radius: 50,
+                    backgroundColor: const Color.fromARGB(255, 255, 192, 2),
                     child: Text(
                       userProvider.userName.isNotEmpty
                           ? userProvider.userName[0].toUpperCase()
@@ -59,7 +62,6 @@ class _MyDrawerState extends State<MyDrawer> {
                           fontSize: 48,
                           color: const Color.fromARGB(255, 255, 255, 255)),
                     ),
-                    backgroundColor: const Color.fromARGB(255, 255, 192, 2),
                   ),
                   const SizedBox(height: 10),
                   Text(

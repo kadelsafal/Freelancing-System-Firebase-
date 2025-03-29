@@ -38,7 +38,7 @@ class _CourseDetailState extends State<CourseDetail> {
 
       List<Map<String, dynamic>> fetchedChapters =
           chapterSnapshot.docs.map((doc) {
-        var data = doc.data() as Map<String, dynamic>;
+        var data = doc.data();
 
         // Extract the chapter number from the chapter ID, e.g., "Chapter 1" -> 1
         String chapterId =

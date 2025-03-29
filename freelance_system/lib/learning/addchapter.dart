@@ -479,10 +479,10 @@ class _AddChapterState extends State<AddChapter> {
                     onPressed: _addChapter,
                     style: ButtonStyle(
                       backgroundColor:
-                          MaterialStateProperty.all(Colors.deepPurple),
-                      foregroundColor: MaterialStateProperty.all(
+                          WidgetStateProperty.all(Colors.deepPurple),
+                      foregroundColor: WidgetStateProperty.all(
                           const Color.fromARGB(255, 255, 255, 255)),
-                      padding: MaterialStateProperty.all(EdgeInsets.symmetric(
+                      padding: WidgetStateProperty.all(EdgeInsets.symmetric(
                           vertical: 15, horizontal: 30)), // Increased padding
                     ),
                     child: const Text("Add Another Chapter")),

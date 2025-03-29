@@ -20,11 +20,12 @@ class _ShowAddPostDialogState extends State<ShowAddPostDialog> {
   final ImagePicker _picker = ImagePicker();
   final TextEditingController _statusController = TextEditingController();
 
-  List<XFile> _uploadedImages = []; // List to hold selected images
+  final List<XFile> _uploadedImages = []; // List to hold selected images
   bool _isPosting = false; // State to manage the loading indicator
 
   // To track loading state of each image
-  Map<int, bool> _imageLoadingStatus = {}; // Maps image index to loading state
+  final Map<int, bool> _imageLoadingStatus =
+      {}; // Maps image index to loading state
 
   /// Upload images to Cloudinary
   Future<List<String?>> uploadImagesToCloudinary(List<XFile> imageFiles) async {

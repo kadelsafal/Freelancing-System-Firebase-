@@ -80,9 +80,10 @@ class _DescriptionWidgetState extends State<DescriptionWidget> {
 
   String _getTruncatedText(String text, int maxLines) {
     final words = text.split(' ');
-    if (words.length <= maxLines * 5)
+    if (words.length <= maxLines * 5) {
       return text; // Roughly estimate words per line
+    }
 
-    return words.take(maxLines * 5).join(' ') + '...';
+    return '${words.take(maxLines * 5).join(' ')}...';
   }
 }

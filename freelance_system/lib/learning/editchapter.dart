@@ -487,10 +487,10 @@ class _EditChapterState extends State<EditChapter> {
                                 child: ElevatedButton(
                                   onPressed: () => _uploadFile(i),
                                   style: ButtonStyle(
-                                    backgroundColor: MaterialStateProperty.all(
+                                    backgroundColor: WidgetStateProperty.all(
                                         Colors.deepPurple),
                                     foregroundColor:
-                                        MaterialStateProperty.all(Colors.white),
+                                        WidgetStateProperty.all(Colors.white),
                                   ),
                                   child: _isUploadingFiles
                                       ? CircularProgressIndicator()
@@ -572,14 +572,6 @@ class _EditChapterState extends State<EditChapter> {
                                           );
                                         } // Disable the button if video is uploaded or uploading
                                       : () => _uploadVideo(i),
-                                  // Enable if no video is uploaded
-
-                                  child: _isUploadingVideo
-                                      ? const CircularProgressIndicator()
-                                      : const Text(
-                                          "Upload Video",
-                                          style: TextStyle(color: Colors.white),
-                                        ),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: _chapters[i]
                                                 ['uploadedVideo'] !=
@@ -589,6 +581,14 @@ class _EditChapterState extends State<EditChapter> {
                                         : Colors
                                             .deepPurple, // Default color when it's not uploaded
                                   ),
+                                  // Enable if no video is uploaded
+
+                                  child: _isUploadingVideo
+                                      ? const CircularProgressIndicator()
+                                      : const Text(
+                                          "Upload Video",
+                                          style: TextStyle(color: Colors.white),
+                                        ),
                                 ),
                               ),
 
@@ -641,9 +641,8 @@ class _EditChapterState extends State<EditChapter> {
                       onPressed: _addChapter,
                       style: ButtonStyle(
                         backgroundColor:
-                            MaterialStateProperty.all(Colors.deepPurple),
-                        foregroundColor:
-                            MaterialStateProperty.all(Colors.white),
+                            WidgetStateProperty.all(Colors.deepPurple),
+                        foregroundColor: WidgetStateProperty.all(Colors.white),
                       ),
                       child: const Text("Add New Chapter"),
                     ),

@@ -14,11 +14,11 @@ class Editcourse extends StatefulWidget {
 
 class _EditcourseState extends State<Editcourse> {
   final _formKey = GlobalKey<FormState>();
-  TextEditingController _titleController = TextEditingController();
-  TextEditingController _descriptionController = TextEditingController();
-  TextEditingController _priceController = TextEditingController();
-  TextEditingController _skillsController = TextEditingController();
-  TextEditingController _benefitController = TextEditingController();
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _priceController = TextEditingController();
+  final TextEditingController _skillsController = TextEditingController();
+  final TextEditingController _benefitController = TextEditingController();
 
   String? _selectedCourseType;
   List<String> _skillsList = [];

@@ -59,8 +59,9 @@ class _AddcourseState extends State<Addcourse> {
   }
 
   Future<void> _navigateToAddChapters() async {
-    if (!_formKey.currentState!.validate() || _selectedCourseType == null)
+    if (!_formKey.currentState!.validate() || _selectedCourseType == null) {
       return;
+    }
 
     setState(() => _isUploading = true);
 
@@ -351,10 +352,10 @@ class _AddcourseState extends State<Addcourse> {
                               _isUploading ? null : _navigateToAddChapters,
                           style: ButtonStyle(
                             backgroundColor:
-                                MaterialStateProperty.all(Colors.deepPurple),
-                            foregroundColor: MaterialStateProperty.all(
+                                WidgetStateProperty.all(Colors.deepPurple),
+                            foregroundColor: WidgetStateProperty.all(
                                 const Color.fromARGB(255, 255, 255, 255)),
-                            padding: MaterialStateProperty.all(
+                            padding: WidgetStateProperty.all(
                                 EdgeInsets.symmetric(
                                     vertical: 15,
                                     horizontal: 30)), // Increased padding

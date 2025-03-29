@@ -10,7 +10,7 @@ import 'package:pdf/widgets.dart' as pw;
 class Preview extends StatefulWidget {
   final Uint8List? pdfimageBytes;
   final pw.Document pdf;
-  Preview({super.key, required this.pdfimageBytes, required this.pdf});
+  const Preview({super.key, required this.pdfimageBytes, required this.pdf});
 
   @override
   State<Preview> createState() => _PreviewState();
@@ -96,7 +96,7 @@ class _PreviewState extends State<Preview> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color.fromARGB(255, 66, 1, 107),
                 ),
-                child: Container(
+                child: SizedBox(
                   width: 250,
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),

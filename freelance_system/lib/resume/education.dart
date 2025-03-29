@@ -13,15 +13,21 @@ class EducationDetails extends StatefulWidget {
 
 class _EducationDetailsState extends State<EducationDetails> {
   final _formKey = GlobalKey<FormState>();
-  List<TextEditingController> _institutionControllers = [
+  final List<TextEditingController> _institutionControllers = [
     TextEditingController()
   ];
-  List<TextEditingController> _descriptionControllers = [
+  final List<TextEditingController> _descriptionControllers = [
     TextEditingController()
   ];
-  List<TextEditingController> _degreeControllers = [TextEditingController()];
-  List<TextEditingController> _startDateControllers = [TextEditingController()];
-  List<TextEditingController> _endDateControllers = [TextEditingController()];
+  final List<TextEditingController> _degreeControllers = [
+    TextEditingController()
+  ];
+  final List<TextEditingController> _startDateControllers = [
+    TextEditingController()
+  ];
+  final List<TextEditingController> _endDateControllers = [
+    TextEditingController()
+  ];
 
   @override
   void dispose() {
@@ -182,7 +188,7 @@ class _EducationDetailsState extends State<EducationDetails> {
                       Divider(),
                     ],
                   );
-                }).toList(),
+                }),
 
                 // Add Education Button
                 Align(

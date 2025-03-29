@@ -61,7 +61,7 @@ class ModernTemplate {
                   color: PdfColors.white)),
           pw.SizedBox(height: 7),
           pw.Column(
-            children: resume.address?.map((addr) {
+            children: resume.address.map((addr) {
                   return pw.Padding(
                     padding: pw.EdgeInsets.only(bottom: 10),
                     child: pw.Text(addr,
@@ -79,7 +79,7 @@ class ModernTemplate {
           sectionTitle("Skills"),
           pw.SizedBox(height: 15),
           pw.Column(
-            children: resume.skills?.map((skill) {
+            children: resume.skills.map((skill) {
                   return pw.Padding(
                     padding: pw.EdgeInsets.only(bottom: 10),
                     child: pw.Bullet(

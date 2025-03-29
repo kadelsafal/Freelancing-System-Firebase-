@@ -6,7 +6,7 @@ import 'package:freelance_system/screens/elearning.dart';
 import 'package:freelance_system/screens/payment.dart';
 
 class NavigationMenu extends StatefulWidget {
-  const NavigationMenu({Key? key}) : super(key: key);
+  const NavigationMenu({super.key});
 
   @override
   State<NavigationMenu> createState() => _NavigationMenuState();
@@ -44,10 +44,10 @@ class _NavigationMenuState extends State<NavigationMenu> {
       bottomNavigationBar: NavigationBarTheme(
         data: NavigationBarThemeData(
           indicatorColor: Colors.blue.shade100,
-          labelTextStyle: MaterialStateProperty.all(
+          labelTextStyle: WidgetStateProperty.all(
             const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
           ),
-          iconTheme: MaterialStateProperty.all(
+          iconTheme: WidgetStateProperty.all(
             const IconThemeData(size: 24),
           ),
         ),

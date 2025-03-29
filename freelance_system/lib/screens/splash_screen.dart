@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:freelance_system/navigation_bar.dart';
-import 'package:freelance_system/screens/dashboard.dart';
 import 'package:freelance_system/providers/userProvider.dart';
 import 'package:freelance_system/screens/login_screen.dart';
 import 'package:provider/provider.dart';

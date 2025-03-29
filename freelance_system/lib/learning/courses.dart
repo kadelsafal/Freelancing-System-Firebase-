@@ -125,10 +125,10 @@ class _CoursesState extends State<Courses> {
                                         builder: (context) => Addcourse()));
                               },
                               style: ButtonStyle(
-                                backgroundColor: MaterialStateProperty.all(
-                                    Colors.deepPurple),
+                                backgroundColor:
+                                    WidgetStateProperty.all(Colors.deepPurple),
                                 foregroundColor:
-                                    MaterialStateProperty.all(Colors.white),
+                                    WidgetStateProperty.all(Colors.white),
                               ),
                               child: Padding(
                                 padding: const EdgeInsets.all(8.0),
@@ -252,16 +252,16 @@ class _CoursesState extends State<Courses> {
                                                 onPressed: () {},
                                                 style: ButtonStyle(
                                                   backgroundColor:
-                                                      MaterialStateProperty.all(
+                                                      WidgetStateProperty.all(
                                                           Colors.deepPurple),
                                                   foregroundColor:
-                                                      MaterialStateProperty.all(
+                                                      WidgetStateProperty.all(
                                                           const Color.fromARGB(
                                                               255,
                                                               255,
                                                               255,
                                                               255)),
-                                                  padding: MaterialStateProperty
+                                                  padding: WidgetStateProperty
                                                       .all(EdgeInsets.symmetric(
                                                           vertical: 10,
                                                           horizontal:

@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:freelance_system/profile_controller/experiencetab.dart';
 import 'package:freelance_system/profile_controller/posttab.dart';
 import 'package:flutter/material.dart';

@@ -18,7 +18,7 @@ class _AddProjectState extends State<AddProject> {
   final TextEditingController _budgetController = TextEditingController();
   final TextEditingController _deadlineController = TextEditingController();
 
-  List<TextEditingController> _preferencesControllers =
+  final List<TextEditingController> _preferencesControllers =
       []; // List of controllers for preferences
   List<String> preferences = []; // To hold the list of preferences/skills
 
@@ -69,8 +69,8 @@ class _AddProjectState extends State<AddProject> {
 
       //Set initial values
       String status = 'New'; // Initial Project Staus
-      String? appointedFreelancerId = null;
-      String? appointedFreelancer = null;
+      String? appointedFreelancerId;
+      String? appointedFreelancer;
       List<String> appliedIndividuals = [];
 
       //Save data to Firebase
@@ -131,7 +131,6 @@ class _AddProjectState extends State<AddProject> {
               .toList();
         });
       }
-      ;
       saveproject();
       // You can process the form data here, like sending it to a server
       ScaffoldMessenger.of(context).showSnackBar(
@@ -256,10 +255,7 @@ class _AddProjectState extends State<AddProject> {
                 SizedBox(height: 8),
 
                 // Preferences (Skills) Fields
-                ..._preferencesControllers
-                    .asMap()
-                    .entries
-                    .map(
+                ..._preferencesControllers.asMap().entries.map(
                       (entry) => Padding(
                         padding: EdgeInsets.only(bottom: 8),
                         child: Row(
@@ -288,8 +284,7 @@ class _AddProjectState extends State<AddProject> {
                           ],
                         ),
                       ),
-                    )
-                    .toList(),
+                    ),
 
                 // Add Preference Button (Plus Icon)
                 IconButton(
@@ -363,10 +358,10 @@ class _AddProjectState extends State<AddProject> {
                 // Submit Button
                 ElevatedButton(
                   onPressed: _submitForm,
-                  child: Text('Submit'),
                   style: ElevatedButton.styleFrom(
                     padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                   ),
+                  child: Text('Submit'),
                 ),
               ],
             ),

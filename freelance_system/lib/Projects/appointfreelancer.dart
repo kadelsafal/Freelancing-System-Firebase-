@@ -118,8 +118,8 @@ class _AppointfreelancerState extends State<Appointfreelancer> {
             ElevatedButton(
               onPressed: appointFreelancer,
               style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all(Colors.deepPurple),
-                  foregroundColor: MaterialStateProperty.all(Colors.white)),
+                  backgroundColor: WidgetStateProperty.all(Colors.deepPurple),
+                  foregroundColor: WidgetStateProperty.all(Colors.white)),
               child: Padding(
                 padding: EdgeInsets.all(12),
                 child: Text(

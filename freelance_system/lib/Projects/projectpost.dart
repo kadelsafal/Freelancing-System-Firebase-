@@ -1,14 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:freelance_system/Projects/projectview.dart';
-import 'package:googleapis/compute/v1.dart';
-import 'package:http/http.dart';
 import 'package:intl/intl.dart';
 import './description.dart';
 import './edit_project.dart';
 import 'dart:core'; // Core Duration from Dart
-import 'package:googleapis/compute/v1.dart' as compute;
 
 class Projectpost extends StatefulWidget {
   final String userId;

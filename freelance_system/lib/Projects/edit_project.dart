@@ -8,7 +8,7 @@ class EditProject extends StatefulWidget {
   final String
       projectId; // Pass the projectId to identify the project to update
 
-  const EditProject({Key? key, required this.projectId}) : super(key: key);
+  const EditProject({super.key, required this.projectId});
 
   @override
   _EditProjectState createState() => _EditProjectState();
@@ -16,14 +16,15 @@ class EditProject extends StatefulWidget {
 
 class _EditProjectState extends State<EditProject> {
   final _formKey = GlobalKey<FormState>();
-  TextEditingController _titleController = TextEditingController();
-  TextEditingController _descriptionController = TextEditingController();
-  TextEditingController _budgetController = TextEditingController();
-  TextEditingController _deadlineController = TextEditingController();
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _budgetController = TextEditingController();
+  final TextEditingController _deadlineController = TextEditingController();
   String? _status = "New";
   List<TextEditingController> _preferencesControllers =
       []; // List of controllers for preferences
   List<String> preferences = []; // To hold the list of preferences/skills
+  @override
   void dispose() {
     // Dispose all the controllers when the widget is disposed
     for (var controller in _preferencesControllers) {
@@ -267,10 +268,7 @@ class _EditProjectState extends State<EditProject> {
                 // Preferences (Skills) Fields
                 Column(
                   children: [
-                    ..._preferencesControllers
-                        .asMap()
-                        .entries
-                        .map(
+                    ..._preferencesControllers.asMap().entries.map(
                           (entry) => Padding(
                             padding: EdgeInsets.only(bottom: 8),
                             child: Row(
@@ -299,8 +297,7 @@ class _EditProjectState extends State<EditProject> {
                               ],
                             ),
                           ),
-                        )
-                        .toList(),
+                        ),
                     IconButton(
                       icon: Icon(Icons.add),
                       onPressed: _addPreference,
@@ -374,10 +371,10 @@ class _EditProjectState extends State<EditProject> {
                 // Submit Button
                 ElevatedButton(
                   onPressed: _submitForm,
-                  child: Text('Submit'),
                   style: ElevatedButton.styleFrom(
                     padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                   ),
+                  child: Text('Submit'),
                 ),
               ],
             ),

@@ -42,7 +42,7 @@ class _SignupScreenState extends State<SignupScreen> {
             .collection('users')
             .doc(userCredential.user!.uid)
             .set({
-          'Full Name': first_Name.text + " " + last_Name.text,
+          'Full Name': "${first_Name.text} ${last_Name.text}",
           'email': email.text,
           'phone': selectedCountryCode + phn_num.text.trim(),
           'id': userId.toString(),
@@ -84,7 +84,6 @@ class _SignupScreenState extends State<SignupScreen> {
       print(
           "-----------------------------------------------------------------error, $e");
     }
-    ;
   }
 
   @override

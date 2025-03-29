@@ -15,7 +15,7 @@ class _ExperiencesDetailsState extends State<ExperiencesDetails> {
   final _formKey = GlobalKey<FormState>();
 
   // List to manage multiple experience inputs
-  List<Map<String, TextEditingController>> _experienceFields = [];
+  final List<Map<String, TextEditingController>> _experienceFields = [];
 
   @override
   void initState() {
@@ -159,7 +159,7 @@ class _ExperiencesDetailsState extends State<ExperiencesDetails> {
                       SizedBox(height: 15),
                     ],
                   );
-                }).toList(),
+                }),
                 // Plus Icon to add new experience fields
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,

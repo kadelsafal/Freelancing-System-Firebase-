@@ -9,8 +9,7 @@ class Profilepage extends StatefulWidget {
   final String userId;
   final String userName;
 
-  const Profilepage({Key? key, required this.userId, required this.userName})
-      : super(key: key);
+  const Profilepage({super.key, required this.userId, required this.userName});
 
   @override
   State<Profilepage> createState() => _ProfilepageState();

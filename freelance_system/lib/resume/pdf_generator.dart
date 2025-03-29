@@ -81,7 +81,7 @@ class _PdfGeneratorState extends State<PdfGenerator> {
   Future<void> _generatePdfImage() async {
     // Save the PDF and convert it into an image
     final pdfBytes = await pdf.save();
-    final pages = await Printing.raster(pdfBytes, pages: [0], dpi: 150);
+    final pages = Printing.raster(pdfBytes, pages: [0], dpi: 150);
 
     // Extract the first page image and convert to PNG
     final firstPage = await pages.first;

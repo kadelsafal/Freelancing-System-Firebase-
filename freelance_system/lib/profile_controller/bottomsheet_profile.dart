@@ -70,7 +70,7 @@ class _BottomsheetProfileState extends State<BottomsheetProfile> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
       height: 300,
       child: Padding(

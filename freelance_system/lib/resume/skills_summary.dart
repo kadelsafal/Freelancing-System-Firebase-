@@ -17,8 +17,8 @@ class _SkillsSummaryScreenState extends State<SkillsSummaryScreen> {
 
   final _skillsController = TextEditingController();
   final _summaryController = TextEditingController();
-  List<TextEditingController> _skillControllers = [];
-  List<String> _skills = [];
+  final List<TextEditingController> _skillControllers = [];
+  final List<String> _skills = [];
 
   @override
   void dispose() {

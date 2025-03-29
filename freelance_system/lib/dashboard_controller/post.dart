@@ -7,7 +7,7 @@ import 'package:freelance_system/dashboard_controller/jobpost.dart'; // Assuming
 class Post extends StatefulWidget {
   final String userId;
 
-  const Post({Key? key, required this.userId}) : super(key: key);
+  const Post({super.key, required this.userId});
 
   @override
   _PostState createState() => _PostState();

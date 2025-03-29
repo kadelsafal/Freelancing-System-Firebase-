@@ -10,7 +10,7 @@ class ChatroomScreen extends StatefulWidget {
   final String receiverId;
   final String receiverName;
 
-  ChatroomScreen({
+  const ChatroomScreen({
     super.key,
     required this.chatroomId,
     required this.chatroomName,

@@ -18,7 +18,9 @@ class _BuildResumeState extends State<BuildResume> {
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
-  List<TextEditingController> _addressControllers = [TextEditingController()];
+  final List<TextEditingController> _addressControllers = [
+    TextEditingController()
+  ];
   String? _imagePath; // To store the path of the selected image
 
   final ImagePicker _picker = ImagePicker(); // Instance of ImagePicker
@@ -219,7 +221,7 @@ class _BuildResumeState extends State<BuildResume> {
                       ],
                     ),
                   );
-                }).toList(),
+                }),
 
                 // Add Address Button
                 Align(

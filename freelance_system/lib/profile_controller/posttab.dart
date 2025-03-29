@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import 'package:freelance_system/providers/userProvider.dart';
 
 class PostTab extends StatelessWidget {
+  const PostTab({super.key});
+
   @override
   Widget build(BuildContext context) {
     var userProvider = Provider.of<Userprovider>(context);

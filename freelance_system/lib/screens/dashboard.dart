@@ -145,7 +145,7 @@ class _DashboardState extends State<Dashboard> {
           toolbarHeight: 90,
         ),
         drawer: Drawer(
-          child: Container(
+          child: SizedBox(
             width: MediaQuery.of(context).size.width * 0.5, // Adjust the width
             child: MyDrawer(), // Use your custom drawer
           ),

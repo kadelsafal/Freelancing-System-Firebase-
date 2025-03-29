@@ -3,7 +3,6 @@ import 'package:freelance_system/resume/resume_modal.dart';
 import 'package:freelance_system/resume/pdf_generator.dart';
 
 // Dynamically load all available templates (assuming modern_template.dart, etc.)
-import 'package:freelance_system/resume/templates/modern_template.dart';
 
 class SelectTemplates extends StatefulWidget {
   final Resume resume;

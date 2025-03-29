@@ -28,7 +28,7 @@ class _PdfPageState extends State<PdfPage> {
   }
 
   Future<void> _initializePdf() async {
-    if (widget.resume.imageUrl != null && widget.resume.imageUrl!.isNotEmpty) {
+    if (widget.resume.imageUrl.isNotEmpty) {
       await _loadImage(); // Ensure image is loaded before generating the PDF
     }
     _generatePdf(); // Generate the PDF after loading the image
@@ -60,7 +60,7 @@ class _PdfPageState extends State<PdfPage> {
   }
 
   Future<void> _loadImage() async {
-    final file = File(widget.resume.imageUrl!);
+    final file = File(widget.resume.imageUrl);
     if (await file.exists()) {
       imageBytes = await file.readAsBytes();
       setState(() {}); // Update UI after loading the image
@@ -71,7 +71,7 @@ class _PdfPageState extends State<PdfPage> {
     final pdfBytes = await pdf.save();
 
     // Convert PDF bytes into images
-    final pages = await Printing.raster(pdfBytes, pages: [0], dpi: 150);
+    final pages = Printing.raster(pdfBytes, pages: [0], dpi: 150);
 
     // Extract the first page image
     final firstPage = await pages.first;
@@ -123,7 +123,7 @@ class _PdfPageState extends State<PdfPage> {
                   fontWeight: pw.FontWeight.bold,
                   color: PdfColors.white)),
           pw.SizedBox(height: 7),
-          pw.Text("${widget.resume.phone}",
+          pw.Text(widget.resume.phone,
               style: pw.TextStyle(
                 fontSize: 14,
                 fontWeight: pw.FontWeight.bold,
@@ -131,11 +131,11 @@ class _PdfPageState extends State<PdfPage> {
               )),
           pw.SizedBox(height: 7),
           pw.Column(
-            children: widget.resume.address?.map((addr) {
+            children: widget.resume.address.map((addr) {
                   return pw.Padding(
                     padding: pw.EdgeInsets.only(
                         bottom: 10), // Add space between each address
-                    child: pw.Text(" ${addr}",
+                    child: pw.Text(" $addr",
                         style: pw.TextStyle(
                           fontSize: 14,
                           fontWeight: pw.FontWeight.bold,
@@ -151,7 +151,7 @@ class _PdfPageState extends State<PdfPage> {
           sectionTitle("Skills"),
           pw.SizedBox(height: 15),
           pw.Column(
-            children: widget.resume.skills?.map((skill) {
+            children: widget.resume.skills.map((skill) {
                   return pw.Padding(
                     padding: pw.EdgeInsets.only(
                         bottom: 10), // Add space between each address
@@ -207,13 +207,13 @@ class _PdfPageState extends State<PdfPage> {
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
                     pw.SizedBox(height: 10),
-                    pw.Text("${exp.company}",
+                    pw.Text(exp.company,
                         style: pw.TextStyle(
                             fontSize: 16,
                             fontWeight: pw.FontWeight.bold,
                             color: PdfColors.black)),
                     pw.SizedBox(height: 8),
-                    pw.Text("${exp.position}",
+                    pw.Text(exp.position,
                         style: pw.TextStyle(
                             fontSize: 14,
                             fontWeight: pw.FontWeight.bold,
@@ -225,7 +225,7 @@ class _PdfPageState extends State<PdfPage> {
                             fontWeight: pw.FontWeight.bold,
                             color: PdfColors.black)),
                     pw.SizedBox(height: 8),
-                    pw.Text("${exp.description}",
+                    pw.Text(exp.description,
                         style: pw.TextStyle(
                             fontSize: 13,
                             fontWeight: pw.FontWeight.normal,
@@ -244,19 +244,19 @@ class _PdfPageState extends State<PdfPage> {
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.Text("${edu.institution}",
+                    pw.Text(edu.institution,
                         style: pw.TextStyle(
                             fontSize: 18,
                             fontWeight: pw.FontWeight.bold,
                             color: PdfColors.black)),
                     pw.SizedBox(height: 8),
-                    pw.Text("${edu.course}",
+                    pw.Text(edu.course,
                         style: pw.TextStyle(
                             fontSize: 16,
                             fontWeight: pw.FontWeight.bold,
                             color: PdfColors.black)),
                     pw.SizedBox(height: 8),
-                    pw.Text("${edu.degree}",
+                    pw.Text(edu.degree,
                         style: pw.TextStyle(
                             fontSize: 14,
                             fontWeight: pw.FontWeight.bold,
@@ -353,7 +353,7 @@ class _PdfPageState extends State<PdfPage> {
                 backgroundColor: const Color.fromARGB(
                     255, 66, 1, 107), // Set the background color to purple
               ),
-              child: Container(
+              child: SizedBox(
                 width: 250,
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),

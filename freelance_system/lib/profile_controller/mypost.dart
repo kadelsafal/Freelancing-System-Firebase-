@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 class MyPost extends StatefulWidget {
   final String userId;
 
-  const MyPost({Key? key, required this.userId}) : super(key: key);
+  const MyPost({super.key, required this.userId});
 
   @override
   _MyPostState createState() => _MyPostState();

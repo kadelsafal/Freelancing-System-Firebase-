@@ -212,11 +212,11 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                                       );
                                     },
                               style: ButtonStyle(
-                                backgroundColor: MaterialStateProperty.all(
+                                backgroundColor: WidgetStateProperty.all(
                                     isApplied
                                         ? Colors.grey
                                         : Colors.deepPurple),
-                                foregroundColor: MaterialStateProperty.all(
+                                foregroundColor: WidgetStateProperty.all(
                                     isApplied ? Colors.black : Colors.white),
                               ),
                               child: Padding(
