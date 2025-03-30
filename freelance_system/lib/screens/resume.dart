@@ -156,47 +156,187 @@ class _ResumeScreenState extends State<ResumeScreen> {
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: Text("Edit Entities"),
-          content: SingleChildScrollView(
-            child: Column(
-              children: _entities!.keys.map((key) {
-                return TextField(
-                  controller: controllers[key],
-                  decoration: InputDecoration(labelText: key),
-                  maxLines: 2,
-                );
-              }).toList(),
-            ),
+        final workedAsList = _entities?["WORKED AS"] ?? [];
+        final companiesList = _entities?["COMPANIES WORKED AT"] ?? [];
+        final durationList = _entities?["DURATION"] ?? [];
+
+        // Max number of entries to sync across all 3 lists
+        final maxLength = [
+          workedAsList.length,
+          companiesList.length,
+          durationList.length
+        ].reduce((a, b) => a > b ? a : b);
+
+        List<Map<String, TextEditingController>> workExperienceControllers = [];
+
+        // Create a controller for each work experience item
+        for (int i = 0; i < maxLength; i++) {
+          workExperienceControllers.add({
+            "workedAs": TextEditingController(
+                text: i < workedAsList.length ? workedAsList[i] : ""),
+            "company": TextEditingController(
+                text: i < companiesList.length ? companiesList[i] : ""),
+            "duration": TextEditingController(
+                text: i < durationList.length ? durationList[i] : ""),
+          });
+        }
+
+        // At least one entry
+        if (workExperienceControllers.isEmpty) {
+          workExperienceControllers.add({
+            "workedAs": TextEditingController(),
+            "company": TextEditingController(),
+            "duration": TextEditingController(),
+          });
+        }
+
+        // Initialize years of experience controller
+        controllers.putIfAbsent(
+          "Years of Experience",
+          () => TextEditingController(
+            text: _entities?["YEARS OF EXPERIENCE"]?.first ?? '',
           ),
-          actions: [
-            TextButton(
-              onPressed: () async {
-                // Update entities with edited values
-                Map<String, List<String>> updatedEntities = {};
-                _entities!.forEach((key, value) {
-                  updatedEntities[key] = controllers[key]!.text.split(", ");
-                });
+        );
 
-                // Save updated entities to Firestore
-                String userId = FirebaseAuth.instance.currentUser!.uid;
-                await FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(userId)
-                    .set(
-                  {'resume_entities': updatedEntities},
-                  SetOptions(merge: true),
-                );
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text("Edit Resume Info"),
+              content: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Years of Experience
+                    TextField(
+                      controller: controllers["Years of Experience"],
+                      decoration:
+                          InputDecoration(labelText: "Years of Experience"),
+                    ),
+                    SizedBox(height: 20),
 
-                setState(() {
-                  _entities = updatedEntities;
-                });
+                    // Work Experience Section
+                    Text("Work Experience:",
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    SizedBox(height: 10),
 
-                Navigator.pop(context);
-              },
-              child: Text("Submit"),
-            ),
-          ],
+                    ...workExperienceControllers.asMap().entries.map((entry) {
+                      int i = entry.key;
+                      var map = entry.value;
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("Work Experience ${i + 1}",
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 16)),
+                          SizedBox(height: 8),
+                          TextField(
+                            controller: map["workedAs"],
+                            decoration: InputDecoration(labelText: "Worked As"),
+                          ),
+                          TextField(
+                            controller: map["company"],
+                            decoration: InputDecoration(labelText: "Company"),
+                          ),
+                          TextField(
+                            controller: map["duration"],
+                            decoration: InputDecoration(labelText: "Duration"),
+                          ),
+                          SizedBox(height: 15),
+                        ],
+                      );
+                    }),
+
+                    TextButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          workExperienceControllers.add({
+                            "workedAs": TextEditingController(),
+                            "company": TextEditingController(),
+                            "duration": TextEditingController(),
+                          });
+                        });
+                      },
+                      icon: Icon(Icons.add),
+                      label: Text("Add Work Experience"),
+                    ),
+
+                    SizedBox(height: 20),
+
+                    // Other fields (excluding work experience-related)
+                    ..._entities!.keys.where((key) {
+                      final lowerKey = key.toLowerCase();
+                      return lowerKey != "worked as" &&
+                          lowerKey != "duration" &&
+                          lowerKey != "companies worked at" &&
+                          key != "Years of Experience";
+                    }).map((key) {
+                      controllers.putIfAbsent(
+                        key,
+                        () => TextEditingController(
+                            text: _entities?[key]?.join(", ") ?? ""),
+                      );
+                      return TextField(
+                        controller: controllers[key],
+                        decoration: InputDecoration(labelText: key),
+                        maxLines: 2,
+                      );
+                    }).toList(),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () async {
+                    Map<String, List<String>> updatedEntities = {};
+
+                    // Save general fields
+                    controllers.forEach((key, controller) {
+                      updatedEntities[key] = controller.text
+                          .split(",")
+                          .map((e) => e.trim())
+                          .where((e) => e.isNotEmpty)
+                          .toList();
+                    });
+
+                    // Save work experience (including "Worked As")
+                    updatedEntities["WORKED AS"] = workExperienceControllers
+                        .map((e) => e["workedAs"]!.text)
+                        .where((text) => text.isNotEmpty)
+                        .toList();
+
+                    updatedEntities["COMPANIES WORKED AT"] =
+                        workExperienceControllers
+                            .map((e) => e["company"]!.text)
+                            .where((text) => text.isNotEmpty)
+                            .toList();
+
+                    updatedEntities["DURATION"] = workExperienceControllers
+                        .map((e) => e["duration"]!.text)
+                        .where((text) => text.isNotEmpty)
+                        .toList();
+
+                    // Upload to Firestore
+                    String userId = FirebaseAuth.instance.currentUser!.uid;
+                    await FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(userId)
+                        .set(
+                      {'resume_entities': updatedEntities},
+                      SetOptions(merge: true),
+                    );
+
+                    setState(() {
+                      _entities = updatedEntities;
+                    });
+
+                    Navigator.pop(context);
+                  },
+                  child: Text("Submit"),
+                ),
+              ],
+            );
+          },
         );
       },
     );
