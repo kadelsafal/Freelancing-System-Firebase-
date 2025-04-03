@@ -55,7 +55,10 @@ class _ResumeScreenState extends State<ResumeScreen> {
       _score = prefs.getDouble('resume_score') ?? 0.0;
       String? entitiesJson = prefs.getString('resume_entities');
       if (entitiesJson != null) {
-        _entities = jsonDecode(entitiesJson);
+        _entities = (jsonDecode(entitiesJson) as Map<String, dynamic>?)?.map(
+          (key, value) => MapEntry(
+              key, (value as List<dynamic>).map((e) => e.toString()).toList()),
+        );
       }
     });
   }
@@ -118,7 +121,7 @@ class _ResumeScreenState extends State<ResumeScreen> {
   }
 
   Future<void> uploadResumeForReview(File file) async {
-    var uri = Uri.parse("http://192.168.1.25:8000/process_resume/");
+    var uri = Uri.parse("http://192.168.1.98:8000/process_resume/");
     var request = http.MultipartRequest('POST', uri)
       ..files.add(await http.MultipartFile.fromPath('file', file.path));
     try {
@@ -148,7 +151,6 @@ class _ResumeScreenState extends State<ResumeScreen> {
   Future<void> _openEditEntitiesDialog() async {
     Map<String, TextEditingController> controllers = {};
 
-    // Initialize controllers for each entity
     _entities?.forEach((key, value) {
       controllers[key] = TextEditingController(text: value.join(", "));
     });
@@ -159,8 +161,8 @@ class _ResumeScreenState extends State<ResumeScreen> {
         final workedAsList = _entities?["WORKED AS"] ?? [];
         final companiesList = _entities?["COMPANIES WORKED AT"] ?? [];
         final durationList = _entities?["DURATION"] ?? [];
+        final skillsList = _entities?["SKILLS"] ?? [];
 
-        // Max number of entries to sync across all 3 lists
         final maxLength = [
           workedAsList.length,
           companiesList.length,
@@ -169,7 +171,6 @@ class _ResumeScreenState extends State<ResumeScreen> {
 
         List<Map<String, TextEditingController>> workExperienceControllers = [];
 
-        // Create a controller for each work experience item
         for (int i = 0; i < maxLength; i++) {
           workExperienceControllers.add({
             "workedAs": TextEditingController(
@@ -181,7 +182,6 @@ class _ResumeScreenState extends State<ResumeScreen> {
           });
         }
 
-        // At least one entry
         if (workExperienceControllers.isEmpty) {
           workExperienceControllers.add({
             "workedAs": TextEditingController(),
@@ -190,13 +190,17 @@ class _ResumeScreenState extends State<ResumeScreen> {
           });
         }
 
-        // Initialize years of experience controller
-        controllers.putIfAbsent(
-          "Years of Experience",
-          () => TextEditingController(
-            text: _entities?["YEARS OF EXPERIENCE"]?.first ?? '',
-          ),
+        // Check if 'YEARS OF EXPERIENCE' is present, otherwise leave it empty
+        TextEditingController yearsOfExperienceController =
+            TextEditingController(
+          text: (_entities?["YEARS OF EXPERIENCE"] != null &&
+                  _entities?["YEARS OF EXPERIENCE"] is List &&
+                  (_entities?["YEARS OF EXPERIENCE"] as List).isNotEmpty)
+              ? (_entities?["YEARS OF EXPERIENCE"] as List)[0]
+              : "",
         );
+
+        TextEditingController skillController = TextEditingController();
 
         return StatefulBuilder(
           builder: (context, setState) {
@@ -206,19 +210,19 @@ class _ResumeScreenState extends State<ResumeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Years of Experience
                     TextField(
-                      controller: controllers["Years of Experience"],
+                      controller: yearsOfExperienceController,
                       decoration:
                           InputDecoration(labelText: "Years of Experience"),
+                      onChanged: (value) {
+                        // Update the years of experience value
+                        _entities?["YEARS OF EXPERIENCE"] = [value];
+                      },
                     ),
                     SizedBox(height: 20),
-
-                    // Work Experience Section
                     Text("Work Experience:",
                         style: TextStyle(fontWeight: FontWeight.bold)),
                     SizedBox(height: 10),
-
                     ...workExperienceControllers.asMap().entries.map((entry) {
                       int i = entry.key;
                       var map = entry.value;
@@ -245,8 +249,7 @@ class _ResumeScreenState extends State<ResumeScreen> {
                           SizedBox(height: 15),
                         ],
                       );
-                    }),
-
+                    }).toList(),
                     TextButton.icon(
                       onPressed: () {
                         setState(() {
@@ -260,16 +263,46 @@ class _ResumeScreenState extends State<ResumeScreen> {
                       icon: Icon(Icons.add),
                       label: Text("Add Work Experience"),
                     ),
-
                     SizedBox(height: 20),
-
-                    // Other fields (excluding work experience-related)
+                    Text("Skills:",
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8.0,
+                      children: skillsList
+                          .map<Widget>((skill) => Chip(
+                                label: Text(skill),
+                                onDeleted: () {
+                                  setState(() {
+                                    skillsList.remove(skill);
+                                  });
+                                },
+                                deleteIconColor: Colors.red,
+                              ))
+                          .toList(),
+                    ),
+                    SizedBox(height: 10),
+                    TextField(
+                      controller: skillController,
+                      decoration: InputDecoration(labelText: "Add Skill"),
+                      onSubmitted: (value) {
+                        if (value.isNotEmpty) {
+                          setState(() {
+                            skillsList.add(value);
+                            skillController.clear();
+                          });
+                        }
+                      },
+                    ),
+                    SizedBox(height: 20),
                     ..._entities!.keys.where((key) {
                       final lowerKey = key.toLowerCase();
                       return lowerKey != "worked as" &&
                           lowerKey != "duration" &&
                           lowerKey != "companies worked at" &&
-                          key != "Years of Experience";
+                          lowerKey != "skills" &&
+                          lowerKey !=
+                              "years of experience"; // Exclude 'years of experience'
                     }).map((key) {
                       controllers.putIfAbsent(
                         key,
@@ -290,7 +323,6 @@ class _ResumeScreenState extends State<ResumeScreen> {
                   onPressed: () async {
                     Map<String, List<String>> updatedEntities = {};
 
-                    // Save general fields
                     controllers.forEach((key, controller) {
                       updatedEntities[key] = controller.text
                           .split(",")
@@ -299,7 +331,6 @@ class _ResumeScreenState extends State<ResumeScreen> {
                           .toList();
                     });
 
-                    // Save work experience (including "Worked As")
                     updatedEntities["WORKED AS"] = workExperienceControllers
                         .map((e) => e["workedAs"]!.text)
                         .where((text) => text.isNotEmpty)
@@ -316,7 +347,13 @@ class _ResumeScreenState extends State<ResumeScreen> {
                         .where((text) => text.isNotEmpty)
                         .toList();
 
-                    // Upload to Firestore
+                    updatedEntities["SKILLS"] = List<String>.from(skillsList);
+
+                    // Ensure that the 'YEARS OF EXPERIENCE' field is updated
+                    updatedEntities["YEARS OF EXPERIENCE"] = [
+                      yearsOfExperienceController.text.trim()
+                    ];
+
                     String userId = FirebaseAuth.instance.currentUser!.uid;
                     await FirebaseFirestore.instance
                         .collection('users')
@@ -325,6 +362,11 @@ class _ResumeScreenState extends State<ResumeScreen> {
                       {'resume_entities': updatedEntities},
                       SetOptions(merge: true),
                     );
+
+                    // Save updated data to local storage
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.setString(
+                        'resume_entities', jsonEncode(updatedEntities));
 
                     setState(() {
                       _entities = updatedEntities;
@@ -366,12 +408,14 @@ class _ResumeScreenState extends State<ResumeScreen> {
                         : () async {
                             File? file = await _uploadResume();
                             if (file != null) {
-                              uploadResumeForReview(file);
+                              await uploadResumeForReview(file);
+                              setState(() {}); // Update UI after upload
                             }
                           },
                     child: _isUploading
                         ? CircularProgressIndicator(color: Colors.deepPurple)
                         : Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Text("Upload Resume"),
                               SizedBox(width: 5),
@@ -389,9 +433,13 @@ class _ResumeScreenState extends State<ResumeScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (context) => BuildResume()),
-                      );
+                      ).then((_) {
+                        setState(
+                            () {}); // Update UI after returning from BuildResume
+                      });
                     },
                     child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Text("Build Resume"),
                         SizedBox(width: 3),
@@ -447,7 +495,7 @@ class _ResumeScreenState extends State<ResumeScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "${entry.key}:", // Entity Title
+                              "${entry.key}:",
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -458,7 +506,7 @@ class _ResumeScreenState extends State<ResumeScreen> {
                               return Padding(
                                 padding: EdgeInsets.only(left: 15, top: 3),
                                 child: Text(
-                                  "- ${entry.value[index]}", // Entity Value
+                                  "- ${entry.value[index]}",
                                   style: TextStyle(fontSize: 16),
                                 ),
                               );
@@ -490,7 +538,10 @@ class _ResumeScreenState extends State<ResumeScreen> {
             if (_entities != null)
               Center(
                 child: ElevatedButton(
-                  onPressed: _openEditEntitiesDialog,
+                  onPressed: () async {
+                    await _openEditEntitiesDialog();
+                    setState(() {}); // Refresh UI after saving details
+                  },
                   child: Text("Save Details"),
                 ),
               ),

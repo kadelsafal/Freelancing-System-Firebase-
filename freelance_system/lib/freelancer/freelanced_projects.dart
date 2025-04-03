@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:freelance_system/Projects/recommendtab.dart';
 import 'package:freelance_system/freelancer/appliedproject.dart';
 import 'package:freelance_system/freelancer/projectscreen.dart';
+import 'package:freelance_system/freelancer/recommended.dart';
 import 'package:freelance_system/freelancer/teambuilding.dart';
+import 'package:googleapis/content/v2_1.dart';
 
 class FreelancedProjects extends StatefulWidget {
   const FreelancedProjects({super.key});
@@ -17,7 +20,7 @@ class _FreelancedProjectsState extends State<FreelancedProjects>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -34,13 +37,14 @@ class _FreelancedProjectsState extends State<FreelancedProjects>
           preferredSize: Size.fromHeight(0), // Ensures proper spacing
           child: TabBar(
             controller: _tabController,
-            isScrollable: false,
-            labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+            isScrollable: true,
+            labelPadding: const EdgeInsets.symmetric(horizontal: 8),
             indicatorColor: Colors.deepPurple,
             tabs: const [
               Tab(text: "Projects"),
+              Tab(text: "Recommendation"),
               Tab(text: "Applied Projects"),
-              Tab(text: "Team Building"),
+              Tab(text: "Team Building")
             ],
           ),
         ),
@@ -56,6 +60,9 @@ class _FreelancedProjectsState extends State<FreelancedProjects>
                 children: [
                   SingleChildScrollView(
                     child: FreelancerProjectscreen(),
+                  ),
+                  SingleChildScrollView(
+                    child: Recommend(),
                   ),
                   SingleChildScrollView(
                     child: Appliedproject(),
