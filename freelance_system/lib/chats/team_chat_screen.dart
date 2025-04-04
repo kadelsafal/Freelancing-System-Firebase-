@@ -1,4 +1,3 @@
-// team_chat_screen.dart (improved UI with distinct sent/received messages)
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -72,12 +71,16 @@ class _TeamChatScreenState extends State<TeamChatScreen> {
           ],
         ),
         actions: [
-          IconButton(
-            icon: Icon(Icons.info_outline),
-            onPressed: () {
-              _showTeamInfo(context);
-            },
-          ),
+          isLoading
+              ? Center(
+                  child:
+                      CircularProgressIndicator()) // Show loading indicator until the team details are loaded
+              : IconButton(
+                  icon: Icon(Icons.info_outline),
+                  onPressed: () {
+                    _showTeamInfo(context);
+                  },
+                ),
         ],
       ),
       body: Column(
@@ -274,25 +277,54 @@ class _TeamChatScreenState extends State<TeamChatScreen> {
     );
   }
 
-  void _showTeamInfo(BuildContext context) {
+  void _showTeamInfo(BuildContext context) async {
     if (teamDetails == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Team details are still loading...")));
+        SnackBar(content: Text("Team details are still loading...")),
+      );
       return;
     }
 
-    List<Map<String, dynamic>> members =
-        List<Map<String, dynamic>>.from(teamDetails?['memberDetails'] ?? []);
+    List<String> teamMemberIds =
+        List<String>.from(teamDetails?['members'] ?? []);
     String adminId = teamDetails?['admin'] ?? '';
 
+    // 🔹 Fetch member details from Firestore concurrently
+    List<Future<Map<String, dynamic>>> memberFutures =
+        teamMemberIds.map((memberId) {
+      return FirebaseFirestore.instance
+          .collection('users')
+          .doc(memberId)
+          .get()
+          .then((userDoc) {
+        if (userDoc.exists) {
+          Map<String, dynamic> userData =
+              userDoc.data() as Map<String, dynamic>;
+          return {
+            'id': memberId,
+            'fullName': userData['Full Name'] ?? "Unknown User"
+          };
+        } else {
+          return {'id': memberId, 'fullName': "Unknown User"};
+        }
+      });
+    }).toList();
+
+    // Wait for all member fetches to complete
+    List<Map<String, dynamic>> members = await Future.wait(memberFutures);
+
+    // 🔹 Show Bottom Sheet after fetching names
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
         return Container(
           padding: EdgeInsets.all(16),
+          height:
+              MediaQuery.of(context).size.height * 0.6, // Make it scrollable
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -322,10 +354,7 @@ class _TeamChatScreenState extends State<TeamChatScreen> {
                   itemBuilder: (context, index) {
                     final member = members[index];
                     final isAdmin = member['id'] == adminId;
-                    final fullName = member['Full Name'] ??
-                        member['fullName'] ??
-                        member['displayName'] ??
-                        "User";
+                    final fullName = member['fullName'];
 
                     return ListTile(
                       leading: CircleAvatar(
@@ -339,9 +368,11 @@ class _TeamChatScreenState extends State<TeamChatScreen> {
                       ),
                       title: Text(fullName),
                       subtitle: isAdmin
-                          ? Text("Admin",
+                          ? Text(
+                              "Admin",
                               style: TextStyle(
-                                  color: Theme.of(context).primaryColor))
+                                  color: Theme.of(context).primaryColor),
+                            )
                           : null,
                     );
                   },

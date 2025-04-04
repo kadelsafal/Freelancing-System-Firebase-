@@ -1,4 +1,5 @@
 // team_creation_dialog.dart (modified with avatars and mutual followers)
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:freelance_system/chats/team_service.dart';
 import 'package:freelance_system/chats/user_service.dart';
@@ -6,14 +7,31 @@ import 'package:freelance_system/chats/user_service.dart';
 void showTeamCreationDialog(
     BuildContext context, String currentUserId, VoidCallback refreshTeams) {
   final TextEditingController teamNameController = TextEditingController();
-  String? selectedAdminId;
+  String? selectedAdminId =
+      currentUserId; // Set the current user's ID as the default admin
 
   showDialog(
     context: context,
     builder: (BuildContext context) {
       return Dialog(
         child: FutureBuilder<List<Map<String, dynamic>>>(
-          future: UserService.fetchMutualFollowers(currentUserId),
+          future: (() async {
+            final currentUser = FirebaseAuth.instance.currentUser;
+            List<Map<String, dynamic>> users =
+                await UserService.fetchMutualFollowers(currentUserId);
+
+            if (currentUser != null &&
+                !users.any((user) => user['id'] == currentUser.uid)) {
+              String? fullName =
+                  await UserService.getUserFullName(currentUser.uid);
+              users.add({
+                "id": currentUser.uid,
+                "Full Name": fullName ?? "You",
+              });
+            }
+
+            return users;
+          })(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -24,6 +42,7 @@ void showTeamCreationDialog(
                 child: Center(child: Text("Error: ${snapshot.error}")),
               );
             }
+
             final users = snapshot.data ?? [];
 
             return Container(
@@ -56,7 +75,11 @@ void showTeamCreationDialog(
                       ? Center(child: Text("No mutual connections available"))
                       : Flexible(
                           child: _buildUserSelection(
-                              users, context, refreshTeams, teamNameController),
+                              users,
+                              context,
+                              refreshTeams,
+                              teamNameController,
+                              selectedAdminId),
                         ),
                 ],
               ),
@@ -72,9 +95,11 @@ Widget _buildUserSelection(
     List<Map<String, dynamic>> users,
     BuildContext context,
     VoidCallback refreshTeams,
-    TextEditingController teamNameController) {
-  List<String> selectedUserIds = [];
-  String? selectedAdminId;
+    TextEditingController teamNameController,
+    String? selectedAdminId) {
+  List<String> selectedUserIds = [
+    selectedAdminId!
+  ]; // Ensure the current user is in the list
 
   return StatefulBuilder(
     builder: (context, setState) {

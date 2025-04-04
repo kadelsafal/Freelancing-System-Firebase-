@@ -1,8 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:freelance_system/chats/team_creation_dialogue.dart';
-import 'package:freelance_system/chats/team_list.dart';
 import 'package:freelance_system/chats/team_service.dart';
+import 'package:freelance_system/chats/team_list.dart';
 
 class TeamTab extends StatefulWidget {
   const TeamTab({super.key});
@@ -32,6 +32,7 @@ class _TeamTabState extends State<TeamTab> {
     return Container(
       height: MediaQuery.of(context).size.height,
       child: FutureBuilder<List<Map<String, dynamic>>>(
+        // Use FutureBuilder to load teams
         future: _teamsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -51,7 +52,7 @@ class _TeamTabState extends State<TeamTab> {
                       const SizedBox(height: 10),
                       ElevatedButton(
                         onPressed: () => showTeamCreationDialog(
-                            context, currentUserId, _refreshTeams), // ✅ Fixed
+                            context, currentUserId, _refreshTeams),
                         child: const Text("Build a Team"),
                       ),
                     ],
@@ -62,11 +63,12 @@ class _TeamTabState extends State<TeamTab> {
                     const SizedBox(height: 10),
                     ElevatedButton(
                       onPressed: () => showTeamCreationDialog(
-                          context, currentUserId, _refreshTeams), // ✅ Fixed
+                          context, currentUserId, _refreshTeams),
                       child: const Text("Add a Team"),
                     ),
                     Expanded(
-                      child: TeamList(teams: teams),
+                      child: TeamList(
+                          teams: teams), // Pass the filtered teams here
                     ),
                   ],
                 );

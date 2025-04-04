@@ -49,14 +49,7 @@ class TeamService {
       required List<String> memberIds}) async {
     if (_user == null) return;
 
-    List<String> allMembers = [...memberIds];
-    if (!allMembers.contains(adminId)) {
-      allMembers.add(adminId);
-    }
-
-    if (!allMembers.contains(_user!.uid)) {
-      allMembers.add(_user!.uid);
-    }
+    Set<String> allMembers = {...memberIds, adminId, _user!.uid};
 
     await _db.collection("teams").add({
       "teamName": teamName,

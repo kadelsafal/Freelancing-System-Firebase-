@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:freelance_system/chats/team_chat_screen.dart';
 import 'package:intl/intl.dart';
@@ -10,29 +11,32 @@ class TeamList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? "";
+
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('teams')
+          .where('members',
+              arrayContains:
+                  currentUserId) // Filter teams where user is a member
           .orderBy('lastMessageTime', descending: true)
           .snapshots(),
       builder: (context, snapshot) {
-        // fallback to passed `teams` if no data available yet
+        // Only use the snapshot data if available; otherwise, fall back to local list
         final teamDocs = snapshot.hasData
             ? snapshot.data!.docs
-            : teams.map((team) => FakeDocument(team)).toList();
+            : []; // Ensure no teams are added when there is no snapshot data
 
         return ListView.builder(
           itemCount: teamDocs.length,
           itemBuilder: (context, index) {
             final doc = teamDocs[index];
-            final data = doc is FakeDocument
-                ? doc.data
-                : (doc as QueryDocumentSnapshot).data() as Map<String, dynamic>;
+            final data = doc.data() as Map<String, dynamic>;
 
             final teamName = data["teamName"] ?? "Unnamed Team";
             final lastMessage = data["lastMessage"] ?? "";
             final timestamp = data["lastMessageTime"] as Timestamp?;
-            final teamId = data["id"] ?? (doc as QueryDocumentSnapshot).id;
+            final teamId = data["id"] ?? doc.id;
 
             String timeString = "";
             if (timestamp != null) {
@@ -102,10 +106,4 @@ class TeamList extends StatelessWidget {
       },
     );
   }
-}
-
-// Fallback class for local list of teams if no Firestore snapshot yet
-class FakeDocument {
-  final Map<String, dynamic> data;
-  FakeDocument(this.data);
 }
