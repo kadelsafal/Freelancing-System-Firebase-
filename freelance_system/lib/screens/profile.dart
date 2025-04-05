@@ -1,9 +1,9 @@
-import 'package:freelance_system/profile_controller/experiencetab.dart';
-import 'package:freelance_system/profile_controller/posttab.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:freelance_system/providers/userProvider.dart';
+import 'package:provider/provider.dart';
+import 'package:freelance_system/profile_controller/experiencetab.dart';
+import 'package:freelance_system/profile_controller/posttab.dart';
 import '../profile_controller/bottomsheet_profile.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -15,14 +15,16 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen>
     with SingleTickerProviderStateMixin {
-  double _userRating = 4.5; // Default rating
-
   late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<Userprovider>(context, listen: false).getUserDetails();
+    });
   }
 
   @override
@@ -39,9 +41,30 @@ class _ProfileScreenState extends State<ProfileScreen>
     return "Poor";
   }
 
+  // This method returns rating based on years of experience
+  double getExperienceRating(int yearsOfExperience) {
+    if (yearsOfExperience >= 10) {
+      return 5.0; // 5 stars for 10+ years of experience
+    } else if (yearsOfExperience >= 5) {
+      return 4.0; // 4 stars for 5-9 years of experience
+    } else if (yearsOfExperience >= 2) {
+      return 3.0; // 3 stars for 2-4 years of experience
+    } else if (yearsOfExperience >= 1) {
+      return 2.0; // 2 stars for 1 year of experience
+    } else {
+      return 0.0; // No experience or 0 years, 0 stars
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     var userProvider = Provider.of<Userprovider>(context);
+
+    // Safely convert yearsOfExperience from String to int
+    int yearsOfExperience = int.tryParse(userProvider.yearsOfExperience) ?? 0;
+
+    // Get the rating based on years of experience
+    double experienceRating = getExperienceRating(yearsOfExperience);
 
     return Scaffold(
       appBar: AppBar(title: Text("Profile")),
@@ -89,15 +112,15 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
             SizedBox(height: 20),
 
-            // Rating Section
+            // Rating Section based on years of experience
             Column(
               children: [
-                Text("Your Rating:",
+                Text("Your Rating: ",
                     style:
                         TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 RatingBar.builder(
-                  initialRating: _userRating,
-                  minRating: 1,
+                  initialRating: experienceRating,
+                  minRating: 0,
                   direction: Axis.horizontal,
                   allowHalfRating: true,
                   itemSize: 20,
@@ -107,15 +130,17 @@ class _ProfileScreenState extends State<ProfileScreen>
                       Icon(Icons.star, size: 20, color: Colors.amber),
                   onRatingUpdate: (rating) {
                     setState(() {
-                      _userRating = rating;
+                      // Here, update the yearsOfExperience (as int)
+                      userProvider.yearsOfExperience =
+                          yearsOfExperience.toString();
                     });
                   },
                 ),
                 SizedBox(height: 10),
-                Text(getRatingText(_userRating),
+                Text(getRatingText(experienceRating),
                     style:
                         TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                Text("Rated: ${_userRating.toStringAsFixed(1)}",
+                Text("Rated: ${experienceRating.toStringAsFixed(1)}",
                     style: TextStyle(fontSize: 16)),
                 SizedBox(height: 20),
               ],

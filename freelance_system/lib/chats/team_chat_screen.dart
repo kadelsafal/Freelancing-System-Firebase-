@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:freelance_system/chats/team_info.dart';
 import 'package:freelance_system/chats/team_service.dart';
 import 'package:freelance_system/chats/user_service.dart';
 import 'package:intl/intl.dart';
@@ -55,33 +56,34 @@ class _TeamChatScreenState extends State<TeamChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: Theme.of(context).primaryColorDark,
-              child: Text(
-                widget.teamName.isNotEmpty
-                    ? widget.teamName[0].toUpperCase()
-                    : "?",
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-            SizedBox(width: 8),
-            Text(widget.teamName),
-          ],
-        ),
-        actions: [
-          isLoading
-              ? Center(
-                  child:
-                      CircularProgressIndicator()) // Show loading indicator until the team details are loaded
-              : IconButton(
-                  icon: Icon(Icons.info_outline),
-                  onPressed: () {
-                    _showTeamInfo(context);
-                  },
+        title: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TeamInfoScreen(
+                  teamId: widget.teamId,
+                  teamName: widget.teamName,
                 ),
-        ],
+              ),
+            );
+          },
+          child: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: Theme.of(context).primaryColorDark,
+                child: Text(
+                  widget.teamName.isNotEmpty
+                      ? widget.teamName[0].toUpperCase()
+                      : "?",
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+              SizedBox(width: 8),
+              Text(widget.teamName),
+            ],
+          ),
+        ),
       ),
       body: Column(
         children: [
@@ -277,111 +279,111 @@ class _TeamChatScreenState extends State<TeamChatScreen> {
     );
   }
 
-  void _showTeamInfo(BuildContext context) async {
-    if (teamDetails == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Team details are still loading...")),
-      );
-      return;
-    }
+  // void _showTeamInfo(BuildContext context) async {
+  //   if (teamDetails == null) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text("Team details are still loading...")),
+  //     );
+  //     return;
+  //   }
 
-    List<String> teamMemberIds =
-        List<String>.from(teamDetails?['members'] ?? []);
-    String adminId = teamDetails?['admin'] ?? '';
+  //   List<String> teamMemberIds =
+  //       List<String>.from(teamDetails?['members'] ?? []);
+  //   String adminId = teamDetails?['admin'] ?? '';
 
-    // 🔹 Fetch member details from Firestore concurrently
-    List<Future<Map<String, dynamic>>> memberFutures =
-        teamMemberIds.map((memberId) {
-      return FirebaseFirestore.instance
-          .collection('users')
-          .doc(memberId)
-          .get()
-          .then((userDoc) {
-        if (userDoc.exists) {
-          Map<String, dynamic> userData =
-              userDoc.data() as Map<String, dynamic>;
-          return {
-            'id': memberId,
-            'fullName': userData['Full Name'] ?? "Unknown User"
-          };
-        } else {
-          return {'id': memberId, 'fullName': "Unknown User"};
-        }
-      });
-    }).toList();
+  //   // 🔹 Fetch member details from Firestore concurrently
+  //   List<Future<Map<String, dynamic>>> memberFutures =
+  //       teamMemberIds.map((memberId) {
+  //     return FirebaseFirestore.instance
+  //         .collection('users')
+  //         .doc(memberId)
+  //         .get()
+  //         .then((userDoc) {
+  //       if (userDoc.exists) {
+  //         Map<String, dynamic> userData =
+  //             userDoc.data() as Map<String, dynamic>;
+  //         return {
+  //           'id': memberId,
+  //           'fullName': userData['Full Name'] ?? "Unknown User"
+  //         };
+  //       } else {
+  //         return {'id': memberId, 'fullName': "Unknown User"};
+  //       }
+  //     });
+  //   }).toList();
 
-    // Wait for all member fetches to complete
-    List<Map<String, dynamic>> members = await Future.wait(memberFutures);
+  //   // Wait for all member fetches to complete
+  //   List<Map<String, dynamic>> members = await Future.wait(memberFutures);
 
-    // 🔹 Show Bottom Sheet after fetching names
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Container(
-          padding: EdgeInsets.all(16),
-          height:
-              MediaQuery.of(context).size.height * 0.6, // Make it scrollable
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 50,
-                  height: 5,
-                  margin: EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
-              Text(
-                "Team Members",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              SizedBox(height: 16),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: members.length,
-                  itemBuilder: (context, index) {
-                    final member = members[index];
-                    final isAdmin = member['id'] == adminId;
-                    final fullName = member['fullName'];
+  //   // 🔹 Show Bottom Sheet after fetching names
+  //   showModalBottomSheet(
+  //     context: context,
+  //     isScrollControlled: true,
+  //     shape: RoundedRectangleBorder(
+  //       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+  //     ),
+  //     builder: (context) {
+  //       return Container(
+  //         padding: EdgeInsets.all(16),
+  //         height:
+  //             MediaQuery.of(context).size.height * 0.6, // Make it scrollable
+  //         child: Column(
+  //           mainAxisSize: MainAxisSize.min,
+  //           crossAxisAlignment: CrossAxisAlignment.start,
+  //           children: [
+  //             Center(
+  //               child: Container(
+  //                 width: 50,
+  //                 height: 5,
+  //                 margin: EdgeInsets.only(bottom: 16),
+  //                 decoration: BoxDecoration(
+  //                   color: Colors.grey[300],
+  //                   borderRadius: BorderRadius.circular(10),
+  //                 ),
+  //               ),
+  //             ),
+  //             Text(
+  //               "Team Members",
+  //               style: TextStyle(
+  //                 fontSize: 18,
+  //                 fontWeight: FontWeight.bold,
+  //               ),
+  //             ),
+  //             SizedBox(height: 16),
+  //             Expanded(
+  //               child: ListView.builder(
+  //                 itemCount: members.length,
+  //                 itemBuilder: (context, index) {
+  //                   final member = members[index];
+  //                   final isAdmin = member['id'] == adminId;
+  //                   final fullName = member['fullName'];
 
-                    return ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: isAdmin
-                            ? Theme.of(context).primaryColor
-                            : Colors.grey[400],
-                        child: Text(
-                          fullName.isNotEmpty ? fullName[0].toUpperCase() : "?",
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                      title: Text(fullName),
-                      subtitle: isAdmin
-                          ? Text(
-                              "Admin",
-                              style: TextStyle(
-                                  color: Theme.of(context).primaryColor),
-                            )
-                          : null,
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+  //                   return ListTile(
+  //                     leading: CircleAvatar(
+  //                       backgroundColor: isAdmin
+  //                           ? Theme.of(context).primaryColor
+  //                           : Colors.grey[400],
+  //                       child: Text(
+  //                         fullName.isNotEmpty ? fullName[0].toUpperCase() : "?",
+  //                         style: TextStyle(color: Colors.white),
+  //                       ),
+  //                     ),
+  //                     title: Text(fullName),
+  //                     subtitle: isAdmin
+  //                         ? Text(
+  //                             "Admin",
+  //                             style: TextStyle(
+  //                                 color: Theme.of(context).primaryColor),
+  //                           )
+  //                         : null,
+  //                   );
+  //                 },
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
 }

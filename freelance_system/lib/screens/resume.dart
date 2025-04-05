@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:freelance_system/resume/edit_resume_dialog.dart';
 import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -7,10 +8,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:freelance_system/resume/buildresume.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class ResumeScreen extends StatefulWidget {
-  const ResumeScreen({super.key});
+  final String? userId;
+
+  const ResumeScreen({super.key, this.userId});
 
   @override
   State<ResumeScreen> createState() => _ResumeScreenState();
@@ -21,56 +23,86 @@ class _ResumeScreenState extends State<ResumeScreen> {
   String? _resumeUrl;
   String? _resumeReview;
   double _score = 0.0;
-  Map<String, dynamic>? _entities;
+  Map<String, List<String>>? _entities;
+
+  late String _currentUserId;
+  bool _isCurrentUser = true;
 
   @override
   void initState() {
     super.initState();
-    _fetchResume();
-    _loadResumeReviewFromLocal();
+    _initUserData();
   }
 
-  Future<void> _fetchResume() async {
-    String userId = FirebaseAuth.instance.currentUser!.uid;
+  void _initUserData() {
+    _currentUserId = widget.userId ?? FirebaseAuth.instance.currentUser!.uid;
+    _isCurrentUser = widget.userId == null ||
+        widget.userId == FirebaseAuth.instance.currentUser!.uid;
+    _fetchUserResumeData();
+  }
+
+  Future<void> _fetchUserResumeData() async {
     try {
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
           .collection('users')
-          .doc(userId)
+          .doc(_currentUserId)
           .get();
-      if (userDoc.exists && userDoc['resume_file'] != null) {
+
+      if (userDoc.exists) {
         setState(() {
-          _resumeUrl = userDoc['resume_file'];
+          if (userDoc.data() is Map<String, dynamic>) {
+            Map<String, dynamic> userData =
+                userDoc.data() as Map<String, dynamic>;
+
+            _resumeUrl = userData['resume_file'];
+            _resumeReview = userData['resume_review'];
+            _score = (userData['resume_score'] ?? 0.0).toDouble();
+
+            if (userData['resume_entities'] != null) {
+              _entities =
+                  (userData['resume_entities'] as Map<String, dynamic>).map(
+                (key, value) => MapEntry(
+                  key,
+                  (value as List<dynamic>).map((e) => e.toString()).toList(),
+                ),
+              );
+            }
+          }
         });
-        print("Fetched resume URL: $_resumeUrl");
+        print("Fetched resume data for user: $_currentUserId");
       }
     } catch (e) {
-      print("Error fetching resume: $e");
+      print("Error fetching resume data: $e");
     }
   }
 
-  Future<void> _loadResumeReviewFromLocal() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _resumeReview = prefs.getString('resume_review');
-      _score = prefs.getDouble('resume_score') ?? 0.0;
-      String? entitiesJson = prefs.getString('resume_entities');
-      if (entitiesJson != null) {
-        _entities = (jsonDecode(entitiesJson) as Map<String, dynamic>?)?.map(
-          (key, value) => MapEntry(
-              key, (value as List<dynamic>).map((e) => e.toString()).toList()),
-        );
-      }
-    });
-  }
+  Future<void> _saveResumeDataToFirestore() async {
+    if (_entities != null) {
+      Map<String, dynamic> filteredEntities = Map.from(_entities!);
+      filteredEntities.removeWhere((key, value) =>
+          key.toLowerCase() == 'name' ||
+          key.toLowerCase() == 'email address' ||
+          key.toLowerCase() == 'email');
 
-  Future<void> _saveResumeReviewToLocal() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('resume_review', _resumeReview ?? '');
-    await prefs.setDouble('resume_score', _score);
-    await prefs.setString('resume_entities', jsonEncode(_entities ?? {}));
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_currentUserId)
+          .set({
+        'resume_review': _resumeReview,
+        'resume_score': _score,
+        'resume_entities': filteredEntities,
+      }, SetOptions(merge: true));
+    }
   }
 
   Future<File?> _uploadResume() async {
+    if (!_isCurrentUser) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("You can only upload your own resume")),
+      );
+      return null;
+    }
+
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf', 'doc', 'docx'],
@@ -113,8 +145,10 @@ class _ResumeScreenState extends State<ResumeScreen> {
   }
 
   Future<void> _saveToFirestore(String fileUrl) async {
-    String userId = FirebaseAuth.instance.currentUser!.uid;
-    await FirebaseFirestore.instance.collection('users').doc(userId).set(
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(_currentUserId)
+        .set(
       {'resume_file': fileUrl},
       SetOptions(merge: true),
     );
@@ -129,12 +163,29 @@ class _ResumeScreenState extends State<ResumeScreen> {
       if (response.statusCode == 200) {
         var responseData = await response.stream.bytesToString();
         var jsonData = json.decode(responseData);
+
         setState(() {
           _resumeReview = jsonData['review'];
           _score = jsonData['score'];
-          _entities = jsonData['entities'];
+          _entities = Map<String, dynamic>.from(jsonData['entities'])
+              .cast<String, List<String>>();
         });
-        await _saveResumeReviewToLocal();
+
+        Map<String, dynamic> filteredEntities =
+            Map<String, dynamic>.from(jsonData['entities']);
+        filteredEntities.removeWhere((key, value) =>
+            key.toLowerCase() == 'name' ||
+            key.toLowerCase() == 'email address' ||
+            key.toLowerCase() == 'email');
+
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(_currentUserId)
+            .update({
+          'resume_review': _resumeReview,
+          'resume_score': _score,
+          'resume_entities': filteredEntities,
+        });
       }
     } catch (e) {
       print("Error connecting to FastAPI: $e");
@@ -149,236 +200,19 @@ class _ResumeScreenState extends State<ResumeScreen> {
   }
 
   Future<void> _openEditEntitiesDialog() async {
-    Map<String, TextEditingController> controllers = {};
-
-    _entities?.forEach((key, value) {
-      controllers[key] = TextEditingController(text: value.join(", "));
-    });
+    if (!_isCurrentUser) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("You can only edit your own resume")),
+      );
+      return;
+    }
 
     showDialog(
       context: context,
       builder: (context) {
-        final workedAsList = _entities?["WORKED AS"] ?? [];
-        final companiesList = _entities?["COMPANIES WORKED AT"] ?? [];
-        final durationList = _entities?["DURATION"] ?? [];
-        final skillsList = _entities?["SKILLS"] ?? [];
-
-        final maxLength = [
-          workedAsList.length,
-          companiesList.length,
-          durationList.length
-        ].reduce((a, b) => a > b ? a : b);
-
-        List<Map<String, TextEditingController>> workExperienceControllers = [];
-
-        for (int i = 0; i < maxLength; i++) {
-          workExperienceControllers.add({
-            "workedAs": TextEditingController(
-                text: i < workedAsList.length ? workedAsList[i] : ""),
-            "company": TextEditingController(
-                text: i < companiesList.length ? companiesList[i] : ""),
-            "duration": TextEditingController(
-                text: i < durationList.length ? durationList[i] : ""),
-          });
-        }
-
-        if (workExperienceControllers.isEmpty) {
-          workExperienceControllers.add({
-            "workedAs": TextEditingController(),
-            "company": TextEditingController(),
-            "duration": TextEditingController(),
-          });
-        }
-
-        // Check if 'YEARS OF EXPERIENCE' is present, otherwise leave it empty
-        TextEditingController yearsOfExperienceController =
-            TextEditingController(
-          text: (_entities?["YEARS OF EXPERIENCE"] != null &&
-                  _entities?["YEARS OF EXPERIENCE"] is List &&
-                  (_entities?["YEARS OF EXPERIENCE"] as List).isNotEmpty)
-              ? (_entities?["YEARS OF EXPERIENCE"] as List)[0]
-              : "",
-        );
-
-        TextEditingController skillController = TextEditingController();
-
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: Text("Edit Resume Info"),
-              content: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TextField(
-                      controller: yearsOfExperienceController,
-                      decoration:
-                          InputDecoration(labelText: "Years of Experience"),
-                      onChanged: (value) {
-                        // Update the years of experience value
-                        _entities?["YEARS OF EXPERIENCE"] = [value];
-                      },
-                    ),
-                    SizedBox(height: 20),
-                    Text("Work Experience:",
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    SizedBox(height: 10),
-                    ...workExperienceControllers.asMap().entries.map((entry) {
-                      int i = entry.key;
-                      var map = entry.value;
-
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text("Work Experience ${i + 1}",
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 16)),
-                          SizedBox(height: 8),
-                          TextField(
-                            controller: map["workedAs"],
-                            decoration: InputDecoration(labelText: "Worked As"),
-                          ),
-                          TextField(
-                            controller: map["company"],
-                            decoration: InputDecoration(labelText: "Company"),
-                          ),
-                          TextField(
-                            controller: map["duration"],
-                            decoration: InputDecoration(labelText: "Duration"),
-                          ),
-                          SizedBox(height: 15),
-                        ],
-                      );
-                    }).toList(),
-                    TextButton.icon(
-                      onPressed: () {
-                        setState(() {
-                          workExperienceControllers.add({
-                            "workedAs": TextEditingController(),
-                            "company": TextEditingController(),
-                            "duration": TextEditingController(),
-                          });
-                        });
-                      },
-                      icon: Icon(Icons.add),
-                      label: Text("Add Work Experience"),
-                    ),
-                    SizedBox(height: 20),
-                    Text("Skills:",
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    SizedBox(height: 10),
-                    Wrap(
-                      spacing: 8.0,
-                      children: skillsList
-                          .map<Widget>((skill) => Chip(
-                                label: Text(skill),
-                                onDeleted: () {
-                                  setState(() {
-                                    skillsList.remove(skill);
-                                  });
-                                },
-                                deleteIconColor: Colors.red,
-                              ))
-                          .toList(),
-                    ),
-                    SizedBox(height: 10),
-                    TextField(
-                      controller: skillController,
-                      decoration: InputDecoration(labelText: "Add Skill"),
-                      onSubmitted: (value) {
-                        if (value.isNotEmpty) {
-                          setState(() {
-                            skillsList.add(value);
-                            skillController.clear();
-                          });
-                        }
-                      },
-                    ),
-                    SizedBox(height: 20),
-                    ..._entities!.keys.where((key) {
-                      final lowerKey = key.toLowerCase();
-                      return lowerKey != "worked as" &&
-                          lowerKey != "duration" &&
-                          lowerKey != "companies worked at" &&
-                          lowerKey != "skills" &&
-                          lowerKey !=
-                              "years of experience"; // Exclude 'years of experience'
-                    }).map((key) {
-                      controllers.putIfAbsent(
-                        key,
-                        () => TextEditingController(
-                            text: _entities?[key]?.join(", ") ?? ""),
-                      );
-                      return TextField(
-                        controller: controllers[key],
-                        decoration: InputDecoration(labelText: key),
-                        maxLines: 2,
-                      );
-                    }).toList(),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () async {
-                    Map<String, List<String>> updatedEntities = {};
-
-                    controllers.forEach((key, controller) {
-                      updatedEntities[key] = controller.text
-                          .split(",")
-                          .map((e) => e.trim())
-                          .where((e) => e.isNotEmpty)
-                          .toList();
-                    });
-
-                    updatedEntities["WORKED AS"] = workExperienceControllers
-                        .map((e) => e["workedAs"]!.text)
-                        .where((text) => text.isNotEmpty)
-                        .toList();
-
-                    updatedEntities["COMPANIES WORKED AT"] =
-                        workExperienceControllers
-                            .map((e) => e["company"]!.text)
-                            .where((text) => text.isNotEmpty)
-                            .toList();
-
-                    updatedEntities["DURATION"] = workExperienceControllers
-                        .map((e) => e["duration"]!.text)
-                        .where((text) => text.isNotEmpty)
-                        .toList();
-
-                    updatedEntities["SKILLS"] = List<String>.from(skillsList);
-
-                    // Ensure that the 'YEARS OF EXPERIENCE' field is updated
-                    updatedEntities["YEARS OF EXPERIENCE"] = [
-                      yearsOfExperienceController.text.trim()
-                    ];
-
-                    String userId = FirebaseAuth.instance.currentUser!.uid;
-                    await FirebaseFirestore.instance
-                        .collection('users')
-                        .doc(userId)
-                        .set(
-                      {'resume_entities': updatedEntities},
-                      SetOptions(merge: true),
-                    );
-
-                    // Save updated data to local storage
-                    final prefs = await SharedPreferences.getInstance();
-                    await prefs.setString(
-                        'resume_entities', jsonEncode(updatedEntities));
-
-                    setState(() {
-                      _entities = updatedEntities;
-                    });
-
-                    Navigator.pop(context);
-                  },
-                  child: Text("Submit"),
-                ),
-              ],
-            );
-          },
+        return EditResumeDialog(
+          entities: _entities!, // Pass entities to the dialog
+          currentUserId: _currentUserId, // Pass the current user ID
         );
       },
     );
@@ -388,163 +222,194 @@ class _ResumeScreenState extends State<ResumeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Resume Upload and Review"),
+        title: Text(_isCurrentUser ? "My Resume" : "User Resume"),
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Upload and Build Resume Buttons
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: ElevatedButton(
-                    onPressed: _isUploading
-                        ? null
-                        : () async {
-                            File? file = await _uploadResume();
-                            if (file != null) {
-                              await uploadResumeForReview(file);
-                              setState(() {}); // Update UI after upload
-                            }
-                          },
-                    child: _isUploading
-                        ? CircularProgressIndicator(color: Colors.deepPurple)
-                        : Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text("Upload Resume"),
-                              SizedBox(width: 5),
-                              Icon(Icons.upload,
-                                  color: Colors.deepPurple, size: 20),
-                            ],
-                          ),
-                  ),
-                ),
-                SizedBox(width: 20),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => BuildResume()),
-                      ).then((_) {
-                        setState(
-                            () {}); // Update UI after returning from BuildResume
-                      });
-                    },
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text("Build Resume"),
-                        SizedBox(width: 3),
-                        Icon(Icons.build, color: Colors.deepPurple, size: 20),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            SizedBox(height: 20),
-
-            // Display Resume Review Score
-            if (_resumeReview != null)
+            if (_isCurrentUser)
               Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(
-                    "Resume Score: $_score/10",
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 10),
-
-                  // Display Review Content
-                  Text(
-                    "Review:",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 5),
-                  ..._resumeReview!.trim().split("\n").map((line) => Padding(
-                        padding: EdgeInsets.only(bottom: 5),
-                        child: Text(
-                          line.trim(),
-                          style: TextStyle(fontSize: 16),
-                        ),
-                      )),
-
-                  SizedBox(height: 20),
-
-                  // Display Entities Section
-                  if (_entities != null) ...[
-                    Text(
-                      "Extracted Entities:",
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 10),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: _entities!.entries.map((entry) {
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "${entry.key}:",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blue,
-                              ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: ElevatedButton(
+                      onPressed: _isUploading
+                          ? null
+                          : () async {
+                              File? file = await _uploadResume();
+                              if (file != null) {
+                                await uploadResumeForReview(file);
+                                setState(() {});
+                              }
+                            },
+                      child: _isUploading
+                          ? CircularProgressIndicator(color: Colors.deepPurple)
+                          : Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text("Upload Resume"),
+                                SizedBox(width: 5),
+                                Icon(Icons.upload,
+                                    color: Colors.deepPurple, size: 20),
+                              ],
                             ),
-                            ...List.generate(entry.value.length, (index) {
-                              return Padding(
-                                padding: EdgeInsets.only(left: 15, top: 3),
-                                child: Text(
-                                  "- ${entry.value[index]}",
-                                  style: TextStyle(fontSize: 16),
-                                ),
-                              );
-                            }),
-                            SizedBox(height: 10),
-                          ],
-                        );
-                      }).toList(),
                     ),
-                  ],
+                  ),
+                  SizedBox(width: 20),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => BuildResume()),
+                        ).then((_) {
+                          _fetchUserResumeData();
+                        });
+                      },
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text("Build Resume"),
+                          SizedBox(width: 3),
+                          Icon(Icons.build, color: Colors.deepPurple, size: 20),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
-
             SizedBox(height: 20),
+            StreamBuilder<DocumentSnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(_currentUserId)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                }
+                if (!snapshot.hasData || !snapshot.data!.exists) {
+                  return Text("No data found");
+                }
 
-            // Show Resume File if Available
-            if (_resumeUrl != null)
-              ListTile(
-                leading:
-                    Icon(Icons.picture_as_pdf, color: Colors.red, size: 40),
-                title: Text("View Uploaded Resume"),
-                subtitle: Text("Tap to open"),
-                onTap: () => _openPdf(_resumeUrl!),
-              )
-            else
-              Text("No resume uploaded yet."),
+                Map<String, dynamic> userData =
+                    snapshot.data!.data() as Map<String, dynamic>;
 
-            // Save Details Button
-            if (_entities != null)
-              Center(
-                child: ElevatedButton(
-                  onPressed: () async {
-                    await _openEditEntitiesDialog();
-                    setState(() {}); // Refresh UI after saving details
-                  },
-                  child: Text("Save Details"),
-                ),
-              ),
+                _resumeUrl = userData['resume_file'];
+                _resumeReview = userData['resume_review'];
+                _score = (userData['resume_score'] ?? 0.0).toDouble();
+
+                if (userData['resume_entities'] != null) {
+                  _entities =
+                      (userData['resume_entities'] as Map<String, dynamic>).map(
+                    (key, value) => MapEntry(
+                        key,
+                        (value as List<dynamic>)
+                            .map((e) => e.toString())
+                            .toList()),
+                  );
+                }
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_resumeReview != null)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Resume Score: $_score/10",
+                            style: TextStyle(
+                                fontSize: 20, fontWeight: FontWeight.bold),
+                          ),
+                          SizedBox(height: 10),
+                          Text(
+                            "Review:",
+                            style: TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                          SizedBox(height: 5),
+                          ..._resumeReview!
+                              .trim()
+                              .split("\n")
+                              .map((line) => Padding(
+                                    padding: EdgeInsets.only(bottom: 5),
+                                    child: Text(
+                                      line.trim(),
+                                      style: TextStyle(fontSize: 16),
+                                    ),
+                                  )),
+                          SizedBox(height: 20),
+                          if (_entities != null) ...[
+                            Text(
+                              "Extracted Entities:",
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            SizedBox(height: 10),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: _entities!.entries.map((entry) {
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "${entry.key}:",
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.blue,
+                                      ),
+                                    ),
+                                    ...List.generate(entry.value.length,
+                                        (index) {
+                                      return Padding(
+                                        padding:
+                                            EdgeInsets.only(left: 15, top: 3),
+                                        child: Text(
+                                          "- ${entry.value[index]}",
+                                          style: TextStyle(fontSize: 16),
+                                        ),
+                                      );
+                                    }),
+                                    SizedBox(height: 10),
+                                  ],
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ],
+                      ),
+                    SizedBox(height: 20),
+                    if (_resumeUrl != null)
+                      ListTile(
+                        leading: Icon(Icons.picture_as_pdf,
+                            color: Colors.red, size: 40),
+                        title: Text("View Uploaded Resume"),
+                        subtitle: Text("Tap to open"),
+                        onTap: () => _openPdf(_resumeUrl!),
+                      )
+                    else
+                      Text("No resume uploaded yet."),
+                    if (_entities != null && _isCurrentUser)
+                      Center(
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            await _openEditEntitiesDialog();
+                            setState(() {}); // Refresh UI after saving details
+                          },
+                          child: Text("Edit Resume Details"),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
           ],
         ),
       ),

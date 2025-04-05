@@ -6,7 +6,7 @@ from io import BytesIO
 import os
 
 # Load your trained model
-model_path = r"E:\Flutter_Projects\freelancing_system\model-20250327T022230Z-001\model\output\model-best"
+model_path = r"E:\Flutter_Projects\model-20250327T022230Z-001\model\output\model-best"
 nlp = spacy.load(model_path)
 
 # FastAPI app instance

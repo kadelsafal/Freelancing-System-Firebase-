@@ -32,7 +32,6 @@ class _TeamTabState extends State<TeamTab> {
     return Container(
       height: MediaQuery.of(context).size.height,
       child: FutureBuilder<List<Map<String, dynamic>>>(
-        // Use FutureBuilder to load teams
         future: _teamsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -61,14 +60,16 @@ class _TeamTabState extends State<TeamTab> {
               : Column(
                   children: [
                     const SizedBox(height: 10),
-                    ElevatedButton(
-                      onPressed: () => showTeamCreationDialog(
-                          context, currentUserId, _refreshTeams),
-                      child: const Text("Add a Team"),
-                    ),
                     Expanded(
-                      child: TeamList(
-                          teams: teams), // Pass the filtered teams here
+                      child: TeamList(teams: teams),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: ElevatedButton(
+                        onPressed: () => showTeamCreationDialog(
+                            context, currentUserId, _refreshTeams),
+                        child: const Text("Add a Team"),
+                      ),
                     ),
                   ],
                 );
