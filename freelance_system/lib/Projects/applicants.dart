@@ -1,58 +1,108 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:freelance_system/providers/userProvider.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class Applicants extends StatefulWidget {
   final Map<String, dynamic> applicant;
-  const Applicants({super.key, required this.applicant});
+  final String projectId;
+
+  const Applicants({
+    super.key,
+    required this.applicant,
+    required this.projectId,
+  });
 
   @override
   State<Applicants> createState() => _ApplicantsState();
 }
 
 class _ApplicantsState extends State<Applicants> {
+  bool isLoading = false;
+  Map<String, dynamic>? projectData;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchProjectData();
+  }
+
+  Future<void> fetchProjectData() async {
+    final doc = await FirebaseFirestore.instance
+        .collection('projects')
+        .doc(widget.projectId)
+        .get();
+
+    if (doc.exists) {
+      setState(() {
+        projectData = doc.data();
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    String name = widget.applicant['name'] ?? 'Unknown';
+    String applicantName = widget.applicant['name'] ?? 'Unknown';
     String description =
         widget.applicant['description'] ?? 'No description provided';
     List<String> skills = List<String>.from(widget.applicant['skills'] ?? []);
     String uploadedFile = widget.applicant['uploadedFile'] ?? '';
     String userId = widget.applicant['userId'] ?? 'Unknown';
 
+    if (projectData == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    String appointedFreelancerID = projectData!['appointedFreelancerID'] ?? '';
+
+    // Determine button label and style
+    String buttonText = "Appoint";
+    Color buttonColor = Colors.green;
+    Color textColor = Colors.white;
+    bool isButtonDisabled = false;
+    FontWeight textWeight = FontWeight.normal;
+
+    if (appointedFreelancerID == userId) {
+      buttonText = "Appointed";
+      isButtonDisabled = true;
+    } else if (appointedFreelancerID.isNotEmpty &&
+        appointedFreelancerID != userId) {
+      buttonText = "Rejected";
+      isButtonDisabled = true;
+
+      textColor = const Color.fromARGB(255, 255, 31, 31);
+      textWeight = FontWeight.bold;
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: Text("Applicant Details"),
+        title: const Text("Applicant Details"),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Name
             Text(
-              name,
-              style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.deepPurple),
+              applicantName,
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.deepPurple,
+              ),
             ),
-            SizedBox(height: 10),
-
-            // Description
-            Text(
-              "Description",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 5),
-            Text(description, style: TextStyle(fontSize: 16)),
-            SizedBox(height: 10),
-
-            // Skills
-            Text(
-              "Skills",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 5),
+            const SizedBox(height: 10),
+            const Text("Description",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 5),
+            Text(description, style: const TextStyle(fontSize: 16)),
+            const SizedBox(height: 10),
+            const Text("Skills",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 5),
             Wrap(
               spacing: 6.0,
               children: skills
@@ -62,28 +112,26 @@ class _ApplicantsState extends State<Applicants> {
                       ))
                   .toList(),
             ),
-            SizedBox(height: 10),
-
-            // Uploaded File Preview
+            const SizedBox(height: 10),
             if (uploadedFile.isNotEmpty) ...[
-              Text(
+              const Text(
                 "Uploaded File",
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               GestureDetector(
                 onTap: () async {
-                  if (await canLaunchUrl(Uri.parse(uploadedFile))) {
-                    await launchUrl(Uri.parse(uploadedFile),
-                        mode: LaunchMode.externalApplication);
+                  final uri = Uri.parse(uploadedFile);
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("Could not open file")),
+                      const SnackBar(content: Text("Could not open file")),
                     );
                   }
                 },
                 child: Container(
-                  padding: EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: Colors.deepPurple.shade50,
                     borderRadius: BorderRadius.circular(10),
@@ -91,7 +139,7 @@ class _ApplicantsState extends State<Applicants> {
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
+                    children: const [
                       Icon(Icons.picture_as_pdf, color: Colors.red, size: 28),
                       Expanded(
                         child: Text(
@@ -109,10 +157,58 @@ class _ApplicantsState extends State<Applicants> {
                 ),
               ),
             ],
-            SizedBox(height: 20),
+            const Spacer(),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ElevatedButton(
+                onPressed: isButtonDisabled || isLoading
+                    ? null
+                    : () => appointFreelancer(applicantName, userId),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: buttonColor,
+                  minimumSize: const Size(double.infinity, 48),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
+                child: isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : Text(
+                        buttonText,
+                        style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: textWeight,
+                            color: textColor),
+                      ),
+              ),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> appointFreelancer(
+      String freelancerName, String freelancerId) async {
+    setState(() => isLoading = true);
+    try {
+      await FirebaseFirestore.instance
+          .collection('projects')
+          .doc(widget.projectId)
+          .update({
+        'appointedFreelancer': freelancerName,
+        'appointedFreelancerID': freelancerId,
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Freelancer Appointed!")),
+      );
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: ${e.toString()}")),
+      );
+    } finally {
+      setState(() => isLoading = false);
+    }
   }
 }

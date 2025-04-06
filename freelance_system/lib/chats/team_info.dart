@@ -54,11 +54,17 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
         // Get the rating based on years of experience
         double experienceRating = getExperienceRating(yearsOfExperience);
 
+        // Get the first workedAs role if available
+        String workedAs = userProvider.workedAs.isNotEmpty
+            ? userProvider.workedAs[0]
+            : 'Not specified';
+
         var member = {
           'id': memberId,
           'fullName': userProvider.userName,
           'isAdmin': memberId == adminId,
           'experienceRating': experienceRating,
+          'workedAs': workedAs,
         };
 
         fetchedMembers.add(member);
@@ -168,6 +174,17 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
                               SizedBox(height: 8),
                               // Displaying rating as stars
                               _buildRatingStars(experienceRating),
+                              SizedBox(height: 6),
+                              Text(
+                                member['workedAs'],
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontStyle: FontStyle.italic,
+                                  color:
+                                      isAdmin ? Colors.white70 : Colors.black54,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
                               SizedBox(height: 25),
                               Container(
                                 width: 100,

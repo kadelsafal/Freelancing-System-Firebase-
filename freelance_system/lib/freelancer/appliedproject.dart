@@ -15,6 +15,7 @@ class Appliedproject extends StatefulWidget {
 
 class _AppliedprojectState extends State<Appliedproject> {
   bool isExpanded = false;
+  Set<String> dismissedProjectIds = {};
   String _getWrappedTitle(String text, int wordsPerLine) {
     List<String> words = text.split(' ');
     List<String> wrappedLines = [];
@@ -65,8 +66,11 @@ class _AppliedprojectState extends State<Appliedproject> {
                   var filteredProjects = projects.where((project) {
                     List<dynamic> appliedIndividuals =
                         project['appliedIndividuals'] ?? [];
-                    return appliedIndividuals
+                    bool hasApplied = appliedIndividuals
                         .any((applicant) => applicant['name'] == currentName);
+                    String projectId = project['projectId'] ?? '';
+                    return hasApplied &&
+                        !dismissedProjectIds.contains(projectId);
                   }).toList();
 
                   // If no projects found
@@ -103,6 +107,8 @@ class _AppliedprojectState extends State<Appliedproject> {
                             project['appliedIndividuals'] ?? [];
                         bool hasUserApplied = appliedIndividuals.any(
                             (applicant) => applicant['name'] == currentName);
+                        String? appointedFreelancer =
+                            project['appointedFreelancer'];
 
                         if (!hasUserApplied) {
                           return SizedBox
@@ -110,6 +116,18 @@ class _AppliedprojectState extends State<Appliedproject> {
                         }
 
                         int appliedCount = appliedIndividuals.length;
+
+                        // Determine button label
+                        String buttonLabel = "Applied";
+                        bool isRejected = false;
+                        if (appointedFreelancer != null) {
+                          if (appointedFreelancer == currentName) {
+                            buttonLabel = "Appointed";
+                          } else {
+                            buttonLabel = "Rejected";
+                            isRejected = true;
+                          }
+                        }
 
                         return Padding(
                           padding: EdgeInsets.all(7),
@@ -160,6 +178,21 @@ class _AppliedprojectState extends State<Appliedproject> {
                                                   255, 255, 19, 19),
                                               fontSize: 13),
                                         ),
+                                        SizedBox(width: 10),
+                                        if (isRejected)
+                                          Align(
+                                            alignment: Alignment.centerRight,
+                                            child: IconButton(
+                                              icon: Icon(Icons.delete,
+                                                  color: Colors.red),
+                                              onPressed: () {
+                                                setState(() {
+                                                  dismissedProjectIds
+                                                      .add(projectId);
+                                                });
+                                              },
+                                            ),
+                                          ),
                                       ],
                                     ),
                                     Text(
@@ -260,9 +293,7 @@ class _AppliedprojectState extends State<Appliedproject> {
                                           child: Padding(
                                             padding: const EdgeInsets.all(4.0),
                                             child: Text(
-                                              hasUserApplied
-                                                  ? "Applied"
-                                                  : "Apply Now",
+                                              buttonLabel,
                                               style: TextStyle(
                                                 color: Colors
                                                     .white, // Set the text color to white

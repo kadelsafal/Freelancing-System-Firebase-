@@ -187,51 +187,121 @@ class _ProjectviewState extends State<Projectview>
                         ],
                       ),
                     ),
-                    SizedBox(
-                      height: 250,
-                      child: TabBarView(
-                        controller: _tabController,
-                        children: [
-                          AllApplicants(applicants: applicants),
-                          Recommended(recommended: recommended),
-                          Freshers(freshers: freshers),
-                        ],
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        minHeight: 150,
+                      ),
+                      child: SizedBox(
+                        height: 450, // max height
+                        child: TabBarView(
+                          controller: _tabController,
+                          children: [
+                            AllApplicants(
+                              projectId: widget.projectId,
+                              applicants: project['appliedIndividuals'],
+                              appointedFreelancer:
+                                  project['appointedFreelancer'] ?? '',
+                            ),
+                            Recommended(recommended: recommended),
+                            Freshers(freshers: freshers),
+                          ],
+                        ),
                       ),
                     ),
                   ],
                   if (appoint.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text("Appointed Freelancer",
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              CircleAvatar(
-                                backgroundColor: Colors.purple,
-                                child: Text(
-                                  appoint.isNotEmpty ? appoint[0] : '?',
-                                  style: const TextStyle(
-                                      color: Colors.white, fontSize: 18),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Text(
-                                appoint,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                    const Divider(
+                      thickness: 1.5,
+                      color: Colors.grey,
+                      height: 40,
                     ),
+
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text("Appointed Freelancer",
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              backgroundColor: Colors.purple,
+                              child: Text(
+                                appoint.isNotEmpty ? appoint[0] : '?',
+                                style: const TextStyle(
+                                    color: Colors.white, fontSize: 18),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              appoint,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const Spacer(),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        Center(
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              // Confirm before removing
+                              bool confirm = await showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text("Remove Freelancer"),
+                                  content: const Text(
+                                      "Are you sure you want to remove the appointed freelancer?"),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, false),
+                                      child: const Text("Cancel"),
+                                    ),
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, true),
+                                      child: const Text("Remove"),
+                                    ),
+                                  ],
+                                ),
+                              );
+
+                              if (confirm) {
+                                // Clear appointed freelancer info
+                                await FirebaseFirestore.instance
+                                    .collection('projects')
+                                    .doc(widget.projectId)
+                                    .update({
+                                  'appointedFreelancer': '',
+                                  'appointedFreelancerID': '',
+                                });
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content:
+                                          Text("Appointed freelancer removed")),
+                                );
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red.shade600,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            child: const Text("Remove Freelancer"),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             );
