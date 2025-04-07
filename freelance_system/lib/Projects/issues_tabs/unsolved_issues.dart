@@ -67,7 +67,6 @@ class _UnsolvedIssuesState extends State<UnsolvedIssues> {
                   }
                 });
                 return ListView(
-                  reverse: true,
                   controller: _scrollController,
                   shrinkWrap: true, // Prevent infinite height
                   children: issueSnapshot.data!.docs.map((doc) {
