@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freelance_system/Projects/applicantstab.dart';
+import 'package:freelance_system/Projects/appointed_freelancer.dart';
 import 'package:freelance_system/Projects/freshertab.dart';
 import 'package:freelance_system/Projects/recommendtab.dart';
 import 'package:intl/intl.dart';
@@ -16,11 +17,18 @@ class Projectview extends StatefulWidget {
 class _ProjectviewState extends State<Projectview>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  bool _freelancerRemoved = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose(); // ✅ Safe
+    super.dispose();
   }
 
   @override
@@ -54,7 +62,12 @@ class _ProjectviewState extends State<Projectview>
             double budget = project['budget'] ?? 0;
             String deadline = project['deadline'] ?? '';
             int appliedCount = applicants.length;
-            String status = project['status'] ?? 'Pending'; // Add status check
+            String status = project['status'] ?? 'Pending';
+
+            // Reset _freelancerRemoved if a new freelancer is appointed again
+            if (appoint.isNotEmpty && _freelancerRemoved) {
+              _freelancerRemoved = false;
+            }
 
             return SingleChildScrollView(
               child: Column(
@@ -170,7 +183,6 @@ class _ProjectviewState extends State<Projectview>
                       ],
                     ),
                   ),
-                  // Show TabBar only if the project is neither pending nor completed
                   if (status != 'Pending' && status != 'Completed') ...[
                     SizedBox(
                       height: 50,
@@ -179,7 +191,7 @@ class _ProjectviewState extends State<Projectview>
                         labelColor: Colors.deepPurple,
                         unselectedLabelColor: Colors.grey,
                         labelPadding: const EdgeInsets.symmetric(horizontal: 4),
-                        isScrollable: false, // Ensures full names fit
+                        isScrollable: false,
                         tabs: const [
                           Tab(text: "All Applicants"),
                           Tab(text: "Recommend"),
@@ -192,7 +204,7 @@ class _ProjectviewState extends State<Projectview>
                         minHeight: 150,
                       ),
                       child: SizedBox(
-                        height: 450, // max height
+                        height: 450,
                         child: TabBarView(
                           controller: _tabController,
                           children: [
@@ -209,99 +221,25 @@ class _ProjectviewState extends State<Projectview>
                       ),
                     ),
                   ],
-                  if (appoint.isNotEmpty)
+                  if (appoint.isNotEmpty && !_freelancerRemoved) ...[
                     const Divider(
                       thickness: 1.5,
                       color: Colors.grey,
                       height: 40,
                     ),
-
-                  Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text("Appointed Freelancer",
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            CircleAvatar(
-                              backgroundColor: Colors.purple,
-                              child: Text(
-                                appoint.isNotEmpty ? appoint[0] : '?',
-                                style: const TextStyle(
-                                    color: Colors.white, fontSize: 18),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Text(
-                              appoint,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const Spacer(),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        Center(
-                          child: ElevatedButton(
-                            onPressed: () async {
-                              // Confirm before removing
-                              bool confirm = await showDialog(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: const Text("Remove Freelancer"),
-                                  content: const Text(
-                                      "Are you sure you want to remove the appointed freelancer?"),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(context, false),
-                                      child: const Text("Cancel"),
-                                    ),
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(context, true),
-                                      child: const Text("Remove"),
-                                    ),
-                                  ],
-                                ),
-                              );
-
-                              if (confirm) {
-                                // Clear appointed freelancer info
-                                await FirebaseFirestore.instance
-                                    .collection('projects')
-                                    .doc(widget.projectId)
-                                    .update({
-                                  'appointedFreelancer': '',
-                                  'appointedFreelancerID': '',
-                                });
-
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                      content:
-                                          Text("Appointed freelancer removed")),
-                                );
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red.shade600,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            child: const Text("Remove Freelancer"),
-                          ),
-                        ),
-                      ],
+                    Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: AppointedFreelancer(
+                        appointedName: appoint,
+                        projectId: widget.projectId,
+                        onFreelancerRemoved: () {
+                          setState(() {
+                            _freelancerRemoved = true;
+                          });
+                        },
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             );

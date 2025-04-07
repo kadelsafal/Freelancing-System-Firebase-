@@ -37,7 +37,9 @@ class _IssuesTabState extends State<IssuesTab> {
         .add({
       'author': author, // Use current logged-in user's name
       'issueText': issueText,
+
       'status': _selectedStatus,
+      'role': 'freelancer',
       'timestamp': timestamp,
     });
 

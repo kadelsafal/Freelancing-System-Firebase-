@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:freelance_system/freelancer/Details/tabs/issues_tab.dart';
-import 'package:freelance_system/freelancer/Details/tabs/milestone_tab.dart';
-import 'package:freelance_system/freelancer/Details/tabs/status_tab.dart';
+
+import '../../Projects/tabs/issues_tab.dart';
+import '../../Projects/tabs/milestone_tab.dart';
+import '../../Projects/tabs/status_tab.dart';
 
 class AppointedFreelancerMessage extends StatefulWidget {
   final String projectId;
@@ -63,11 +64,13 @@ class _AppointedFreelancerMessageState extends State<AppointedFreelancerMessage>
                 children: [
                   IssuesTab(
                     projectId: widget.projectId,
+                    role: "freelancer",
                   ),
                   StatusTab(
                     projectId: widget.projectId,
+                    role: "freelancer",
                   ),
-                  const MilestoneTab(),
+                  MilestoneTab(),
                 ],
               ),
             ),
