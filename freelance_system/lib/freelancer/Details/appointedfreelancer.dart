@@ -45,9 +45,9 @@ class _AppointedFreelancerMessageState extends State<AppointedFreelancerMessage>
               labelPadding: const EdgeInsets.symmetric(horizontal: 4),
               isScrollable: false, // Ensures full names fit
               tabs: const [
+                Tab(text: "Milestones"),
                 Tab(text: "Issues"),
                 Tab(text: "Status"),
-                Tab(text: "Milestones"),
               ],
             ),
           ),
@@ -58,10 +58,11 @@ class _AppointedFreelancerMessageState extends State<AppointedFreelancerMessage>
               minHeight: 350,
             ),
             child: SizedBox(
-              height: 650, // max height for TabBarView
+              height: 750, // max height for TabBarView
               child: TabBarView(
                 controller: _tabController,
                 children: [
+                  MilestoneTab(projectId: widget.projectId),
                   IssuesTab(
                     projectId: widget.projectId,
                     role: "freelancer",
@@ -70,7 +71,6 @@ class _AppointedFreelancerMessageState extends State<AppointedFreelancerMessage>
                     projectId: widget.projectId,
                     role: "freelancer",
                   ),
-                  MilestoneTab(),
                 ],
               ),
             ),

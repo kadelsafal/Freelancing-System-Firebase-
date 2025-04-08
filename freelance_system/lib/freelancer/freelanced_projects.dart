@@ -20,7 +20,7 @@ class _FreelancedProjectsState extends State<FreelancedProjects>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -38,13 +38,11 @@ class _FreelancedProjectsState extends State<FreelancedProjects>
           child: TabBar(
             controller: _tabController,
             isScrollable: true,
-            labelPadding: const EdgeInsets.symmetric(horizontal: 8),
             indicatorColor: Colors.deepPurple,
             tabs: const [
               Tab(text: "Projects"),
               Tab(text: "Recommendation"),
               Tab(text: "Applied Projects"),
-              Tab(text: "Team Building")
             ],
           ),
         ),
@@ -66,9 +64,6 @@ class _FreelancedProjectsState extends State<FreelancedProjects>
                   ),
                   SingleChildScrollView(
                     child: Appliedproject(),
-                  ),
-                  SingleChildScrollView(
-                    child: Teambuilding(),
                   ),
                 ],
               ),

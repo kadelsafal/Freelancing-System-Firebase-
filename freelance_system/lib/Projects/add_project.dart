@@ -71,6 +71,7 @@ class _AddProjectState extends State<AddProject> {
       String status = 'New'; // Initial Project Staus
       String? appointedFreelancerId;
       String? appointedFreelancer;
+
       List<String> appliedIndividuals = [];
 
       //Save data to Firebase
@@ -88,6 +89,7 @@ class _AddProjectState extends State<AddProject> {
         'status': status,
         'appointedFreelancerId': appointedFreelancerId,
         'appointedFreelancer': appointedFreelancer,
+
         'appliedIndividuals': appliedIndividuals,
         'createdAt': FieldValue.serverTimestamp(),
         'deadline': deadline

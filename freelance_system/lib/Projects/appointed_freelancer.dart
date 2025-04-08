@@ -93,7 +93,7 @@ class _AppointedFreelancerState extends State<AppointedFreelancer>
                     .doc(widget.projectId)
                     .update({
                   'appointedFreelancer': '',
-                  'appointedFreelancerID': '',
+                  'appointedFreelancerId': '',
                 });
 
                 widget.onFreelancerRemoved();
@@ -128,19 +128,20 @@ class _AppointedFreelancerState extends State<AppointedFreelancer>
             labelPadding: const EdgeInsets.symmetric(horizontal: 4),
             isScrollable: false,
             tabs: const [
+              Tab(text: "Milestone"),
               Tab(text: "Issues"),
               Tab(text: "Status"),
-              Tab(text: "Milestone"),
             ],
           ),
         ),
         ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 150),
           child: SizedBox(
-            height: 750,
+            height: 900,
             child: TabBarView(
               controller: _tabController,
               children: [
+                MilestoneTab(projectId: widget.projectId),
                 IssuesTab(
                   projectId: widget.projectId,
                   role: 'client',
@@ -149,7 +150,6 @@ class _AppointedFreelancerState extends State<AppointedFreelancer>
                   projectId: widget.projectId,
                   role: 'Client',
                 ),
-                const MilestoneTab(),
               ],
             ),
           ),

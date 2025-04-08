@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:freelance_system/Projects/tabs/fullscreenimage.dart';
+
 import 'package:provider/provider.dart';
 
 import '../../providers/userProvider.dart';
@@ -78,16 +78,6 @@ class _AllIssuesState extends State<AllIssues> {
                     List<String> imageUrls = issueData['imageUrls'] != null
                         ? List<String>.from(issueData['imageUrls'])
                         : [];
-
-                    // Fullscreen image viewing functionality
-                    void _showFullScreenImage(String url) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => FullScreenImage(url: url),
-                        ),
-                      );
-                    }
 
                     // Handle status change
                     void _changeStatus(String status) {
@@ -187,20 +177,19 @@ class _AllIssuesState extends State<AllIssues> {
                                     runSpacing: 10,
                                     children: imageUrls.map((url) {
                                       return GestureDetector(
-                                        onTap: () => _showFullScreenImage(url),
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            border: Border.all(
-                                                color: Colors.black, width: 2),
-                                            borderRadius:
-                                                BorderRadius.circular(4),
-                                          ),
-                                          child: Image.network(
-                                            url,
-                                            width: 120,
-                                            height: 60,
-                                            fit: BoxFit.cover,
-                                          ),
+                                        onTap: () {
+                                          showDialog(
+                                            context: context,
+                                            builder: (context) => Dialog(
+                                              child: Image.network(
+                                                  url), // use the individual url
+                                            ),
+                                          );
+                                        },
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Image.network(url,
+                                              height: 100), // display thumbnail
                                         ),
                                       );
                                     }).toList(),

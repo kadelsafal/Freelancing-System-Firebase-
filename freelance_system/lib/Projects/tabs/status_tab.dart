@@ -266,44 +266,62 @@ class _StatusTabState extends State<StatusTab> {
                                           Text(statusData['text']),
                                           if (statusData['images'] != null &&
                                               statusData['images'].isNotEmpty)
-                                            SizedBox(
-                                              height: 100,
-                                              child: Wrap(
-                                                direction: Axis.horizontal,
-                                                children: List.generate(
-                                                    statusData['images'].length,
-                                                    (index) {
-                                                  String imageUrl =
+                                            Column(
+                                              children: [
+                                                SizedBox(
+                                                  height: 100,
+                                                  child: Wrap(
+                                                    direction: Axis.horizontal,
+                                                    children: List.generate(
                                                       statusData['images']
-                                                          [index];
-                                                  return GestureDetector(
-                                                    onTap: () {
-                                                      showDialog(
-                                                        context: context,
-                                                        builder: (context) =>
-                                                            Dialog(
-                                                          child: Image.network(
-                                                              imageUrl),
-                                                        ),
-                                                      );
-                                                    },
-                                                    child: Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              8.0),
-                                                      child: Image.network(
-                                                          imageUrl,
-                                                          height: 100),
+                                                          .length,
+                                                      (index) {
+                                                        String imageUrl =
+                                                            statusData['images']
+                                                                [index];
+                                                        return GestureDetector(
+                                                          onTap: () {
+                                                            showDialog(
+                                                              context: context,
+                                                              builder:
+                                                                  (context) =>
+                                                                      Dialog(
+                                                                child: Image
+                                                                    .network(
+                                                                        imageUrl),
+                                                              ),
+                                                            );
+                                                          },
+                                                          child: Padding(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .all(
+                                                                    8.0), // Smaller padding
+                                                            child:
+                                                                Image.network(
+                                                                    imageUrl,
+                                                                    height:
+                                                                        100),
+                                                          ),
+                                                        );
+                                                      },
                                                     ),
-                                                  );
-                                                }),
-                                              ),
+                                                  ),
+                                                ),
+                                                const SizedBox(
+                                                    height:
+                                                        22), // Spacing between images and timestamp
+                                              ],
                                             ),
-                                          Text(
-                                            "${(statusData['timestamp'] as Timestamp).toDate()}",
-                                            style: const TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.grey),
+                                          Padding(
+                                            padding:
+                                                const EdgeInsets.only(top: 4.0),
+                                            child: Text(
+                                              "${(statusData['timestamp'] as Timestamp).toDate()}",
+                                              style: const TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.grey),
+                                            ),
                                           ),
                                         ],
                                       ),

@@ -56,7 +56,7 @@ class _ApplicantsState extends State<Applicants> {
       );
     }
 
-    String appointedFreelancerID = projectData!['appointedFreelancerID'] ?? '';
+    String appointedFreelancerID = projectData!['appointedFreelancerId'] ?? '';
 
     // Determine button label and style
     String buttonText = "Appoint";

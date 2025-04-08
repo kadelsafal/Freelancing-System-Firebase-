@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:freelance_system/freelancer/Details/applysheet.dart';
+import 'package:freelance_system/freelancer/Details/applyteam.dart';
 import 'package:freelance_system/freelancer/Details/appointedfreelancer.dart';
 import 'package:freelance_system/providers/userProvider.dart';
 import 'package:intl/intl.dart';
@@ -236,29 +237,88 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                             : () {
                                 showModalBottomSheet(
                                   context: context,
-                                  isScrollControlled: true,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.vertical(
+                                        top: Radius.circular(20)),
+                                  ),
                                   builder: (BuildContext context) {
-                                    return ApplyModalSheet(
-                                        projectId: projectId);
+                                    return Padding(
+                                      padding: const EdgeInsets.all(20.0),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            "Choose how to apply",
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          SizedBox(height: 20),
+                                          ElevatedButton.icon(
+                                            onPressed: () {
+                                              Navigator.pop(
+                                                  context); // Close the bottom sheet
+                                              showModalBottomSheet(
+                                                context: context,
+                                                isScrollControlled: true,
+                                                builder:
+                                                    (BuildContext context) {
+                                                  return ApplyModalSheet(
+                                                      projectId: projectId);
+                                                },
+                                              );
+                                            },
+                                            icon: Icon(Icons.person),
+                                            label: Text("Apply Solo"),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor:
+                                                  Colors.deepPurple,
+                                              foregroundColor: Colors.white,
+                                              minimumSize:
+                                                  Size(double.infinity, 45),
+                                            ),
+                                          ),
+                                          SizedBox(height: 10),
+                                          ElevatedButton.icon(
+                                            onPressed: () {
+                                              Navigator.pop(
+                                                  context); // Close the bottom sheet
+                                              // Show team application sheet or handle accordingly
+                                              showModalBottomSheet(
+                                                context: context,
+                                                isScrollControlled: true,
+                                                builder:
+                                                    (BuildContext context) {
+                                                  return ApplyWithTeamModalSheet(
+                                                      projectId: projectId);
+                                                },
+                                              );
+                                            },
+                                            icon: Icon(Icons.group),
+                                            label: Text("Apply with Team"),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor:
+                                                  Colors.deepPurple.shade100,
+                                              foregroundColor:
+                                                  Colors.deepPurple,
+                                              minimumSize:
+                                                  Size(double.infinity, 45),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
                                   },
                                 );
                               },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: isButtonDisabled
-                              ? Colors.grey
-                              : Colors.deepPurple,
-                          foregroundColor:
-                              isButtonDisabled ? Colors.black : Colors.white,
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 10),
-                        ),
                         child: Text(buttonText),
                       ),
                     ),
                     if (applicationStatus == "appointed")
                       ConstrainedBox(
                         // Add explicit constraints
-                        constraints: BoxConstraints(maxHeight: 700),
+                        constraints: BoxConstraints(maxHeight: 800),
                         child: AppointedFreelancerMessage(
                           projectId: projectId,
                         ),

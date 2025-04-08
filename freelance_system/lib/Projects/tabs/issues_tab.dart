@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:freelance_system/Projects/issues_tabs/all_issues.dart';
 import 'package:freelance_system/Projects/issues_tabs/solved_issues.dart';
-import 'package:freelance_system/Projects/tabs/fullscreenimage.dart';
+
 import 'package:freelance_system/providers/userProvider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;

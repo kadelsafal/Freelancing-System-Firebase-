@@ -68,6 +68,7 @@ dependencies:
   chewie: ^1.10.0
   appinio_video_player: ^1.2.2
   syncfusion_flutter_pdf: ^28.2.11
+  percent_indicator: ^4.2.4
  
   
  
