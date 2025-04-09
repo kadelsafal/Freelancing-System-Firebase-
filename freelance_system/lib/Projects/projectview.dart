@@ -31,6 +31,12 @@ class _ProjectviewState extends State<Projectview>
     super.dispose();
   }
 
+  void onAppointmentRemoved() {
+    setState(() {
+      _freelancerRemoved = true;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -57,7 +63,9 @@ class _ProjectviewState extends State<Projectview>
                 applicants.where((a) => a['experience'] == 'Fresher').toList();
             List<dynamic> recommended =
                 applicants.where((a) => a['recommended'] == true).toList();
-            String appoint = project['appointedFreelancer'] ?? '';
+            String appointFreelancer = project['appointedFreelancer'] ?? '';
+            String appointTeam = project['appointedTeam'] ?? '';
+
             String title = project['title'] ?? '';
             String description = project['description'] ?? '';
             double budget = project['budget'] ?? 0;
@@ -66,9 +74,11 @@ class _ProjectviewState extends State<Projectview>
                 applicants.length + appliedTeams.length; // Combined count
             String status = project['status'] ?? 'Pending';
 
-            // Reset _freelancerRemoved if a new freelancer is appointed again
-            if (appoint.isNotEmpty && _freelancerRemoved) {
-              _freelancerRemoved = false;
+            // Reset _freelancerRemoved if a new freelancer or team is appointed
+            if (appointFreelancer.isNotEmpty || appointTeam.isNotEmpty) {
+              if (_freelancerRemoved) {
+                _freelancerRemoved = false;
+              }
             }
 
             return SingleChildScrollView(
@@ -228,7 +238,8 @@ class _ProjectviewState extends State<Projectview>
                       ),
                     ),
                   ],
-                  if (appoint.isNotEmpty && !_freelancerRemoved) ...[
+                  if (appointFreelancer.isNotEmpty ||
+                      appointTeam.isNotEmpty && !_freelancerRemoved) ...[
                     const Divider(
                       thickness: 1.5,
                       color: Colors.grey,
@@ -237,7 +248,9 @@ class _ProjectviewState extends State<Projectview>
                     Padding(
                       padding: const EdgeInsets.all(12),
                       child: AppointedFreelancer(
-                        appointedName: appoint,
+                        appointedName: appointFreelancer.isNotEmpty
+                            ? appointFreelancer
+                            : appointTeam,
                         projectId: widget.projectId,
                         onFreelancerRemoved: () {
                           setState(() {
@@ -245,7 +258,7 @@ class _ProjectviewState extends State<Projectview>
                           });
                         },
                       ),
-                    ),
+                    )
                   ],
                 ],
               ),

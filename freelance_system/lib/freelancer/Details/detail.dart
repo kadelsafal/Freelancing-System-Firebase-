@@ -18,6 +18,8 @@ class ProjectDetailsScreen extends StatefulWidget {
 class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
   bool isExpanded = false;
   String applicationStatus = "none";
+  Future<bool>?
+      isUserInAppointedTeamFuture; // Added a Future variable for the appointed team check
 
   String _getWrappedTitle(String text, int wordsPerLine) {
     List<String> words = text.split(' ');
@@ -31,6 +33,29 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
     }
 
     return wrappedLines.join('\n');
+  }
+
+  Future<bool> isUserInAppointedTeam(
+      String appointedTeamId, String currentUserId) async {
+    try {
+      var teamDoc = await FirebaseFirestore.instance
+          .collection('teams')
+          .doc(appointedTeamId)
+          .get();
+
+      if (teamDoc.exists) {
+        List<dynamic> members = teamDoc['members'] ?? [];
+        for (var member in members) {
+          if (member is Map<String, dynamic> &&
+              member['userId'] == currentUserId) {
+            return true; // User is a member of the appointed team
+          }
+        }
+      }
+    } catch (e) {
+      print("Error fetching team members: $e");
+    }
+    return false; // User is not in the appointed team
   }
 
   @override
@@ -71,7 +96,17 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
             String appointedFreelancer = project['appointedFreelancer'] ?? '';
             applicationStatus = "none"; // Reset
 
-// Check if applied as a team
+            // Check if appointed
+            if (appointedFreelancer == currentName) {
+              applicationStatus = "appointed";
+            } else if (project['appointedTeamId'] != null) {
+              // Check if the user is in the appointed team
+              isUserInAppointedTeamFuture = isUserInAppointedTeam(
+                  project['appointedTeamId'],
+                  currentuserId); // Save future for FutureBuilder
+            }
+
+            // Check if applied as a team
             List<dynamic> appliedTeams = project['appliedTeams'] ?? [];
             for (var team in appliedTeams) {
               if (team != null && team is Map<String, dynamic>) {
@@ -81,12 +116,17 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                     member['userId'] == currentuserId);
                 if (isInTeam) {
                   applicationStatus = "applied_team";
+                  // Now check if this team is appointed
+                  if (project['appointedTeamId'] == team['teamId']) {
+                    // Team is appointed, so display AppointedFreelancerMessage
+                    applicationStatus = "team_appointed";
+                  }
                   break;
                 }
               }
             }
 
-// Check if applied solo
+            // Check if applied solo
             for (var applicant in appliedIndividuals) {
               if (applicant != null && applicant is Map<String, dynamic>) {
                 if (applicant.containsKey('name') &&
@@ -98,19 +138,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
               }
             }
 
-// Check if appointed
-            if (appointedFreelancer == currentName ||
-                appliedTeams.any((team) =>
-                    team is Map<String, dynamic> &&
-                    team['teamName'] == appointedFreelancer &&
-                    team['members'] != null &&
-                    (team['members'] as List).any((member) =>
-                        member is Map<String, dynamic> &&
-                        member['userId'] == currentuserId))) {
-              applicationStatus = "appointed";
-            }
-
-// Determine button text and state
+            // Determine button text and state
             String buttonText;
             bool isButtonDisabled;
 
@@ -131,6 +159,10 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                 buttonText = "Applied as Team";
                 isButtonDisabled = true;
                 break;
+              case "team_appointed":
+                buttonText = "Appointed as Team Member";
+                isButtonDisabled = true;
+                break;
               case "none":
               default:
                 buttonText = "Apply Now";
@@ -144,6 +176,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Your existing UI code...
                     Text(
                       title,
                       style: TextStyle(
@@ -307,7 +340,6 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                                             onPressed: () {
                                               Navigator.pop(
                                                   context); // Close the bottom sheet
-                                              // Show team application sheet or handle accordingly
                                               showModalBottomSheet(
                                                 context: context,
                                                 isScrollControlled: true,
@@ -338,9 +370,9 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                         child: Text(buttonText),
                       ),
                     ),
-                    if (applicationStatus == "appointed")
+                    if (applicationStatus == "appointed" ||
+                        applicationStatus == "team_appointed")
                       ConstrainedBox(
-                        // Add explicit constraints
                         constraints: BoxConstraints(maxHeight: 800),
                         child: AppointedFreelancerMessage(
                           projectId: projectId,

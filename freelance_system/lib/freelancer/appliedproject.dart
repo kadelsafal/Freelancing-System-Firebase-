@@ -146,7 +146,7 @@ class _AppliedprojectState extends State<Appliedproject> {
                         int appliedCount =
                             appliedIndividuals.length + appliedTeamCount;
 
-                        // Determine button label
+                        // Determine button label based on appointment status
                         String buttonLabel = "Applied";
                         bool isRejected = false;
                         if (appointedFreelancer != null) {
@@ -156,6 +156,19 @@ class _AppliedprojectState extends State<Appliedproject> {
                             buttonLabel = "Rejected";
                             isRejected = true;
                           }
+                        }
+
+                        // Check if current user is part of a team
+                        bool isUserPartOfTeam = false;
+                        appliedTeams.forEach((team) {
+                          List<dynamic> members = team['members'] ?? [];
+                          isUserPartOfTeam = members.any(
+                              (member) => member['fullName'] == currentName);
+                        });
+
+                        if (isUserPartOfTeam) {
+                          buttonLabel =
+                              "Appointed"; // User is part of an appointed team
                         }
 
                         return Padding(
