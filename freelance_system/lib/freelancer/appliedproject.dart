@@ -63,11 +63,24 @@ class _AppliedprojectState extends State<Appliedproject> {
                   var projects = snapshot.data!.docs;
 
                   // Manually filter projects where the user has applied
+                  // Manually filter projects where the user has applied (individual or team)
                   var filteredProjects = projects.where((project) {
                     List<dynamic> appliedIndividuals =
                         project['appliedIndividuals'] ?? [];
-                    bool hasApplied = appliedIndividuals
+                    List<dynamic> appliedTeams = project['appliedTeams'] ?? [];
+
+                    bool hasAppliedIndividually = appliedIndividuals
                         .any((applicant) => applicant['name'] == currentName);
+
+                    bool hasAppliedAsTeam = appliedTeams.any((team) {
+                      List<dynamic> members = team['members'] ?? [];
+                      return members
+                          .any((member) => member['fullName'] == currentName);
+                    });
+
+                    bool hasApplied =
+                        hasAppliedIndividually || hasAppliedAsTeam;
+
                     String projectId = project['projectId'] ?? '';
                     return hasApplied &&
                         !dismissedProjectIds.contains(projectId);
@@ -105,8 +118,18 @@ class _AppliedprojectState extends State<Appliedproject> {
                         String status = project['status'];
                         List<dynamic> appliedIndividuals =
                             project['appliedIndividuals'] ?? [];
+                        List<dynamic> appliedTeams =
+                            project['appliedTeams'] ?? [];
+
                         bool hasUserApplied = appliedIndividuals.any(
-                            (applicant) => applicant['name'] == currentName);
+                                (applicant) =>
+                                    applicant['name'] == currentName) ||
+                            appliedTeams.any((team) {
+                              List<dynamic> members = team['members'] ?? [];
+                              return members.any((member) =>
+                                  member['fullName'] == currentName);
+                            });
+
                         String? appointedFreelancer =
                             project['appointedFreelancer'];
 
@@ -115,7 +138,13 @@ class _AppliedprojectState extends State<Appliedproject> {
                               .shrink(); // Skip this project if the user has already applied
                         }
 
-                        int appliedCount = appliedIndividuals.length;
+                        int appliedTeamCount =
+                            appliedTeams.fold(0, (sum, team) {
+                          List<dynamic> members = team['members'] ?? [];
+                          return sum + members.length;
+                        });
+                        int appliedCount =
+                            appliedIndividuals.length + appliedTeamCount;
 
                         // Determine button label
                         String buttonLabel = "Applied";

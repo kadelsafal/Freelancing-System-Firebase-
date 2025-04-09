@@ -52,6 +52,7 @@ class _ProjectviewState extends State<Projectview>
             List<String> preferences =
                 List<String>.from(project['preferences'] ?? ['None']);
             List<dynamic> applicants = project['appliedIndividuals'] ?? [];
+            List<dynamic> appliedTeams = project['appliedTeams'] ?? [];
             List<dynamic> freshers =
                 applicants.where((a) => a['experience'] == 'Fresher').toList();
             List<dynamic> recommended =
@@ -61,7 +62,8 @@ class _ProjectviewState extends State<Projectview>
             String description = project['description'] ?? '';
             double budget = project['budget'] ?? 0;
             String deadline = project['deadline'] ?? '';
-            int appliedCount = applicants.length;
+            int appliedCount =
+                applicants.length + appliedTeams.length; // Combined count
             String status = project['status'] ?? 'Pending';
 
             // Reset _freelancerRemoved if a new freelancer is appointed again
@@ -210,9 +212,14 @@ class _ProjectviewState extends State<Projectview>
                           children: [
                             AllApplicants(
                               projectId: widget.projectId,
-                              applicants: project['appliedIndividuals'],
+                              applicants: project['appliedIndividuals'] ?? [],
+                              appliedTeams: project['appliedTeams'] ?? [],
                               appointedFreelancer:
                                   project['appointedFreelancer'] ?? '',
+                              appointedTeam: project['appointedTeam'] ?? '',
+                              appointedTeamId: project['appointedTeamId'] ?? '',
+                              appointedFreelancerId:
+                                  project['appointedFreelancerId'] ?? '',
                             ),
                             Recommended(recommended: recommended),
                             Freshers(freshers: freshers),

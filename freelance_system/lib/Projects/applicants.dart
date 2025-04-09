@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:freelance_system/providers/userProvider.dart';
-import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class Applicants extends StatefulWidget {
@@ -28,6 +26,7 @@ class _ApplicantsState extends State<Applicants> {
     fetchProjectData();
   }
 
+  // Fetch project data from Firestore
   Future<void> fetchProjectData() async {
     final doc = await FirebaseFirestore.instance
         .collection('projects')
@@ -57,6 +56,7 @@ class _ApplicantsState extends State<Applicants> {
     }
 
     String appointedFreelancerID = projectData!['appointedFreelancerId'] ?? '';
+    String appointedTeam = projectData!['appointedTeam'] ?? '';
 
     // Determine button label and style
     String buttonText = "Appoint";
@@ -65,6 +65,7 @@ class _ApplicantsState extends State<Applicants> {
     bool isButtonDisabled = false;
     FontWeight textWeight = FontWeight.normal;
 
+    // Check if the current freelancer is already appointed
     if (appointedFreelancerID == userId) {
       buttonText = "Appointed";
       isButtonDisabled = true;
@@ -72,7 +73,14 @@ class _ApplicantsState extends State<Applicants> {
         appointedFreelancerID != userId) {
       buttonText = "Rejected";
       isButtonDisabled = true;
+      textColor = const Color.fromARGB(255, 255, 31, 31);
+      textWeight = FontWeight.bold;
+    }
 
+    // Check if a team is appointed, if so disable the freelancer appointment
+    if (appointedTeam.isNotEmpty) {
+      buttonText = "Rejected";
+      isButtonDisabled = true;
       textColor = const Color.fromARGB(255, 255, 31, 31);
       textWeight = FontWeight.bold;
     }
@@ -187,16 +195,31 @@ class _ApplicantsState extends State<Applicants> {
     );
   }
 
+  // Function to appoint a freelancer
   Future<void> appointFreelancer(
       String freelancerName, String freelancerId) async {
     setState(() => isLoading = true);
     try {
+      // If a team is appointed, reject the freelancer appointment
+      String appointedTeam = projectData!['appointedTeam'] ?? '';
+      if (appointedTeam.isNotEmpty) {
+        // Reject team appointment by clearing the appointed team
+        await FirebaseFirestore.instance
+            .collection('projects')
+            .doc(widget.projectId)
+            .update({
+          'appointedTeam': '',
+          'appointedTeamId': '',
+        });
+      }
+
+      // Appoint the freelancer
       await FirebaseFirestore.instance
           .collection('projects')
           .doc(widget.projectId)
           .update({
         'appointedFreelancer': freelancerName,
-        'appointedFreelancerID': freelancerId,
+        'appointedFreelancerId': freelancerId,
       });
 
       ScaffoldMessenger.of(context).showSnackBar(

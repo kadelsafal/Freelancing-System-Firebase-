@@ -62,12 +62,22 @@ class _FreelancerProjectscreenState extends State<FreelancerProjectscreen> {
                   );
                 } else {
                   var projects = snapshot.data!.docs;
-                  // Filter projects where the user has not applied
+// Filter projects where the user has NOT applied as an individual or in a team
                   var filteredProjects = projects.where((project) {
                     List<dynamic> appliedIndividuals =
                         project['appliedIndividuals'] ?? [];
-                    return !appliedIndividuals
+                    List<dynamic> appliedTeams = project['appliedTeams'] ?? [];
+
+                    bool appliedAsIndividual = appliedIndividuals
                         .any((applicant) => applicant['name'] == currentName);
+
+                    bool appliedAsTeam = appliedTeams.any((team) {
+                      List<dynamic> members = team['members'] ?? [];
+                      return members
+                          .any((member) => member['fullName'] == currentName);
+                    });
+
+                    return !appliedAsIndividual && !appliedAsTeam;
                   }).toList();
 
                   // Check if there are no more projects to display
@@ -101,8 +111,20 @@ class _FreelancerProjectscreenState extends State<FreelancerProjectscreen> {
                         String status = project['status'];
                         List<dynamic> appliedIndividuals =
                             project['appliedIndividuals'] ?? [];
-                        bool hasUserApplied = appliedIndividuals.any(
+                        List<dynamic> appliedTeams =
+                            project['appliedTeams'] ?? [];
+
+                        bool hasAppliedIndividually = appliedIndividuals.any(
                             (applicant) => applicant['name'] == currentName);
+
+                        bool hasAppliedAsTeam = appliedTeams.any((team) {
+                          List<dynamic> members = team['members'] ?? [];
+                          return members.any(
+                              (member) => member['fullName'] == currentName);
+                        });
+
+                        bool hasUserApplied =
+                            hasAppliedIndividually || hasAppliedAsTeam;
 
                         if (hasUserApplied) {
                           return SizedBox

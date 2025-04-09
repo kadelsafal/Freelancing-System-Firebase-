@@ -37,6 +37,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
   Widget build(BuildContext context) {
     var userProvider = Provider.of<Userprovider>(context, listen: false);
     String currentName = userProvider.userName;
+    String currentuserId = userProvider.userId;
 
     return Scaffold(
       appBar: AppBar(title: Text("Project Details")),
@@ -67,28 +68,46 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                 project['appliedIndividuals'] ?? [];
             int appliedCount = appliedIndividuals.length;
 
-            // Determine user's application status
-            Map<String, dynamic>? userApplication =
-                appliedIndividuals.cast<Map<String, dynamic>?>().firstWhere(
-                      (applicant) => applicant?['name'] == currentName,
-                      orElse: () => null,
-                    );
-
             String appointedFreelancer = project['appointedFreelancer'] ?? '';
+            applicationStatus = "none"; // Reset
 
-            if (userApplication == null) {
-              // User has not applied yet
-              applicationStatus = "none";
-            } else if (appointedFreelancer == currentName) {
-              // User is appointed
+// Check if applied as a team
+            List<dynamic> appliedTeams = project['appliedTeams'] ?? [];
+            for (var team in appliedTeams) {
+              if (team != null && team is Map<String, dynamic>) {
+                List<dynamic> members = team['members'] ?? [];
+                bool isInTeam = members.any((member) =>
+                    member is Map<String, dynamic> &&
+                    member['userId'] == currentuserId);
+                if (isInTeam) {
+                  applicationStatus = "applied_team";
+                  break;
+                }
+              }
+            }
+
+// Check if applied solo
+            for (var applicant in appliedIndividuals) {
+              if (applicant != null && applicant is Map<String, dynamic>) {
+                if (applicant.containsKey('name') &&
+                    applicant['name'] == currentName &&
+                    !applicant.containsKey('teamMembers')) {
+                  applicationStatus = "applied_solo";
+                  break;
+                }
+              }
+            }
+
+// Check if appointed
+            if (appointedFreelancer == currentName ||
+                appliedTeams.any((team) =>
+                    team is Map<String, dynamic> &&
+                    team['teamName'] == appointedFreelancer &&
+                    team['members'] != null &&
+                    (team['members'] as List).any((member) =>
+                        member is Map<String, dynamic> &&
+                        member['userId'] == currentuserId))) {
               applicationStatus = "appointed";
-            } else if (appointedFreelancer.isNotEmpty &&
-                appointedFreelancer != currentName) {
-              // Another freelancer is appointed
-              applicationStatus = "rejected";
-            } else {
-              // User has applied but no one is appointed yet
-              applicationStatus = "on_hold";
             }
 
 // Determine button text and state
@@ -104,8 +123,12 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                 buttonText = "Rejected";
                 isButtonDisabled = true;
                 break;
-              case "on_hold":
-                buttonText = "On Hold";
+              case "applied_solo":
+                buttonText = "Applied Solo";
+                isButtonDisabled = true;
+                break;
+              case "applied_team":
+                buttonText = "Applied as Team";
                 isButtonDisabled = true;
                 break;
               case "none":

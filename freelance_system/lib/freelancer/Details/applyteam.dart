@@ -16,9 +16,8 @@ class _ApplyWithTeamModalSheetState extends State<ApplyWithTeamModalSheet> {
   final String currentUserId = FirebaseAuth.instance.currentUser!.uid;
   bool isLoadingMore = false;
   int teamLimit = 3;
-  String? selectedTeamId; // To store selected team
+  String? selectedTeamId;
 
-  // Load more teams logic
   Future<void> _loadMoreTeams() async {
     setState(() {
       isLoadingMore = true;
@@ -40,7 +39,6 @@ class _ApplyWithTeamModalSheetState extends State<ApplyWithTeamModalSheet> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Fetch project title
             FutureBuilder<DocumentSnapshot>(
               future: FirebaseFirestore.instance
                   .collection('projects')
@@ -75,8 +73,6 @@ class _ApplyWithTeamModalSheetState extends State<ApplyWithTeamModalSheet> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 10),
-
-            // Show teams
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
@@ -148,7 +144,6 @@ class _ApplyWithTeamModalSheetState extends State<ApplyWithTeamModalSheet> {
                 },
               ),
             ),
-
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: () async {
@@ -162,22 +157,81 @@ class _ApplyWithTeamModalSheetState extends State<ApplyWithTeamModalSheet> {
                 }
 
                 try {
-                  // Get the selected team document
                   final teamDoc = await FirebaseFirestore.instance
                       .collection('teams')
                       .doc(selectedTeamId)
                       .get();
 
-                  final teamData = teamDoc.data();
-                  final teamName = teamData?['teamName'] ?? 'Unnamed Team';
+                  if (!teamDoc.exists) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Team not found.")),
+                    );
+                    return;
+                  }
 
-                  // Update the project with appointed freelancer info
+                  final teamData = teamDoc.data()!;
+                  final teamName = teamData['teamName'] ?? 'Unnamed Team';
+                  final memberIds =
+                      List<String>.from(teamData['members'] ?? []);
+
+                  List<Map<String, dynamic>> teamMemberDetails = [];
+
+                  for (String memberId in memberIds) {
+                    final userDoc = await FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(memberId)
+                        .get();
+
+                    if (userDoc.exists) {
+                      final userData = userDoc.data()!;
+                      final resumeEntities =
+                          userData['resume_entities'] as Map<String, dynamic>?;
+
+                      if (resumeEntities != null) {
+                        teamMemberDetails.add({
+                          'userId': memberId,
+                          'fullName': userData['Full Name'] ?? 'Unknown',
+                          'skills': resumeEntities['SKILLS'] ?? [],
+                          'workedAs': resumeEntities['WORKED AS'] ?? [],
+                          'experienceYears':
+                              resumeEntities['YEARS OF EXPERIENCE'] ?? [],
+                        });
+                      }
+                    }
+                  }
+
+                  final projectDoc = await FirebaseFirestore.instance
+                      .collection('projects')
+                      .doc(widget.projectId)
+                      .get();
+
+                  final appliedTeams = List<Map<String, dynamic>>.from(
+                      projectDoc.data()?['appliedTeams'] ?? []);
+
+                  final alreadyApplied = appliedTeams.any((team) =>
+                      team['teamId'] != null &&
+                      team['teamId'] == selectedTeamId);
+
+                  if (alreadyApplied) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                          content: Text(
+                              "This team has already applied to this project.")),
+                    );
+                    return;
+                  }
+
                   await FirebaseFirestore.instance
                       .collection('projects')
                       .doc(widget.projectId)
                       .update({
-                    'appointedFreelancer': teamName,
-                    'appointedFreelancerId': selectedTeamId,
+                    'appliedTeams': FieldValue.arrayUnion([
+                      {
+                        'teamId': selectedTeamId,
+                        'teamName': teamName,
+                        'members': teamMemberDetails,
+                      }
+                    ]),
                   });
 
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -186,7 +240,7 @@ class _ApplyWithTeamModalSheetState extends State<ApplyWithTeamModalSheet> {
                             Text("Team application submitted successfully!")),
                   );
 
-                  Navigator.pop(context); // Close the modal sheet
+                  Navigator.pop(context);
                 } catch (e) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text("Failed to apply: $e")),
@@ -201,7 +255,6 @@ class _ApplyWithTeamModalSheetState extends State<ApplyWithTeamModalSheet> {
     );
   }
 
-  // Show team members with admin label
   void _showTeamMembers(DocumentSnapshot team) async {
     final members = team['members'] as List;
 
