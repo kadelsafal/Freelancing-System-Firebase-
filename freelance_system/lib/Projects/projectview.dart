@@ -40,17 +40,35 @@ class _ProjectviewState extends State<Projectview>
 // Function to mark the project as completed
   void markProjectAsCompleted() async {
     try {
-      await FirebaseFirestore.instance
+      // Fetch the current project status
+      var projectSnapshot = await FirebaseFirestore.instance
           .collection('projects')
           .doc(widget.projectId)
-          .update({'status': 'Completed'});
-      // Show a success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Project marked as completed')),
-      );
+          .get();
+
+      String currentStatus = projectSnapshot['status'];
+
+      // Only update the status to "Completed" if it's not already "Completed"
+      if (currentStatus != "Completed") {
+        await FirebaseFirestore.instance
+            .collection('projects')
+            .doc(widget.projectId)
+            .update({'status': 'Completed'});
+
+        // Show a success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Project marked as completed')),
+        );
+      } else {
+        // If already "Completed", show a message indicating it's already done
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Project is already completed')),
+        );
+      }
     } catch (e) {
+      // Error handling
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error marking project as completed')),
+        SnackBar(content: Text('Error marking project as completed: $e')),
       );
     }
   }
@@ -98,7 +116,25 @@ class _ProjectviewState extends State<Projectview>
                 _freelancerRemoved = false;
               }
             }
-
+            // Only change status to "Pending" if not already "Completed"
+            if ((appointFreelancer.isNotEmpty || appointTeam.isNotEmpty) &&
+                status != "Completed") {
+              if (status != "Pending") {
+                FirebaseFirestore.instance
+                    .collection('projects')
+                    .doc(widget.projectId)
+                    .update({'status': 'Pending'}).then((_) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                        content: Text("Project status updated to Pending.")),
+                  );
+                }).catchError((error) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Error updating status: $error")),
+                  );
+                });
+              }
+            }
             return SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

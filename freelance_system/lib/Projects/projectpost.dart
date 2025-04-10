@@ -96,6 +96,10 @@ class _ProjectpostState extends State<Projectpost> {
 
                       bool isCompleted = status == "Completed";
                       bool isPending = status == "Pending";
+
+                      // Check if Freelancer or Team is appointed and update status to "Pending"
+                      // Check if Freelancer or Team is appointed and update status to "Pending"
+
                       return Padding(
                         padding: EdgeInsets.all(8.0),
                         child: GestureDetector(
