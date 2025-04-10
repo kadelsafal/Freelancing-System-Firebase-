@@ -19,7 +19,10 @@ class _LoginScreenState extends State<LoginScreen> {
   bool isPasswordVisible = false;
 
   Future<void> loginUser() async {
-    isloading = true;
+    setState(() {
+      isloading = true;
+    });
+
     try {
       UserCredential userCredential = await FirebaseAuth.instance
           .signInWithEmailAndPassword(
@@ -47,6 +50,10 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("An unexpected error occurred: $e")));
+    } finally {
+      setState(() {
+        isloading = false;
+      });
     }
   }
 
@@ -120,11 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: () {
                         if (_formKey.currentState!.validate()) {
                           // Handle form submission
-                          isloading = true;
-                          setState(() {});
                           loginUser();
-                          isloading = false;
-                          setState(() {});
                         }
                       },
                       child: isloading

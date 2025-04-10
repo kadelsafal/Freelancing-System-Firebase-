@@ -1,16 +1,13 @@
 import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:freelance_system/Projects/issues_tabs/all_issues.dart';
 import 'package:freelance_system/Projects/issues_tabs/solved_issues.dart';
-
 import 'package:freelance_system/providers/userProvider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:provider/provider.dart';
-
 import '../issues_tabs/unsolved_issues.dart';
 
 class IssuesTab extends StatefulWidget {
@@ -30,6 +27,26 @@ class _IssuesTabState extends State<IssuesTab> {
   int _unsolvedIssuesCount = 0;
   bool _isSubmitting = false; // Add this line to track the loading state
 
+  // Function to count unsolved issues
+  Future<void> _countUnsolvedIssues() async {
+    var querySnapshot = await FirebaseFirestore.instance
+        .collection('projects')
+        .doc(widget.projectId)
+        .collection('issues')
+        .where('status', isEqualTo: 'Not Solved')
+        .get();
+    setState(() {
+      _unsolvedIssuesCount = querySnapshot.docs.length;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _countUnsolvedIssues(); // Count unsolved issues when the widget is initialized
+  }
+
+  // Function to create an issue
   void _createIssue(String author, String projectId) async {
     String issueText = _issueController.text.trim();
     if (issueText.isEmpty) {
@@ -76,6 +93,8 @@ class _IssuesTabState extends State<IssuesTab> {
 
       // Clear the text field
       _issueController.clear();
+      // Recount unsolved issues after issue creation
+      _countUnsolvedIssues();
     } catch (error) {
       // Handle error during Firestore submission
       setState(() {
@@ -169,11 +188,45 @@ class _IssuesTabState extends State<IssuesTab> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const TabBar(
+            TabBar(
               tabs: [
-                Tab(text: 'All Issues'),
-                Tab(text: 'Solved'),
-                Tab(text: 'Unsolved'),
+                const Tab(text: 'All Issues'),
+                const Tab(text: 'Solved'),
+                // Display the notification count in the "Unsolved" tab
+                Tab(
+                  child: Stack(
+                    clipBehavior: Clip.none, // Allow content to overlap
+                    children: [
+                      // Tab text
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text('Unsolved'),
+                      ),
+                      // Badge (count)
+                      if (_unsolvedIssuesCount > 0)
+                        Positioned(
+                          right: 0,
+                          top: -4,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '$_unsolvedIssuesCount',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                )
               ],
             ),
             const SizedBox(height: 10),

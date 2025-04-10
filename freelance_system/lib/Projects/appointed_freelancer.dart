@@ -33,6 +33,8 @@ class AppointedUser extends StatefulWidget {
 class _AppointedUserState extends State<AppointedUser>
     with TickerProviderStateMixin {
   late TabController _tabController;
+  Timestamp? latestStatusTimestamp;
+  bool hasUnseenUpdates = false;
 
   @override
   void initState() {
@@ -46,21 +48,34 @@ class _AppointedUserState extends State<AppointedUser>
     super.dispose();
   }
 
+  // Check if there are new unseen updates based on the timestamp
+  void checkUnseenUpdates(QuerySnapshot snapshot) {
+    if (snapshot.docs.isNotEmpty) {
+      Timestamp lastUpdateTimestamp = snapshot.docs.first['timestamp'];
+      DateTime lastUpdateDate =
+          lastUpdateTimestamp.toDate(); // Convert to DateTime
+
+      if (latestStatusTimestamp == null ||
+          lastUpdateDate.isAfter(latestStatusTimestamp! as DateTime)) {
+        setState(() {
+          hasUnseenUpdates = true; // There are new unseen updates
+        });
+      }
+    }
+  }
+
   Future<void> _clearSubCollection(String collectionName) async {
     try {
-      // Get all documents in the sub-collection
       var querySnapshot = await FirebaseFirestore.instance
           .collection('projects')
           .doc(widget.projectId)
           .collection(collectionName)
           .get();
 
-      // Delete each document in the sub-collection
       for (var doc in querySnapshot.docs) {
         await doc.reference.delete();
       }
     } catch (e) {
-      // Handle error if needed
       print("Error clearing $collectionName: $e");
     }
   }
@@ -95,13 +110,11 @@ class _AppointedUserState extends State<AppointedUser>
           : {'appointedTeam': null, 'appointedTeamId': null, 'status': 'New'};
 
       try {
-        // Update project data to remove appointed freelancer/team
         await FirebaseFirestore.instance
             .collection('projects')
             .doc(widget.projectId)
             .update(updateData);
 
-        // Empty the sub-collections: issues, statusUpdates, milestones
         await Future.wait([
           _clearSubCollection('issues'),
           _clearSubCollection('statusUpdates'),
@@ -184,10 +197,41 @@ class _AppointedUserState extends State<AppointedUser>
             controller: _tabController,
             labelColor: Colors.deepPurple,
             unselectedLabelColor: Colors.grey,
-            tabs: const [
+            tabs: [
               Tab(text: "Milestone"),
               Tab(text: "Issues"),
-              Tab(text: "Status"),
+              Tab(
+                child: Stack(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(
+                          right: 12.0), // adjust spacing if needed
+                      child: const Text("Status"),
+                    ),
+                    if (hasUnseenUpdates)
+                      Positioned(
+                        top: -2,
+                        right: -2,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Text(
+                            "New",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -200,7 +244,12 @@ class _AppointedUserState extends State<AppointedUser>
               children: [
                 MilestoneTab(projectId: widget.projectId),
                 IssuesTab(projectId: widget.projectId, role: 'client'),
-                StatusTab(projectId: widget.projectId, role: 'Client'),
+                StatusTab(
+                  projectId: widget.projectId,
+                  role: 'Client',
+                  onNewUpdates:
+                      checkUnseenUpdates, // Pass callback to StatusTab
+                ),
               ],
             ),
           ),

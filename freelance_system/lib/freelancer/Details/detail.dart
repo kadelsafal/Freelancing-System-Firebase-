@@ -96,16 +96,6 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
             String appointedFreelancer = project['appointedFreelancer'] ?? '';
             applicationStatus = "none"; // Reset
 
-            // Check if appointed
-            if (appointedFreelancer == currentName) {
-              applicationStatus = "appointed";
-            } else if (project['appointedTeamId'] != null) {
-              // Check if the user is in the appointed team
-              isUserInAppointedTeamFuture = isUserInAppointedTeam(
-                  project['appointedTeamId'],
-                  currentuserId); // Save future for FutureBuilder
-            }
-
             // Check if applied as a team
             List<dynamic> appliedTeams = project['appliedTeams'] ?? [];
             for (var team in appliedTeams) {
@@ -126,7 +116,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
               }
             }
 
-            // Check if applied solo
+            // Check if applied solo (after checking team and appointed)
             for (var applicant in appliedIndividuals) {
               if (applicant != null && applicant is Map<String, dynamic>) {
                 if (applicant.containsKey('name') &&
@@ -137,7 +127,18 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                 }
               }
             }
+            // Check if appointed as freelancer first
+            if (appointedFreelancer == currentName) {
+              applicationStatus =
+                  "appointed"; // User is appointed as freelancer
+            } else if (project['appointedTeamId'] != null) {
+              // Check if the user is in the appointed team
+              isUserInAppointedTeamFuture = isUserInAppointedTeam(
+                  project['appointedTeamId'],
+                  currentuserId); // Save future for FutureBuilder
+            }
 
+            print("Application Status: $applicationStatus");
             // Determine button text and state
             String buttonText;
             bool isButtonDisabled;
@@ -370,6 +371,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                         child: Text(buttonText),
                       ),
                     ),
+
                     if (applicationStatus == "appointed" ||
                         applicationStatus == "team_appointed")
                       ConstrainedBox(

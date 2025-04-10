@@ -1,17 +1,23 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:freelance_system/providers/userProvider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 class StatusTab extends StatefulWidget {
   final String projectId;
   final String role;
-  const StatusTab({super.key, required this.projectId, required this.role});
+  final Function(QuerySnapshot) onNewUpdates;
+
+  const StatusTab({
+    super.key,
+    required this.projectId,
+    required this.role,
+    required this.onNewUpdates,
+  });
 
   @override
   _StatusTabState createState() => _StatusTabState();
@@ -22,8 +28,76 @@ class _StatusTabState extends State<StatusTab> {
   final List<XFile> _selectedImages = [];
   final List<bool> _imageLoadingStatus = [];
   bool _isPostingUpdate = false;
+  Timestamp? latestStatusTimestamp;
+  bool hasUnseenUpdates = false;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final userProvider = Provider.of<Userprovider>(context, listen: false);
+      checkForUnseenStatusCount(userProvider.userId); // <-- Fix here
+      markStatusAsSeen(
+          userProvider.userId); // optional: mark as seen when opened
+    });
+  }
 
-  // Upload images to Cloudinary
+  // Check if there are new unseen updates based on the timestamp
+  // Check if there are new unseen updates based on the timestamp
+  Future<void> checkForUnseenStatusCount(String userId) async {
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('projectViews')
+        .doc(widget.projectId)
+        .get();
+
+    final lastSeen =
+        userDoc.exists ? userDoc['lastSeenStatus'] as Timestamp : null;
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection('projects')
+        .doc(widget.projectId)
+        .collection('statusUpdates')
+        .orderBy('timestamp', descending: false)
+        .get();
+
+    int unseenCount = 0;
+    for (var doc in snapshot.docs) {
+      final updateTime = doc['timestamp'] as Timestamp;
+      if (lastSeen == null || updateTime.compareTo(lastSeen) > 0) {
+        unseenCount++;
+      }
+    }
+
+    // You can call this in your main page to pass the count to TabBar
+    widget.onNewUpdates(snapshot); // or send unseenCount as a param
+
+    setState(() {
+      hasUnseenUpdates = unseenCount > 0;
+    });
+  }
+
+  Future<void> markStatusAsSeen(String userId) async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('projects')
+        .doc(widget.projectId)
+        .collection('statusUpdates')
+        .orderBy('timestamp', descending: true)
+        .limit(1)
+        .get();
+
+    if (snapshot.docs.isNotEmpty) {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('projectViews')
+          .doc(widget.projectId)
+          .set({
+        'lastSeenStatus': snapshot.docs.first['timestamp'],
+      });
+    }
+  }
+
   Future<List<String?>> uploadImagesToCloudinary(List<XFile> imageFiles) async {
     const cloudinaryUrl =
         "https://api.cloudinary.com/v1_1/dnebaumu9/image/upload";
@@ -34,7 +108,7 @@ class _StatusTabState extends State<StatusTab> {
     try {
       for (var imageFile in imageFiles) {
         setState(() {
-          _imageLoadingStatus.add(true); // Start loading indicator
+          _imageLoadingStatus.add(true);
         });
 
         var request = http.MultipartRequest('POST', Uri.parse(cloudinaryUrl));
@@ -54,8 +128,7 @@ class _StatusTabState extends State<StatusTab> {
 
         await Future.delayed(const Duration(seconds: 2));
         setState(() {
-          _imageLoadingStatus.removeAt(
-              _selectedImages.indexOf(imageFile)); // Stop loading indicator
+          _imageLoadingStatus.removeAt(_selectedImages.indexOf(imageFile));
         });
       }
       return uploadedUrls;
@@ -65,19 +138,19 @@ class _StatusTabState extends State<StatusTab> {
     }
   }
 
-  // Select images
   Future<void> _selectImage() async {
     final picker = ImagePicker();
     final pickedFiles = await picker.pickMultiImage();
-
     if (pickedFiles != null) {
       setState(() {
-        _selectedImages.addAll(pickedFiles);
+        // Avoid adding duplicate images
+        _selectedImages.addAll(pickedFiles
+            .where((file) => !_selectedImages.contains(file))
+            .toList());
       });
     }
   }
 
-  // Delete image
   void _deleteImage(int index) {
     setState(() {
       _selectedImages.removeAt(index);
@@ -85,7 +158,6 @@ class _StatusTabState extends State<StatusTab> {
     });
   }
 
-  // Add status update
   void _addStatusUpdate(String author, String projectId) async {
     if (_statusUpdateController.text.isNotEmpty || _selectedImages.isNotEmpty) {
       setState(() {
@@ -121,7 +193,6 @@ class _StatusTabState extends State<StatusTab> {
     }
   }
 
-  // Delete status update
   Future<void> _deleteStatus(String statusId) async {
     await FirebaseFirestore.instance
         .collection('projects')
@@ -150,13 +221,24 @@ class _StatusTabState extends State<StatusTab> {
           return const Center(child: Text("Project not found"));
         } else {
           var project = snapshot.data!;
-
           String appointedFreelancer = project['appointedFreelancer'] ?? '';
 
           return Padding(
             padding: const EdgeInsets.all(12),
             child: Column(
               children: [
+                if (hasUnseenUpdates)
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(12)),
+                    child: const Text(
+                      "New Updates",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
                 Expanded(
                   child: StreamBuilder<QuerySnapshot>(
                     stream: FirebaseFirestore.instance
@@ -178,8 +260,11 @@ class _StatusTabState extends State<StatusTab> {
                       } else {
                         final docs = statusSnapshot.data!.docs;
 
+                        latestStatusTimestamp =
+                            docs.first['timestamp'] as Timestamp?;
+
                         return ListView.builder(
-                          reverse: true, // To show the latest at the bottom
+                          reverse: true,
                           itemCount: docs.length,
                           itemBuilder: (context, index) {
                             var doc = docs[index];
@@ -372,7 +457,7 @@ class _StatusTabState extends State<StatusTab> {
                             top: -4,
                             right: -4,
                             child: IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
+                              icon: const Icon(Icons.remove_circle),
                               onPressed: () => _deleteImage(index),
                             ),
                           ),
@@ -380,13 +465,11 @@ class _StatusTabState extends State<StatusTab> {
                       );
                     }),
                   ),
+                const SizedBox(height: 10),
                 ElevatedButton(
                   onPressed: _isPostingUpdate
                       ? null
-                      : () {
-                          String author = currentName;
-                          _addStatusUpdate(author, widget.projectId);
-                        },
+                      : () => _addStatusUpdate(currentName, widget.projectId),
                   child: _isPostingUpdate
                       ? const CircularProgressIndicator()
                       : const Text("Post Update"),

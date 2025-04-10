@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../../Projects/tabs/issues_tab.dart';
@@ -17,6 +18,9 @@ class AppointedFreelancerMessage extends StatefulWidget {
 class _AppointedFreelancerMessageState extends State<AppointedFreelancerMessage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  int unseenStatusCount = 0;
+  Timestamp? latestStatusTimestamp;
+  bool hasUnseenUpdates = false;
 
   @override
   void initState() {
@@ -28,6 +32,22 @@ class _AppointedFreelancerMessageState extends State<AppointedFreelancerMessage>
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  // Check if there are new unseen updates based on the timestamp
+  void checkUnseenUpdates(QuerySnapshot snapshot) {
+    if (snapshot.docs.isNotEmpty) {
+      Timestamp lastUpdateTimestamp = snapshot.docs.first['timestamp'];
+      DateTime lastUpdateDate =
+          lastUpdateTimestamp.toDate(); // Convert to DateTime
+
+      if (latestStatusTimestamp == null ||
+          lastUpdateDate.isAfter(latestStatusTimestamp! as DateTime)) {
+        setState(() {
+          hasUnseenUpdates = true; // There are new unseen updates
+        });
+      }
+    }
   }
 
   @override
@@ -44,10 +64,38 @@ class _AppointedFreelancerMessageState extends State<AppointedFreelancerMessage>
               unselectedLabelColor: Colors.grey,
               labelPadding: const EdgeInsets.symmetric(horizontal: 4),
               isScrollable: false, // Ensures full names fit
-              tabs: const [
-                Tab(text: "Milestones"),
-                Tab(text: "Issues"),
-                Tab(text: "Status"),
+              tabs: [
+                const Tab(text: "Milestones"),
+                const Tab(text: "Issues"),
+                Tab(
+                  text: "Status",
+                  icon: unseenStatusCount > 0
+                      ? Positioned(
+                          top: 0,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 16,
+                              minHeight: 16,
+                            ),
+                            child: Text(
+                              '$unseenStatusCount',
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        )
+                      : null,
+                ),
               ],
             ),
           ),
@@ -70,6 +118,7 @@ class _AppointedFreelancerMessageState extends State<AppointedFreelancerMessage>
                   StatusTab(
                     projectId: widget.projectId,
                     role: "freelancer",
+                    onNewUpdates: checkUnseenUpdates,
                   ),
                 ],
               ),
