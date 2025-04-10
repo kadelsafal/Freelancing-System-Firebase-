@@ -4,30 +4,40 @@ import 'package:freelance_system/Projects/tabs/issues_tab.dart';
 import 'package:freelance_system/Projects/tabs/milestone_tab.dart';
 import 'package:freelance_system/Projects/tabs/status_tab.dart';
 
-class AppointedFreelancer extends StatefulWidget {
-  final String appointedName;
-  final String projectId;
-  final VoidCallback onFreelancerRemoved;
+// Extension to capitalize strings
+extension StringCasingExtension on String {
+  String capitalize() {
+    if (isEmpty) return '';
+    return "${this[0].toUpperCase()}${substring(1)}";
+  }
+}
 
-  const AppointedFreelancer({
+class AppointedUser extends StatefulWidget {
+  final String projectId;
+  final String appointedName;
+  final String appointedType; // 'freelancer' or 'team'
+  final VoidCallback onAppointedUserRemoved;
+
+  const AppointedUser({
     super.key,
-    required this.appointedName,
     required this.projectId,
-    required this.onFreelancerRemoved,
+    required this.appointedName,
+    required this.appointedType,
+    required this.onAppointedUserRemoved,
   });
 
   @override
-  State<AppointedFreelancer> createState() => _AppointedFreelancerState();
+  State<AppointedUser> createState() => _AppointedUserState();
 }
 
-class _AppointedFreelancerState extends State<AppointedFreelancer>
+class _AppointedUserState extends State<AppointedUser>
     with TickerProviderStateMixin {
   late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this); // 3 tabs
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -36,13 +46,75 @@ class _AppointedFreelancerState extends State<AppointedFreelancer>
     super.dispose();
   }
 
+  Future<void> _removeAppointed() async {
+    bool confirm = await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Remove Appointed ${widget.appointedType.capitalize()}"),
+        content: Text(
+            "Are you sure you want to remove the appointed ${widget.appointedType}?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Remove"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm) {
+      final updateData = widget.appointedType == 'Freelancer'
+          ? {
+              'appointedFreelancer': null,
+              'appointedFreelancerId': null,
+            }
+          : {
+              'appointedTeam': null,
+              'appointedTeamId': null,
+            };
+
+      try {
+        await FirebaseFirestore.instance
+            .collection('projects')
+            .doc(widget.projectId)
+            .update(updateData);
+
+        widget.onAppointedUserRemoved();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  "Appointed ${widget.appointedType} removed successfully."),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content:
+                  Text("Error removing appointed ${widget.appointedType}: $e"),
+            ),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("Appointed Freelancer",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        Text(
+          "Appointed ${widget.appointedType.capitalize()}",
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 10),
         Row(
           children: [
@@ -67,45 +139,7 @@ class _AppointedFreelancerState extends State<AppointedFreelancer>
         const SizedBox(height: 20),
         Center(
           child: ElevatedButton(
-            onPressed: () async {
-              bool confirm = await showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text("Remove Freelancer"),
-                  content: const Text(
-                      "Are you sure you want to remove the appointed freelancer?"),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: const Text("Cancel"),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      child: const Text("Remove"),
-                    ),
-                  ],
-                ),
-              );
-
-              if (confirm) {
-                await FirebaseFirestore.instance
-                    .collection('projects')
-                    .doc(widget.projectId)
-                    .update({
-                  'appointedFreelancer': '',
-                  'appointedFreelancerId': '',
-                });
-
-                widget.onFreelancerRemoved();
-
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text("Appointed freelancer removed")),
-                  );
-                }
-              }
-            },
+            onPressed: _removeAppointed,
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red.shade600,
               foregroundColor: Colors.white,
@@ -113,7 +147,7 @@ class _AppointedFreelancerState extends State<AppointedFreelancer>
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
-            child: const Text("Remove Freelancer"),
+            child: Text("Remove ${widget.appointedType.capitalize()}"),
           ),
         ),
         const SizedBox(height: 10),
@@ -125,8 +159,6 @@ class _AppointedFreelancerState extends State<AppointedFreelancer>
             controller: _tabController,
             labelColor: Colors.deepPurple,
             unselectedLabelColor: Colors.grey,
-            labelPadding: const EdgeInsets.symmetric(horizontal: 4),
-            isScrollable: false,
             tabs: const [
               Tab(text: "Milestone"),
               Tab(text: "Issues"),
@@ -142,14 +174,8 @@ class _AppointedFreelancerState extends State<AppointedFreelancer>
               controller: _tabController,
               children: [
                 MilestoneTab(projectId: widget.projectId),
-                IssuesTab(
-                  projectId: widget.projectId,
-                  role: 'client',
-                ),
-                StatusTab(
-                  projectId: widget.projectId,
-                  role: 'Client',
-                ),
+                IssuesTab(projectId: widget.projectId, role: 'client'),
+                StatusTab(projectId: widget.projectId, role: 'Client'),
               ],
             ),
           ),

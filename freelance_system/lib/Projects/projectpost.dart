@@ -77,10 +77,22 @@ class _ProjectpostState extends State<Projectpost> {
                       String deadline = project['deadline'] ?? '';
                       String projectId = project['projectId'] ?? '';
                       String status = project['status'];
-                      String appoint = project['appointedFreelancer'] ?? '';
+                      String appointFreelancer =
+                          project['appointedFreelancer'] ?? '';
+                      String appointTeam = project['appointedTeam'] ?? '';
                       List<dynamic> appliedIndividuals =
                           project['appliedIndividuals'] ?? [];
-                      int appliedCount = appliedIndividuals.length;
+                      List<dynamic> appliedTeams =
+                          project['appliedTeams'] ?? [];
+                      int appliedCount =
+                          appliedIndividuals.length + appliedTeams.length;
+
+                      String appoint = appointFreelancer.isNotEmpty
+                          ? appointFreelancer
+                          : appointTeam;
+
+                      bool isFreelancerAppointed = appointFreelancer.isNotEmpty;
+                      bool isTeamAppointed = appointTeam.isNotEmpty;
 
                       bool isCompleted = status == "Completed";
                       bool isPending = status == "Pending";
@@ -399,7 +411,10 @@ class _ProjectpostState extends State<Projectpost> {
                                         ],
                                         SizedBox(height: 20),
                                         if (appoint.isNotEmpty) ...[
-                                          Text("Appointed Freelancer",
+                                          Text(
+                                              isFreelancerAppointed
+                                                  ? "Appointed Freelancer"
+                                                  : "Appointed Team",
                                               style: TextStyle(
                                                   fontSize: 14,
                                                   fontWeight: FontWeight.bold)),
@@ -412,9 +427,8 @@ class _ProjectpostState extends State<Projectpost> {
                                                 backgroundColor:
                                                     Colors.deepPurple,
                                                 child: Text(
-                                                  appoint.isNotEmpty
-                                                      ? appoint[0]
-                                                      : '?',
+                                                  appoint[
+                                                      0], // Show the first letter of the appointed person/team
                                                   style: TextStyle(
                                                       color: Colors.white,
                                                       fontSize: 18),
@@ -426,7 +440,7 @@ class _ProjectpostState extends State<Projectpost> {
                                                     CrossAxisAlignment.start,
                                                 children: [
                                                   Text(
-                                                    appoint,
+                                                    appoint, // Display the full name of the appointed freelancer/team
                                                     style: TextStyle(
                                                       fontSize: 16,
                                                       fontWeight:
@@ -434,7 +448,7 @@ class _ProjectpostState extends State<Projectpost> {
                                                     ),
                                                   ),
                                                 ],
-                                              )
+                                              ),
                                             ],
                                           ),
                                           SizedBox(height: 24),

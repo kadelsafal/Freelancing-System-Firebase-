@@ -37,6 +37,24 @@ class _ProjectviewState extends State<Projectview>
     });
   }
 
+// Function to mark the project as completed
+  void markProjectAsCompleted() async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('projects')
+          .doc(widget.projectId)
+          .update({'status': 'Completed'});
+      // Show a success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Project marked as completed')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error marking project as completed')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -231,15 +249,25 @@ class _ProjectviewState extends State<Projectview>
                               appointedFreelancerId:
                                   project['appointedFreelancerId'] ?? '',
                             ),
-                            Recommended(recommended: recommended),
+                            Recommended(
+                              // If needed, pass individual recommendations here
+                              teams: project['appliedTeams'] ??
+                                  [], // Applied teams
+                              projectSkills: List<String>.from(
+                                  project['preferences'] ??
+                                      []), // Ensure this is a List<String>
+                              applicants: project['appliedIndividuals'] ??
+                                  [], // Applied individuals
+                            ),
                             Freshers(freshers: freshers),
                           ],
                         ),
                       ),
                     ),
                   ],
-                  if (appointFreelancer.isNotEmpty ||
-                      appointTeam.isNotEmpty && !_freelancerRemoved) ...[
+                  if ((appointFreelancer.isNotEmpty ||
+                          appointTeam.isNotEmpty) &&
+                      !_freelancerRemoved) ...[
                     const Divider(
                       thickness: 1.5,
                       color: Colors.grey,
@@ -247,18 +275,43 @@ class _ProjectviewState extends State<Projectview>
                     ),
                     Padding(
                       padding: const EdgeInsets.all(12),
-                      child: AppointedFreelancer(
+                      child: AppointedUser(
                         appointedName: appointFreelancer.isNotEmpty
                             ? appointFreelancer
                             : appointTeam,
+                        appointedType: appointFreelancer.isNotEmpty
+                            ? 'Freelancer'
+                            : 'Team',
                         projectId: widget.projectId,
-                        onFreelancerRemoved: () {
+                        onAppointedUserRemoved: () {
                           setState(() {
                             _freelancerRemoved = true;
                           });
                         },
                       ),
-                    )
+                    ),
+                    Center(
+                      child: SizedBox(
+                        width: 280,
+                        height: 80,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: ElevatedButton(
+                            onPressed: markProjectAsCompleted,
+                            child: const Text('Complete Project '),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.deepPurple,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              textStyle: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ],
               ),

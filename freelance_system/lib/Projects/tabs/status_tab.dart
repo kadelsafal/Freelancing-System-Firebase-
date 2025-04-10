@@ -185,6 +185,8 @@ class _StatusTabState extends State<StatusTab> {
                             var doc = docs[index];
                             var statusData = doc.data() as Map<String, dynamic>;
 
+                            bool isSender = currentName == statusData['author'];
+
                             return Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: GestureDetector(
@@ -221,27 +223,25 @@ class _StatusTabState extends State<StatusTab> {
                                   }
                                 },
                                 child: Row(
-                                  mainAxisAlignment:
-                                      statusData['role'] == widget.role
-                                          ? MainAxisAlignment.end
-                                          : MainAxisAlignment.start,
+                                  mainAxisAlignment: isSender
+                                      ? MainAxisAlignment.end
+                                      : MainAxisAlignment.start,
                                   children: [
                                     Container(
                                       padding: const EdgeInsets.all(12),
                                       margin: const EdgeInsets.symmetric(
                                           vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: statusData['role'] == widget.role
+                                        color: isSender
                                             ? Colors.blue.shade100
                                             : const Color.fromARGB(
                                                 255, 156, 255, 162),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Column(
-                                        crossAxisAlignment:
-                                            statusData['role'] == widget.role
-                                                ? CrossAxisAlignment.start
-                                                : CrossAxisAlignment.start,
+                                        crossAxisAlignment: isSender
+                                            ? CrossAxisAlignment.start
+                                            : CrossAxisAlignment.start,
                                         children: [
                                           Row(
                                             children: [
@@ -299,9 +299,9 @@ class _StatusTabState extends State<StatusTab> {
                                                                     8.0), // Smaller padding
                                                             child:
                                                                 Image.network(
-                                                                    imageUrl,
-                                                                    height:
-                                                                        100),
+                                                              imageUrl,
+                                                              height: 100,
+                                                            ),
                                                           ),
                                                         );
                                                       },

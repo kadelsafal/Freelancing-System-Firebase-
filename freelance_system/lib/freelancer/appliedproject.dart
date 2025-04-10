@@ -16,6 +16,7 @@ class Appliedproject extends StatefulWidget {
 class _AppliedprojectState extends State<Appliedproject> {
   bool isExpanded = false;
   Set<String> dismissedProjectIds = {};
+
   String _getWrappedTitle(String text, int wordsPerLine) {
     List<String> words = text.split(' ');
     List<String> wrappedLines = [];
@@ -34,6 +35,7 @@ class _AppliedprojectState extends State<Appliedproject> {
   Widget build(BuildContext context) {
     var userProvider = Provider.of<Userprovider>(context, listen: false);
     String currentName = userProvider.userName;
+
     return Padding(
       padding: const EdgeInsets.only(top: 12.0),
       child: Column(
@@ -62,8 +64,7 @@ class _AppliedprojectState extends State<Appliedproject> {
                 } else {
                   var projects = snapshot.data!.docs;
 
-                  // Manually filter projects where the user has applied
-                  // Manually filter projects where the user has applied (individual or team)
+                  // Filter projects where the user has applied (individually or as a team)
                   var filteredProjects = projects.where((project) {
                     List<dynamic> appliedIndividuals =
                         project['appliedIndividuals'] ?? [];
@@ -112,7 +113,7 @@ class _AppliedprojectState extends State<Appliedproject> {
 
                         String title = project['title'] ?? '';
                         String description = project['description'] ?? '';
-                        double budget = project['budget'] ?? '';
+                        double budget = project['budget'] ?? 0.0;
                         String deadline = project['deadline'] ?? '';
                         String projectId = project['projectId'] ?? '';
                         String status = project['status'];
@@ -132,10 +133,11 @@ class _AppliedprojectState extends State<Appliedproject> {
 
                         String? appointedFreelancer =
                             project['appointedFreelancer'];
+                        String? appointedTeamId = project['appointedTeamId'];
 
+                        // Skip this project if the user has not applied
                         if (!hasUserApplied) {
-                          return SizedBox
-                              .shrink(); // Skip this project if the user has already applied
+                          return SizedBox.shrink();
                         }
 
                         int appliedTeamCount =
@@ -146,30 +148,14 @@ class _AppliedprojectState extends State<Appliedproject> {
                         int appliedCount =
                             appliedIndividuals.length + appliedTeamCount;
 
-                        // Determine button label based on appointment status
-                        String buttonLabel = "Applied";
-                        bool isRejected = false;
-                        if (appointedFreelancer != null) {
-                          if (appointedFreelancer == currentName) {
-                            buttonLabel = "Appointed";
-                          } else {
-                            buttonLabel = "Rejected";
-                            isRejected = true;
-                          }
-                        }
-
-                        // Check if current user is part of a team
-                        bool isUserPartOfTeam = false;
-                        appliedTeams.forEach((team) {
-                          List<dynamic> members = team['members'] ?? [];
-                          isUserPartOfTeam = members.any(
-                              (member) => member['fullName'] == currentName);
-                        });
-
-                        if (isUserPartOfTeam) {
-                          buttonLabel =
-                              "Appointed"; // User is part of an appointed team
-                        }
+                        // Determine the button label based on the project status
+                        String buttonLabel = determineButtonLabel(
+                          appliedIndividuals,
+                          appliedTeams,
+                          currentName,
+                          appointedFreelancer,
+                          appointedTeamId,
+                        );
 
                         return Padding(
                           padding: EdgeInsets.all(7),
@@ -207,34 +193,16 @@ class _AppliedprojectState extends State<Appliedproject> {
                                       maxLines: isExpanded ? null : 5,
                                       softWrap: true,
                                     ),
-                                    SizedBox(
-                                      height: 8,
-                                    ),
+                                    SizedBox(height: 8),
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.end,
                                       children: [
                                         Text(
                                           "Deadline : $deadline",
                                           style: TextStyle(
-                                              color: const Color.fromARGB(
-                                                  255, 255, 19, 19),
-                                              fontSize: 13),
+                                              color: Colors.red, fontSize: 13),
                                         ),
                                         SizedBox(width: 10),
-                                        if (isRejected)
-                                          Align(
-                                            alignment: Alignment.centerRight,
-                                            child: IconButton(
-                                              icon: Icon(Icons.delete,
-                                                  color: Colors.red),
-                                              onPressed: () {
-                                                setState(() {
-                                                  dismissedProjectIds
-                                                      .add(projectId);
-                                                });
-                                              },
-                                            ),
-                                          ),
                                       ],
                                     ),
                                     Text(
@@ -244,20 +212,15 @@ class _AppliedprojectState extends State<Appliedproject> {
                                           fontSize: 14,
                                           fontWeight: FontWeight.bold),
                                     ),
-                                    SizedBox(
-                                      height: 4,
-                                    ),
+                                    SizedBox(height: 4),
                                     DescriptionWidget(description: description),
-                                    SizedBox(
-                                      height: 8,
-                                    ),
+                                    SizedBox(height: 8),
                                     Row(
                                       children: [
                                         Text(
                                           "Applied By : ",
                                           style: TextStyle(
-                                              color: const Color.fromARGB(
-                                                  255, 144, 143, 143),
+                                              color: Colors.grey,
                                               fontSize: 12,
                                               fontWeight: FontWeight.bold),
                                         ),
@@ -265,15 +228,12 @@ class _AppliedprojectState extends State<Appliedproject> {
                                         Text(
                                           '$appliedCount',
                                           style: TextStyle(
-                                              color: const Color.fromARGB(
-                                                  255, 0, 0, 0),
+                                              color: Colors.black,
                                               fontSize: 16,
                                               fontWeight: FontWeight.bold),
                                         ),
-                                        Icon(
-                                          Icons.person,
-                                          color: Colors.deepPurple,
-                                        )
+                                        Icon(Icons.person,
+                                            color: Colors.deepPurple)
                                       ],
                                     ),
                                     Row(
@@ -282,16 +242,14 @@ class _AppliedprojectState extends State<Appliedproject> {
                                         Text(
                                           "Budget : ",
                                           style: TextStyle(
-                                              color: const Color.fromARGB(
-                                                  255, 0, 0, 0),
+                                              color: Colors.black,
                                               fontSize: 13,
                                               fontWeight: FontWeight.bold),
                                         ),
                                         Text(
                                           "${NumberFormat("#,##0", "en_US").format(budget)} Rs",
                                           style: TextStyle(
-                                              color: const Color.fromARGB(
-                                                  255, 106, 0, 148),
+                                              color: Colors.deepPurple,
                                               fontSize: 16,
                                               fontWeight: FontWeight.bold),
                                         ),
@@ -303,9 +261,8 @@ class _AppliedprojectState extends State<Appliedproject> {
                                             fontWeight: FontWeight.bold)),
                                     SizedBox(height: 5),
                                     Wrap(
-                                      spacing: 4.0, // Space between each item
-                                      runSpacing:
-                                          4.0, // Space between lines when wrapping
+                                      spacing: 4.0,
+                                      runSpacing: 4.0,
                                       children: preferences.map((preference) {
                                         return Chip(
                                           label: Text(
@@ -315,8 +272,8 @@ class _AppliedprojectState extends State<Appliedproject> {
                                                 fontWeight: FontWeight.bold),
                                           ),
                                           padding: EdgeInsets.all(2),
-                                          backgroundColor: Colors.deepPurple
-                                              .shade100, // Optional: Change color
+                                          backgroundColor:
+                                              Colors.deepPurple.shade100,
                                         );
                                       }).toList(),
                                     ),
@@ -327,18 +284,16 @@ class _AppliedprojectState extends State<Appliedproject> {
                                           width: 100,
                                           alignment: Alignment.center,
                                           decoration: BoxDecoration(
-                                            color: const Color.fromARGB(
-                                                255, 69, 0, 180), // Dark Purple
-                                            borderRadius: BorderRadius.circular(
-                                                10), // Apply border radius
+                                            color: Colors.deepPurple,
+                                            borderRadius:
+                                                BorderRadius.circular(10),
                                           ),
                                           child: Padding(
                                             padding: const EdgeInsets.all(4.0),
                                             child: Text(
                                               buttonLabel,
                                               style: TextStyle(
-                                                color: Colors
-                                                    .white, // Set the text color to white
+                                                color: Colors.white,
                                               ),
                                             ),
                                           ),
@@ -350,11 +305,9 @@ class _AppliedprojectState extends State<Appliedproject> {
                                       project['createdAt'] != null &&
                                               project['createdAt'] is Timestamp
                                           ? 'Posted on: ${DateFormat('yyyy-MM-dd HH:mm:ss').format((project['createdAt'] as Timestamp).toDate())}'
-                                          : 'Posted on: N/A', // Handle null values gracefully
+                                          : 'Posted on: N/A',
                                       style: TextStyle(
-                                          fontSize: 13,
-                                          color: const Color.fromARGB(
-                                              255, 139, 139, 139)),
+                                          fontSize: 13, color: Colors.grey),
                                     ),
                                   ],
                                 ),
@@ -368,5 +321,38 @@ class _AppliedprojectState extends State<Appliedproject> {
         ],
       ),
     );
+  }
+
+  String determineButtonLabel(
+    List<dynamic> appliedIndividuals,
+    List<dynamic> appliedTeams,
+    String currentName,
+    String? appointedFreelancer,
+    String? appointedTeamId,
+  ) {
+    bool hasUserAppliedIndividually =
+        appliedIndividuals.any((applicant) => applicant['name'] == currentName);
+    bool isUserPartOfTeam = appliedTeams.any((team) {
+      List<dynamic> members = team['members'] ?? [];
+      return members.any((member) => member['fullName'] == currentName);
+    });
+
+    // Check if the user is appointed as a freelancer or in a team
+    bool isUserAppointedFreelancer = appointedFreelancer == currentName;
+    bool isUserAppointedTeam = appointedTeamId != null && isUserPartOfTeam;
+
+    // If the user is appointed as a freelancer or part of a team, return "Appointed"
+    if (isUserAppointedFreelancer || isUserAppointedTeam) {
+      return "Appointed";
+    }
+    // If the user has applied but no one has been appointed, return "On-Hold"
+    else if ((hasUserAppliedIndividually || isUserPartOfTeam) &&
+        (appointedFreelancer == null && appointedTeamId == null)) {
+      return "On-Hold"; // User has applied but no one is appointed
+    }
+    // Otherwise, the user hasn't applied or was rejected after an appointment, show "Rejected"
+    else {
+      return "Rejected";
+    }
   }
 }
