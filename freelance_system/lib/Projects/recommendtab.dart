@@ -1,111 +1,165 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'applicants.dart'; // Import the Applicants screen
 
 class Recommended extends StatelessWidget {
   final List<dynamic> applicants;
-  final List<dynamic> teams;
-  final List<dynamic> projectSkills; // Expected to be a List of Strings
+  final List<dynamic> projectSkills;
+  final String projectId; // Add projectId to pass to the Applicants screen
 
   const Recommended({
     super.key,
     required this.applicants,
-    required this.teams,
     required this.projectSkills,
+    required this.projectId, // Initialize projectId here
   });
 
-  @override
-  Widget build(BuildContext context) {
-    List<Widget> recommendedWidgets = [];
+  // Function to get skill match count from both `skills` and `resume_entities['SKILLS']`
+  int getSkillMatchCount(
+      List<dynamic> candidateSkills, List<dynamic> resumeSkills) {
+    // Convert all skills and projectSkills to lowercase for case-insensitive matching
+    List<String> projectSkillsLower =
+        projectSkills.map((skill) => skill.toString().toLowerCase()).toList();
+    List<String> candidateSkillsLower =
+        candidateSkills.map((skill) => skill.toString().toLowerCase()).toList();
+    List<String> resumeSkillsLower =
+        resumeSkills.map((skill) => skill.toString().toLowerCase()).toList();
 
-    // Helper function to calculate skill match percentage
-    double calculateSkillMatch(
-        List<dynamic> skills, List<dynamic> projectSkills) {
-      int matchedSkills =
-          skills.where((skill) => projectSkills.contains(skill)).length;
-      return matchedSkills / projectSkills.length * 100;
-    }
+    // Matching skills in both fields (applicant's skills and resume_entities' skills)
+    int matchInSkills = candidateSkillsLower
+        .where((skill) => projectSkillsLower.contains(skill))
+        .length;
+    int matchInResumeSkills = resumeSkillsLower
+        .where((skill) => projectSkillsLower.contains(skill))
+        .length;
 
-    // Sort and filter applicants based on skills match and experience
-    List<dynamic> allCandidates = [...applicants, ...teams];
+    return matchInSkills + matchInResumeSkills; // Sum of both matches
+  }
 
-    // Filter out candidates who don't meet the minimum skill match and experience
-    allCandidates = allCandidates.where((candidate) {
-      List<dynamic> skills = candidate['skills'] ?? [];
-      double skillMatch = calculateSkillMatch(skills, projectSkills);
-      double experience =
-          double.tryParse(candidate['yearsOfExperience'].toString()) ?? 0;
+  // Function to fetch and extract experience from Firestore for the userId
+  Future<double> extractExperience(String userId) async {
+    // Print userId to the console
+    print("Fetching experience for user ID: $userId");
 
-      // Define the skill match threshold (e.g., 70% or higher) and minimum experience (e.g., 2 years)
-      return skillMatch >= 70 && experience >= 2;
-    }).toList();
+    // Fetch user document by userId
+    final userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(userId).get();
 
-    // Sort by experience in descending order
-    allCandidates.sort((a, b) {
-      double experienceA =
-          double.tryParse(a['yearsOfExperience'].toString()) ?? 0;
-      double experienceB =
-          double.tryParse(b['yearsOfExperience'].toString()) ?? 0;
-      return experienceB
-          .compareTo(experienceA); // Sort by experience in descending order
-    });
+    if (userDoc.exists) {
+      final resumeEntities = userDoc.data()?['resume_entities'] ?? {};
+      final years = resumeEntities['YEARS OF EXPERIENCE'];
 
-    // Loop through the filtered and sorted applicants and teams
-    for (var candidate in allCandidates) {
-      String name = candidate['name'] ?? 'Unknown';
-      List<dynamic> skills = candidate['skills'] ?? [];
-      double skillMatch = calculateSkillMatch(skills, projectSkills);
-      String status = 'Recommended';
-
-      // Add details based on whether the candidate is an individual or team
-      if (candidate['userId'] != null) {
-        recommendedWidgets.add(
-          ListTile(
-            leading: CircleAvatar(
-              backgroundColor: Colors.green,
-              child: Text(name.isNotEmpty ? name[0] : '?',
-                  style: TextStyle(color: Colors.white, fontSize: 18)),
-            ),
-            title: Text(name),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text("Status: $status"),
-                Text("Skills Match: ${skillMatch.toStringAsFixed(2)}%"),
-                Text("Experience: ${candidate['yearsOfExperience']} years"),
-              ],
-            ),
-            trailing: Icon(Icons.arrow_forward_ios, size: 16),
-            onTap: () {
-              // Navigate to candidate details
-            },
-          ),
-        );
-      } else {
-        recommendedWidgets.add(
-          ListTile(
-            leading: CircleAvatar(
-              backgroundColor: Colors.blue,
-              child: Text(name.isNotEmpty ? name[0] : '?',
-                  style: TextStyle(color: Colors.white, fontSize: 18)),
-            ),
-            title: Text(name),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text("Status: $status"),
-                Text("Skills Match: ${skillMatch.toStringAsFixed(2)}%"),
-              ],
-            ),
-            trailing: Icon(Icons.arrow_forward_ios, size: 16),
-            onTap: () {
-              // Navigate to team details
-            },
-          ),
-        );
+      // Check if years is a list and extract the first element
+      if (years is List && years.isNotEmpty) {
+        return double.tryParse(years[0].toString()) ?? 0;
+      } else if (years is String) {
+        return double.tryParse(years) ?? 0;
       }
     }
 
-    return recommendedWidgets.isNotEmpty
-        ? ListView(children: recommendedWidgets)
-        : Center(child: Text("No recommended applicants"));
+    return 0; // Return 0 if no valid experience is found
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _fetchRecommendedApplicants(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Center(child: Text("Error: ${snapshot.error}"));
+        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const Center(child: Text("No recommended applicants"));
+        } else {
+          List<Map<String, dynamic>> recommended = snapshot.data!;
+
+          return ListView.builder(
+            itemCount: recommended.length,
+            itemBuilder: (context, index) {
+              var data = recommended[index];
+              var candidate = data['candidate'];
+              String name = candidate['name'] ?? 'Unknown';
+
+              return Card(
+                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+                elevation: 3,
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: Colors.deepPurple,
+                    child: Text(
+                      name.isNotEmpty ? name[0] : '?',
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  title: Text(name,
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("Matched Skills: ${data['matchedSkills']}"),
+                      Text("Experience: ${data['experience']} years"),
+                    ],
+                  ),
+                  trailing: const Icon(Icons.recommend, color: Colors.green),
+                  onTap: () {
+                    // Navigate to Applicants screen and pass the data
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => Applicants(
+                          applicant: candidate, // Pass selected applicant data
+                          projectId: projectId, // Pass projectId
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          );
+        }
+      },
+    );
+  }
+
+  // Function to fetch and generate the list of recommended applicants
+  Future<List<Map<String, dynamic>>> _fetchRecommendedApplicants() async {
+    List<Map<String, dynamic>> recommended = [];
+
+    for (var candidate in applicants) {
+      List<dynamic> skills = candidate['skills'] ?? [];
+
+      // Fetch resume skills from Firestore
+      List<dynamic> resumeSkills = [];
+      double experience = await extractExperience(candidate['userId']);
+      final resume = candidate['resume_entities'] ?? {};
+      resumeSkills = resume['SKILLS'] ?? [];
+
+      // Print userId to the console for debugging
+      print("Evaluating userId: ${candidate['userId']}");
+
+      // Get skill matches
+      int matchedSkillCount = getSkillMatchCount(skills, resumeSkills);
+
+      if (matchedSkillCount > 0) {
+        recommended.add({
+          'candidate': candidate,
+          'matchedSkills': matchedSkillCount,
+          'experience': experience,
+        });
+      }
+    }
+
+    // Sort by matched skills and experience
+    recommended.sort((a, b) {
+      int skillCompare = b['matchedSkills'].compareTo(a['matchedSkills']);
+      if (skillCompare != 0) return skillCompare;
+      return b['experience'].compareTo(a['experience']);
+    });
+
+    return recommended;
   }
 }

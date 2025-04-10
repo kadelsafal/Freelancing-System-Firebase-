@@ -46,6 +46,25 @@ class _AppointedUserState extends State<AppointedUser>
     super.dispose();
   }
 
+  Future<void> _clearSubCollection(String collectionName) async {
+    try {
+      // Get all documents in the sub-collection
+      var querySnapshot = await FirebaseFirestore.instance
+          .collection('projects')
+          .doc(widget.projectId)
+          .collection(collectionName)
+          .get();
+
+      // Delete each document in the sub-collection
+      for (var doc in querySnapshot.docs) {
+        await doc.reference.delete();
+      }
+    } catch (e) {
+      // Handle error if needed
+      print("Error clearing $collectionName: $e");
+    }
+  }
+
   Future<void> _removeAppointed() async {
     bool confirm = await showDialog(
       context: context,
@@ -71,17 +90,23 @@ class _AppointedUserState extends State<AppointedUser>
           ? {
               'appointedFreelancer': null,
               'appointedFreelancerId': null,
+              'status': 'New'
             }
-          : {
-              'appointedTeam': null,
-              'appointedTeamId': null,
-            };
+          : {'appointedTeam': null, 'appointedTeamId': null, 'status': 'New'};
 
       try {
+        // Update project data to remove appointed freelancer/team
         await FirebaseFirestore.instance
             .collection('projects')
             .doc(widget.projectId)
             .update(updateData);
+
+        // Empty the sub-collections: issues, statusUpdates, milestones
+        await Future.wait([
+          _clearSubCollection('issues'),
+          _clearSubCollection('statusUpdates'),
+          _clearSubCollection('milestones'),
+        ]);
 
         widget.onAppointedUserRemoved();
 
@@ -89,7 +114,7 @@ class _AppointedUserState extends State<AppointedUser>
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                  "Appointed ${widget.appointedType} removed successfully."),
+                  "Appointed ${widget.appointedType.capitalize()} removed successfully."),
             ),
           );
         }
@@ -97,8 +122,8 @@ class _AppointedUserState extends State<AppointedUser>
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content:
-                  Text("Error removing appointed ${widget.appointedType}: $e"),
+              content: Text(
+                  "Error removing appointed ${widget.appointedType.capitalize()}: $e"),
             ),
           );
         }
@@ -169,7 +194,7 @@ class _AppointedUserState extends State<AppointedUser>
         ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 150),
           child: SizedBox(
-            height: 900,
+            height: 800,
             child: TabBarView(
               controller: _tabController,
               children: [

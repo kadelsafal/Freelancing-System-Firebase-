@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freelance_system/Projects/applicantstab.dart';
 import 'package:freelance_system/Projects/appointed_freelancer.dart';
-import 'package:freelance_system/Projects/freshertab.dart';
+import 'package:freelance_system/Projects/TeamsTab.dart';
 import 'package:freelance_system/Projects/recommendtab.dart';
 import 'package:intl/intl.dart';
 
@@ -261,7 +261,7 @@ class _ProjectviewState extends State<Projectview>
                         tabs: const [
                           Tab(text: "All Applicants"),
                           Tab(text: "Recommend"),
-                          Tab(text: "Freshers"),
+                          Tab(text: "Teams"),
                         ],
                       ),
                     ),
@@ -287,15 +287,17 @@ class _ProjectviewState extends State<Projectview>
                             ),
                             Recommended(
                               // If needed, pass individual recommendations here
-                              teams: project['appliedTeams'] ??
-                                  [], // Applied teams
+                              // Applied teams
+                              projectId: widget.projectId,
                               projectSkills: List<String>.from(
                                   project['preferences'] ??
                                       []), // Ensure this is a List<String>
                               applicants: project['appliedIndividuals'] ??
                                   [], // Applied individuals
                             ),
-                            Freshers(freshers: freshers),
+                            Teamstab(
+                                projectId: widget.projectId,
+                                appliedTeams: project['appliedTeams'] ?? []),
                           ],
                         ),
                       ),

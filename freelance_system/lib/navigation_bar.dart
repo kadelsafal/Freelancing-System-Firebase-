@@ -16,18 +16,29 @@ class _NavigationMenuState extends State<NavigationMenu> {
   int _selectedIndex = 0;
   late PageController _pageController;
 
-  final List<Widget> screens = [
-    const Dashboard(),
-    const ProjectScreen(),
-    const ResumeScreen(),
-    const LearningHub(),
-    const PaymentSystem(),
-  ];
+  late final List<Widget> screens;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: _selectedIndex);
+
+    // Safely initialize screens with fallback widgets in case any screen fails
+    screens = [
+      const Dashboard(),
+      _safeScreen(const ProjectScreen()),
+      _safeScreen(const ResumeScreen()),
+      _safeScreen(const LearningHub()),
+      _safeScreen(const PaymentSystem()),
+    ];
+  }
+
+  Widget _safeScreen(Widget screen) {
+    try {
+      return screen;
+    } catch (e) {
+      return Center(child: Text("Failed to load screen: $e"));
+    }
   }
 
   @override
@@ -53,7 +64,7 @@ class _NavigationMenuState extends State<NavigationMenu> {
         ),
         child: NavigationBar(
           height: 70,
-          backgroundColor: Colors.white, // Changed from transparent to white
+          backgroundColor: Colors.white,
           selectedIndex: _selectedIndex,
           onDestinationSelected: (index) {
             if (_selectedIndex != index) {

@@ -141,23 +141,25 @@ class _MilestoneTabState extends State<MilestoneTab> {
     return DateFormat('yyyy-MM-dd').format(date);
   }
 
-  Color _getStatusColor(String status) {
-    switch (status) {
+  Color _getStatusColor(String? status) {
+    switch (status ?? '') {
       case 'Completed':
-        return Colors.green; // Green for 'Solved'
+        return Colors.green;
       case 'Not Completed':
-        return Colors.red; // Red for 'Not Solved'
+        return Colors.red;
       default:
-        return Colors.white;
+        return Colors.grey; // Use grey for unknown/null status
     }
   }
 
-  // Helper function to get the text color based on status
-  Color _getStatusTextColor(String status) {
-    if (status == 'Not Completed' || status == 'Completed') {
-      return Colors.white;
+  Color _getStatusTextColor(String? status) {
+    switch (status ?? '') {
+      case 'Completed':
+      case 'Not Completed':
+        return Colors.white;
+      default:
+        return Colors.black;
     }
-    return Colors.black;
   }
 
   // Helper function to calculate the milestone status stats
@@ -393,28 +395,30 @@ class _MilestoneTabState extends State<MilestoneTab> {
                                               horizontal: 8, vertical: 6),
                                           decoration: BoxDecoration(
                                             color: _getStatusColor(task[
-                                                'status']), // Background color based on status
+                                                    'status']
+                                                as String?), // Background color based on status
                                             borderRadius: BorderRadius.circular(
                                                 45), // Rounded corners for the border
                                             border: Border.all(
-                                              color: _getStatusTextColor(task[
-                                                  'status']), // Border color based on status
+                                              color: _getStatusColor(task[
+                                                      'status']
+                                                  as String?), // Border color based on status
                                               width: 3, // Border width
                                             ),
                                           ),
                                           child: DropdownButton<String>(
                                             value: task['status'],
                                             isDense: true,
-                                            dropdownColor:
-                                                _getStatusColor(task['status']),
+                                            dropdownColor: _getStatusColor(
+                                                task['status'] as String?),
                                             iconEnabledColor:
                                                 _getStatusTextColor(
-                                                    task['status']),
+                                                    task['status'] as String?),
                                             underline:
                                                 const SizedBox(), // Remove underline
                                             style: TextStyle(
                                               color: _getStatusTextColor(
-                                                  task['status']),
+                                                  task['status'] as String?),
                                             ),
                                             onChanged: (status) {
                                               if (status != null) {
@@ -468,8 +472,8 @@ class _MilestoneTabState extends State<MilestoneTab> {
                               Text(
                                 "Status: ${milestone['status']}",
                                 style: TextStyle(
-                                  color: _getStatusTextColor(milestone[
-                                      'status']), // Dynamically change text color based on status
+                                  color: _getStatusTextColor(milestone['status']
+                                      as String?), // Dynamically change text color based on status
                                 ),
                               ),
                               Row(

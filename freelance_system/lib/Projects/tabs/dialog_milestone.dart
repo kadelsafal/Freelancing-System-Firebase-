@@ -52,7 +52,7 @@ class _MilestoneDialogState extends State<MilestoneDialog> {
           'title': subtaskTitleController.text,
           'startDate': startDate!.toIso8601String(),
           'endDate': endDate!.toIso8601String(),
-          'done': false,
+          'status': 'Not Completed',
         });
         subtaskTitleController.clear();
         startDate = null;
@@ -145,10 +145,15 @@ class _MilestoneDialogState extends State<MilestoneDialog> {
               ...currentSubtasks.asMap().entries.map((entry) {
                 int index = entry.key;
                 var s = entry.value;
+                String start = s['startDate'] != null
+                    ? s['startDate'].split('T')[0]
+                    : 'N/A';
+                String end =
+                    s['endDate'] != null ? s['endDate'].split('T')[0] : 'N/A';
                 return ListTile(
-                  title: Text("Subtask ${index + 1}: ${s['title']}"),
-                  subtitle: Text(
-                      "From: ${s['startDate'].split('T')[0]} To: ${s['endDate'].split('T')[0]}"),
+                  title:
+                      Text("Subtask ${index + 1}: ${s['title'] ?? 'No Title'}"),
+                  subtitle: Text("From: $start To: $end"),
                 );
               }),
               const SizedBox(height: 10),
@@ -168,13 +173,18 @@ class _MilestoneDialogState extends State<MilestoneDialog> {
                     ...m['subtasks'].asMap().entries.map((subEntry) {
                       int subIndex = subEntry.key;
                       var sub = subEntry.value;
+                      String start = sub['startDate'] != null
+                          ? sub['startDate'].split('T')[0]
+                          : 'N/A';
+                      String end = sub['endDate'] != null
+                          ? sub['endDate'].split('T')[0]
+                          : 'N/A';
                       return Padding(
                         padding: const EdgeInsets.only(left: 12.0),
                         child: ListTile(
-                          title:
-                              Text("Subtask ${subIndex + 1}: ${sub['title']}"),
-                          subtitle: Text(
-                              "From: ${sub['startDate'].split('T')[0]} To: ${sub['endDate'].split('T')[0]}"),
+                          title: Text(
+                              "Subtask ${subIndex + 1}: ${sub['title'] ?? 'No Title'}"),
+                          subtitle: Text("From: $start To: $end"),
                         ),
                       );
                     }),
