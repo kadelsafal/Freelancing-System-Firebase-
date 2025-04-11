@@ -101,210 +101,184 @@ class _CoursesState extends State<Courses> {
         title: Text("Upload Course"),
         toolbarHeight: 120,
         backgroundColor: Colors.deepPurple,
-        foregroundColor:
-            Colors.white, // Set the background color to deep purple
+        foregroundColor: Colors.white,
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : courses.isEmpty
-              ? const Center(
-                  child: Text("You haven't enrolled in any courses yet."))
-              : Padding(
-                  padding: const EdgeInsets.all(10),
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: SizedBox(
-                          width: 250,
-                          child: ElevatedButton(
-                              onPressed: () {
-                                Navigator.pushReplacement(
+          : Padding(
+              padding: const EdgeInsets.all(10),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: SizedBox(
+                      width: 250,
+                      child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => Addcourse()));
+                          },
+                          style: ButtonStyle(
+                            backgroundColor:
+                                WidgetStateProperty.all(Colors.deepPurple),
+                            foregroundColor:
+                                WidgetStateProperty.all(Colors.white),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: const [
+                                Text("Add Course",
+                                    style: TextStyle(fontSize: 16)),
+                                SizedBox(width: 3),
+                                Icon(Icons.menu_book_outlined,
+                                    color: Colors.white, size: 40),
+                              ],
+                            ),
+                          )),
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      "Uploaded Course",
+                      style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.deepPurple,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Expanded(
+                    child: courses.isEmpty
+                        ? const Center(
+                            child:
+                                Text("You haven't uploaded any courses yet."))
+                        : GridView.builder(
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 10,
+                              mainAxisSpacing: 10,
+                              childAspectRatio: 0.7,
+                            ),
+                            itemCount: courses.length,
+                            itemBuilder: (context, index) {
+                              var course = courses[index];
+                              return GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                        builder: (context) => Addcourse()));
-                              },
-                              style: ButtonStyle(
-                                backgroundColor:
-                                    WidgetStateProperty.all(Colors.deepPurple),
-                                foregroundColor:
-                                    WidgetStateProperty.all(Colors.white),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      "Add Course",
-                                      style: TextStyle(fontSize: 16),
-                                    ),
-                                    SizedBox(
-                                      width: 3,
-                                    ),
-                                    Icon(
-                                      Icons.menu_book_outlined,
-                                      color: Colors.white,
-                                      size: 40,
-                                    )
-                                  ],
-                                ),
-                              )),
-                        ),
-                      ),
-                      SizedBox(
-                        height: 30,
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Uploaded Course",
-                            style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.deepPurple,
-                                fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                      SizedBox(
-                        height: 30,
-                      ),
-                      Expanded(
-                        child: GridView.builder(
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2, // Two courses per row
-                            crossAxisSpacing: 10,
-                            mainAxisSpacing: 10,
-                            childAspectRatio: 0.7, // Adjust the aspect ratio
-                          ),
-                          itemCount: courses.length,
-                          itemBuilder: (context, index) {
-                            var course = courses[index];
-                            return GestureDetector(
-                              onTap: () {
-                                // Navigate to CourseDetail page when a course is clicked
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => Editcourse(
-                                      courseId: course['courseId'],
-                                      title: course['title'] ?? 'Course',
-                                    ),
-                                  ),
-                                );
-                              },
-                              child: Card(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                elevation: 4,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Container(
-                                      height: 100,
-                                      width: double.infinity,
-                                      decoration: BoxDecoration(
-                                        borderRadius: const BorderRadius.only(
-                                          topLeft: Radius.circular(10),
-                                          topRight: Radius.circular(10),
-                                        ),
-                                        color: Colors.grey[200],
+                                      builder: (context) => Editcourse(
+                                        courseId: course['courseId'],
+                                        title: course['title'] ?? 'Course',
                                       ),
-                                      child: Center(
-                                          child: _getCourseTypeIcon(
-                                              course['courseType'] ??
-                                                  'Others')),
                                     ),
-                                    Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            course['title'] ?? 'No Title',
-                                            style: const TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
+                                  );
+                                },
+                                child: Card(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  elevation: 4,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        height: 100,
+                                        width: double.infinity,
+                                        decoration: BoxDecoration(
+                                          borderRadius: const BorderRadius.only(
+                                            topLeft: Radius.circular(10),
+                                            topRight: Radius.circular(10),
+                                          ),
+                                          color: Colors.grey[200],
+                                        ),
+                                        child: Center(
+                                            child: _getCourseTypeIcon(
+                                                course['courseType'] ??
+                                                    'Others')),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              course['title'] ?? 'No Title',
+                                              style: const TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              maxLines: null,
+                                              overflow: TextOverflow.ellipsis,
                                             ),
-                                            maxLines: null,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          const SizedBox(height: 5),
-                                          Text(
-                                            "Instructor: ${course['username'] ?? 'Unknown'}",
-                                            maxLines: null,
-                                            style: const TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.grey),
-                                          ),
-                                          const SizedBox(
-                                            height: 10,
-                                          ),
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.end,
-                                            children: [
-                                              ElevatedButton(
-                                                onPressed: () {},
-                                                style: ButtonStyle(
-                                                  backgroundColor:
-                                                      WidgetStateProperty.all(
-                                                          Colors.deepPurple),
-                                                  foregroundColor:
-                                                      WidgetStateProperty.all(
-                                                          const Color.fromARGB(
-                                                              255,
-                                                              255,
-                                                              255,
-                                                              255)),
-                                                  padding: WidgetStateProperty
-                                                      .all(EdgeInsets.symmetric(
-                                                          vertical: 10,
-                                                          horizontal:
-                                                              20)), // Increased padding
-                                                ),
-                                                child: Center(
-                                                  child: Row(
+                                            const SizedBox(height: 5),
+                                            Text(
+                                              "Instructor: ${course['username'] ?? 'Unknown'}",
+                                              maxLines: null,
+                                              style: const TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.grey),
+                                            ),
+                                            const SizedBox(height: 10),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.end,
+                                              children: [
+                                                ElevatedButton(
+                                                  onPressed: () {},
+                                                  style: ButtonStyle(
+                                                    backgroundColor:
+                                                        WidgetStateProperty.all(
+                                                            Colors.deepPurple),
+                                                    foregroundColor:
+                                                        WidgetStateProperty.all(
+                                                            Colors.white),
+                                                    padding:
+                                                        WidgetStateProperty.all(
+                                                            const EdgeInsets
+                                                                .symmetric(
+                                                                vertical: 10,
+                                                                horizontal:
+                                                                    20)),
+                                                  ),
+                                                  child: const Row(
                                                     children: [
-                                                      Icon(
-                                                        Icons.edit,
-                                                        size: 24,
-                                                        color: Colors.white,
-                                                      ),
-                                                      const SizedBox(
-                                                        width: 10,
-                                                      ),
-                                                      Text(
-                                                        "Edit",
-                                                        style: TextStyle(
-                                                            fontSize: 14,
-                                                            color: const Color
-                                                                .fromARGB(255,
-                                                                255, 255, 255)),
-                                                      ),
+                                                      Icon(Icons.edit,
+                                                          size: 24,
+                                                          color: Colors.white),
+                                                      SizedBox(width: 10),
+                                                      Text("Edit",
+                                                          style: TextStyle(
+                                                              fontSize: 14,
+                                                              color: Colors
+                                                                  .white)),
                                                     ],
                                                   ),
                                                 ),
-                                              ),
-                                            ],
-                                          )
-                                        ],
+                                              ],
+                                            )
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
+                              );
+                            },
+                          ),
                   ),
-                ),
+                ],
+              ),
+            ),
     );
   }
 }

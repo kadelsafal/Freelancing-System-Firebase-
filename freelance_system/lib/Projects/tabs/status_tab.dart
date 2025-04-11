@@ -10,13 +10,11 @@ import 'package:provider/provider.dart';
 class StatusTab extends StatefulWidget {
   final String projectId;
   final String role;
-  final Function(QuerySnapshot) onNewUpdates;
 
   const StatusTab({
     super.key,
     required this.projectId,
     required this.role,
-    required this.onNewUpdates,
   });
 
   @override
@@ -28,74 +26,10 @@ class _StatusTabState extends State<StatusTab> {
   final List<XFile> _selectedImages = [];
   final List<bool> _imageLoadingStatus = [];
   bool _isPostingUpdate = false;
-  Timestamp? latestStatusTimestamp;
-  bool hasUnseenUpdates = false;
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final userProvider = Provider.of<Userprovider>(context, listen: false);
-      checkForUnseenStatusCount(userProvider.userId); // <-- Fix here
-      markStatusAsSeen(
-          userProvider.userId); // optional: mark as seen when opened
-    });
-  }
-
-  // Check if there are new unseen updates based on the timestamp
-  // Check if there are new unseen updates based on the timestamp
-  Future<void> checkForUnseenStatusCount(String userId) async {
-    final userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .collection('projectViews')
-        .doc(widget.projectId)
-        .get();
-
-    final lastSeen =
-        userDoc.exists ? userDoc['lastSeenStatus'] as Timestamp : null;
-
-    final snapshot = await FirebaseFirestore.instance
-        .collection('projects')
-        .doc(widget.projectId)
-        .collection('statusUpdates')
-        .orderBy('timestamp', descending: false)
-        .get();
-
-    int unseenCount = 0;
-    for (var doc in snapshot.docs) {
-      final updateTime = doc['timestamp'] as Timestamp;
-      if (lastSeen == null || updateTime.compareTo(lastSeen) > 0) {
-        unseenCount++;
-      }
-    }
-
-    // You can call this in your main page to pass the count to TabBar
-    widget.onNewUpdates(snapshot); // or send unseenCount as a param
-
-    setState(() {
-      hasUnseenUpdates = unseenCount > 0;
-    });
-  }
-
-  Future<void> markStatusAsSeen(String userId) async {
-    final snapshot = await FirebaseFirestore.instance
-        .collection('projects')
-        .doc(widget.projectId)
-        .collection('statusUpdates')
-        .orderBy('timestamp', descending: true)
-        .limit(1)
-        .get();
-
-    if (snapshot.docs.isNotEmpty) {
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .collection('projectViews')
-          .doc(widget.projectId)
-          .set({
-        'lastSeenStatus': snapshot.docs.first['timestamp'],
-      });
-    }
   }
 
   Future<List<String?>> uploadImagesToCloudinary(List<XFile> imageFiles) async {
@@ -143,7 +77,6 @@ class _StatusTabState extends State<StatusTab> {
     final pickedFiles = await picker.pickMultiImage();
     if (pickedFiles != null) {
       setState(() {
-        // Avoid adding duplicate images
         _selectedImages.addAll(pickedFiles
             .where((file) => !_selectedImages.contains(file))
             .toList());
@@ -179,6 +112,7 @@ class _StatusTabState extends State<StatusTab> {
         'images': imageUrls.where((url) => url != null).toList(),
         'role': widget.role,
         'timestamp': Timestamp.now(),
+        'isSeenBy': [author], // Mark as seen by author immediately
       });
 
       setState(() {
@@ -190,6 +124,22 @@ class _StatusTabState extends State<StatusTab> {
 
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Status update posted successfully!")));
+    }
+  }
+
+  // Modify _markAsSeen to handle unseen updates properly
+  Future<void> _markAsSeen(
+      String docId, List seenBy, String currentUser) async {
+    if (!seenBy.contains(currentUser)) {
+      await FirebaseFirestore.instance
+          .collection('projects')
+          .doc(widget.projectId)
+          .collection('statusUpdates')
+          .doc(docId)
+          .update({
+        'isSeenBy': FieldValue.arrayUnion(
+            [currentUser]), // Mark as seen by the current user
+      });
     }
   }
 
@@ -220,25 +170,10 @@ class _StatusTabState extends State<StatusTab> {
         } else if (!snapshot.hasData || !snapshot.data!.exists) {
           return const Center(child: Text("Project not found"));
         } else {
-          var project = snapshot.data!;
-          String appointedFreelancer = project['appointedFreelancer'] ?? '';
-
           return Padding(
             padding: const EdgeInsets.all(12),
             child: Column(
               children: [
-                if (hasUnseenUpdates)
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(12)),
-                    child: const Text(
-                      "New Updates",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
                 Expanded(
                   child: StreamBuilder<QuerySnapshot>(
                     stream: FirebaseFirestore.instance
@@ -260,23 +195,27 @@ class _StatusTabState extends State<StatusTab> {
                       } else {
                         final docs = statusSnapshot.data!.docs;
 
-                        latestStatusTimestamp =
-                            docs.first['timestamp'] as Timestamp?;
-
                         return ListView.builder(
                           reverse: true,
                           itemCount: docs.length,
                           itemBuilder: (context, index) {
                             var doc = docs[index];
                             var statusData = doc.data() as Map<String, dynamic>;
+                            List seenBy = statusData['isSeenBy'] ?? [];
 
                             bool isSender = currentName == statusData['author'];
+                            bool isSeen = seenBy.contains(currentName);
+
+                            // Mark as seen if it's not the sender and it's unseen
+                            if (!isSender && !isSeen) {
+                              _markAsSeen(doc.id, seenBy, currentName);
+                            }
 
                             return Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: GestureDetector(
                                 onTap: () async {
-                                  if (currentName == statusData['author']) {
+                                  if (isSender) {
                                     bool? confirmDelete = await showDialog(
                                       context: context,
                                       builder: (context) {
@@ -286,22 +225,19 @@ class _StatusTabState extends State<StatusTab> {
                                               'Are you sure you want to delete this status update?'),
                                           actions: <Widget>[
                                             TextButton(
-                                              onPressed: () {
-                                                Navigator.pop(context, false);
-                                              },
+                                              onPressed: () =>
+                                                  Navigator.pop(context, false),
                                               child: const Text('Cancel'),
                                             ),
                                             TextButton(
-                                              onPressed: () {
-                                                Navigator.pop(context, true);
-                                              },
+                                              onPressed: () =>
+                                                  Navigator.pop(context, true),
                                               child: const Text('Delete'),
                                             ),
                                           ],
                                         );
                                       },
                                     );
-
                                     if (confirmDelete == true) {
                                       _deleteStatus(doc.id);
                                     }
@@ -319,14 +255,15 @@ class _StatusTabState extends State<StatusTab> {
                                       decoration: BoxDecoration(
                                         color: isSender
                                             ? Colors.blue.shade100
-                                            : const Color.fromARGB(
-                                                255, 156, 255, 162),
+                                            : isSeen
+                                                ? const Color.fromARGB(
+                                                    255, 156, 255, 162)
+                                                : Colors.orange.shade100,
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Column(
-                                        crossAxisAlignment: isSender
-                                            ? CrossAxisAlignment.start
-                                            : CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Row(
                                             children: [
@@ -342,13 +279,34 @@ class _StatusTabState extends State<StatusTab> {
                                               const SizedBox(width: 8),
                                               Text(
                                                 statusData['author'],
-                                                style: const TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.bold),
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14,
+                                                  color: Colors.black,
+                                                ),
                                               ),
+                                              if (!isSeen && !isSender)
+                                                const Padding(
+                                                  padding: EdgeInsets.only(
+                                                      left: 8.0),
+                                                  child: Text(
+                                                    "🟢 Unseen",
+                                                    style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold),
+                                                  ),
+                                                ),
                                             ],
                                           ),
-                                          Text(statusData['text']),
+                                          const SizedBox(height: 5),
+                                          Text(
+                                            statusData['text'],
+                                            style: TextStyle(
+                                              fontWeight: !isSeen && !isSender
+                                                  ? FontWeight.bold
+                                                  : FontWeight.normal,
+                                            ),
+                                          ),
                                           if (statusData['images'] != null &&
                                               statusData['images'].isNotEmpty)
                                             Column(
@@ -368,20 +326,16 @@ class _StatusTabState extends State<StatusTab> {
                                                           onTap: () {
                                                             showDialog(
                                                               context: context,
-                                                              builder:
-                                                                  (context) =>
-                                                                      Dialog(
-                                                                child: Image
-                                                                    .network(
-                                                                        imageUrl),
-                                                              ),
+                                                              builder: (context) => Dialog(
+                                                                  child: Image
+                                                                      .network(
+                                                                          imageUrl)),
                                                             );
                                                           },
                                                           child: Padding(
                                                             padding:
                                                                 const EdgeInsets
-                                                                    .all(
-                                                                    8.0), // Smaller padding
+                                                                    .all(8.0),
                                                             child:
                                                                 Image.network(
                                                               imageUrl,
@@ -393,20 +347,14 @@ class _StatusTabState extends State<StatusTab> {
                                                     ),
                                                   ),
                                                 ),
-                                                const SizedBox(
-                                                    height:
-                                                        22), // Spacing between images and timestamp
+                                                const SizedBox(height: 10),
                                               ],
                                             ),
-                                          Padding(
-                                            padding:
-                                                const EdgeInsets.only(top: 4.0),
-                                            child: Text(
-                                              "${(statusData['timestamp'] as Timestamp).toDate()}",
-                                              style: const TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors.grey),
-                                            ),
+                                          Text(
+                                            "${(statusData['timestamp'] as Timestamp).toDate()}",
+                                            style: const TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey),
                                           ),
                                         ],
                                       ),
@@ -428,7 +376,7 @@ class _StatusTabState extends State<StatusTab> {
                     controller: _statusUpdateController,
                     decoration: InputDecoration(
                       labelText: "Post a Status Update",
-                      border: OutlineInputBorder(),
+                      border: const OutlineInputBorder(),
                       suffixIcon: IconButton(
                         icon: Icon(
                           _selectedImages.isEmpty
