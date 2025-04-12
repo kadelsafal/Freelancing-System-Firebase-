@@ -12,144 +12,215 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-
-  bool isloading = false;
-  TextEditingController emailController = TextEditingController();
-  TextEditingController passwordController = TextEditingController();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  bool isLoading = false;
   bool isPasswordVisible = false;
 
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
   Future<void> loginUser() async {
-    setState(() {
-      isloading = true;
-    });
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => isLoading = true);
 
     try {
-      UserCredential userCredential = await FirebaseAuth.instance
-          .signInWithEmailAndPassword(
-              email: emailController.text, password: passwordController.text);
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
 
-      // Handle successful login
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("Login Successful")));
+      if (!mounted) return;
 
-      // Navigate to the dashboard or any other screen
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) {
-        return SplashScreen();
-      }));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Login Successful")),
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const SplashScreen()),
+      );
     } on FirebaseAuthException catch (e) {
-      String errorMessage = "An error occurred";
+      String message = "An error occurred";
 
       if (e.code == 'user-not-found') {
-        errorMessage = 'No user found for that email.';
+        message = 'No user found for that email.';
       } else if (e.code == 'wrong-password') {
-        errorMessage = 'Incorrect password.';
+        message = 'Incorrect password.';
       }
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(errorMessage)));
+          .showSnackBar(SnackBar(content: Text(message)));
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("An unexpected error occurred: $e")));
+        SnackBar(content: Text("Unexpected error: $e")),
+      );
     } finally {
-      setState(() {
-        isloading = false;
-      });
+      if (mounted) setState(() => isLoading = false);
     }
+  }
+
+  void showForgotPasswordDialog() {
+    final forgotEmailController = TextEditingController();
+    final parentContext = context;
+
+    showDialog(
+      context: parentContext,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text("Reset Password"),
+          content: TextFormField(
+            controller: forgotEmailController,
+            keyboardType: TextInputType.emailAddress,
+            decoration: const InputDecoration(labelText: "Enter your email"),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final email = forgotEmailController.text.trim();
+                Navigator.of(dialogContext).pop(); // Close dialog first
+
+                if (email.isNotEmpty) {
+                  try {
+                    await FirebaseAuth.instance
+                        .sendPasswordResetEmail(email: email);
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(parentContext).showSnackBar(
+                      SnackBar(
+                          content: Text("Password reset link sent to $email")),
+                    );
+                  } on FirebaseAuthException catch (e) {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(parentContext).showSnackBar(
+                      SnackBar(
+                          content:
+                              Text(e.message ?? "Error sending reset email")),
+                    );
+                  }
+                }
+              },
+              child: const Text("Send Reset Link"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Login"),
-      ),
+      appBar: AppBar(title: const Text("Login")),
       body: Center(
         child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Email Field
-                  TextFormField(
-                    controller: emailController,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return "Email is required";
-                      }
-                      final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
-                      if (!emailRegex.hasMatch(value)) {
-                        return "Enter a valid email address";
-                      }
-                      return null;
-                    },
-                    decoration: InputDecoration(labelText: "Email"),
-                  ),
-                  SizedBox(height: 10),
-                  // Password Field with Toggle
-                  TextFormField(
-                    controller: passwordController,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return "Password cannot be empty";
-                      }
-                      if (value.length < 6) {
-                        return "Password must be at least 6 characters long";
-                      }
-                      return null;
-                    },
-                    obscureText: !isPasswordVisible,
-                    enableSuggestions: false,
-                    autocorrect: false,
-                    decoration: InputDecoration(
-                      labelText: "Password",
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          isPasswordVisible
-                              ? Icons.visibility
-                              : Icons.visibility_off,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            isPasswordVisible = !isPasswordVisible;
-                          });
-                        },
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Email Field
+                TextFormField(
+                  controller: emailController,
+                  decoration: const InputDecoration(labelText: "Email"),
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return "Email is required";
+                    }
+                    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+                    if (!emailRegex.hasMatch(value)) {
+                      return "Enter a valid email address";
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+
+                // Password Field
+                TextFormField(
+                  controller: passwordController,
+                  obscureText: !isPasswordVisible,
+                  decoration: InputDecoration(
+                    labelText: "Password",
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        isPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
                       ),
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                  // Login Button
-                  Center(
-                    child: ElevatedButton(
                       onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          // Handle form submission
-                          loginUser();
-                        }
+                        setState(() {
+                          isPasswordVisible = !isPasswordVisible;
+                        });
                       },
-                      child: isloading
-                          ? CircularProgressIndicator()
-                          : Text("Login"),
                     ),
                   ),
-                  SizedBox(height: 20),
-                  // Redirect to Signup screen
-                  Center(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(context,
-                            MaterialPageRoute(builder: (context) {
-                          return SignupScreen();
-                        }));
-                      },
-                      child: Text("Don't have an account? Sign up"),
-                    ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return "Password cannot be empty";
+                    }
+                    if (value.length < 6) {
+                      return "Password must be at least 6 characters long";
+                    }
+                    return null;
+                  },
+                ),
+
+                // Forgot Password Link
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: showForgotPasswordDialog,
+                    child: const Text("Forgot Password?"),
                   ),
-                ],
-              ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Login Button
+                Center(
+                  child: ElevatedButton(
+                    onPressed: loginUser,
+                    child: isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text("Login"),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Signup Redirect
+                Center(
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const SignupScreen()),
+                      );
+                    },
+                    child: const Text("Don't have an account? Sign up"),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
