@@ -1,9 +1,11 @@
 // appointed_user_ui.dart
 import 'package:flutter/material.dart';
+import 'package:freelance_system/Projects/tabs/milestone/milestone_tab.dart';
+
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freelance_system/Projects/tabs/issues_tab.dart';
-import 'package:freelance_system/Projects/tabs/milestone_tab.dart';
+
 import 'package:freelance_system/Projects/tabs/status/status_tab.dart';
 import 'package:freelance_system/providers/userProvider.dart';
 import 'appointed_user_service.dart';
