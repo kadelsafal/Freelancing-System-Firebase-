@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:freelance_system/Projects/tabs/issues/issues_tabs.dart';
 import 'package:freelance_system/Projects/tabs/milestone/milestone_tab.dart';
 
 import 'package:provider/provider.dart';

@@ -66,6 +66,10 @@ class _AppliedprojectState extends State<Appliedproject> {
 
                   // Filter projects where the user has applied (individually or as a team)
                   var filteredProjects = projects.where((project) {
+                    String projectId = project['projectId'] ?? '';
+                    if (dismissedProjectIds.contains(projectId)) {
+                      return false; // ⛔ Skip dismissed projects
+                    }
                     List<dynamic> appliedIndividuals =
                         project['appliedIndividuals'] ?? [];
                     List<dynamic> appliedTeams = project['appliedTeams'] ?? [];
@@ -82,9 +86,7 @@ class _AppliedprojectState extends State<Appliedproject> {
                     bool hasApplied =
                         hasAppliedIndividually || hasAppliedAsTeam;
 
-                    String projectId = project['projectId'] ?? '';
-                    return hasApplied &&
-                        !dismissedProjectIds.contains(projectId);
+                    return hasApplied;
                   }).toList();
 
                   // If no projects found
@@ -280,11 +282,31 @@ class _AppliedprojectState extends State<Appliedproject> {
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.end,
                                       children: [
+                                        if (buttonLabel == "Rejected")
+                                          TextButton.icon(
+                                            onPressed: () {
+                                              if (projectId.isNotEmpty) {
+                                                setState(() {
+                                                  dismissedProjectIds
+                                                      .add(projectId);
+                                                });
+                                              }
+                                            },
+                                            icon: Icon(Icons.delete,
+                                                color: Colors.red),
+                                            label: Text(
+                                              "Dismiss",
+                                              style:
+                                                  TextStyle(color: Colors.red),
+                                            ),
+                                          ),
                                         Container(
                                           width: 100,
                                           alignment: Alignment.center,
                                           decoration: BoxDecoration(
-                                            color: Colors.deepPurple,
+                                            color: buttonLabel == "Rejected"
+                                                ? Colors.grey
+                                                : Colors.deepPurple,
                                             borderRadius:
                                                 BorderRadius.circular(10),
                                           ),

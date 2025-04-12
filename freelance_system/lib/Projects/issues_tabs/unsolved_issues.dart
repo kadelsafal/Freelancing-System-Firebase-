@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:freelance_system/profile_controller/imageslider.dart';
 
 class UnsolvedIssues extends StatefulWidget {
   final String projectId;
@@ -133,100 +134,90 @@ class _UnsolvedIssuesState extends State<UnsolvedIssues> {
                               softWrap: true, // Ensure wrapping
                             ),
                             const SizedBox(height: 5),
-
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                if (issueData['role'] == widget.role)
+                                  Container(
+                                    padding: const EdgeInsets.only(
+                                        left: 2, right: 2),
+                                    decoration: BoxDecoration(
+                                      color:
+                                          _getStatusColor(issueData['status']),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: DropdownButton<String>(
+                                      value: issueData['status'],
+                                      dropdownColor:
+                                          _getStatusColor(issueData['status']),
+                                      iconEnabledColor: _getStatusTextColor(
+                                          issueData['status']),
+                                      underline:
+                                          const SizedBox(), // Remove underline
+                                      style: TextStyle(
+                                        color: _getStatusTextColor(
+                                            issueData['status']),
+                                      ),
+                                      onChanged: (newStatus) {
+                                        if (newStatus != null)
+                                          _changeStatus(newStatus);
+                                      },
+                                      items: const [
+                                        DropdownMenuItem<String>(
+                                          value: 'Solving',
+                                          child: Text('Solving'),
+                                        ),
+                                        DropdownMenuItem<String>(
+                                          value: 'Solved',
+                                          child: Text('Solved'),
+                                        ),
+                                        DropdownMenuItem<String>(
+                                          value: 'Not Solved',
+                                          child: Text('Not Solved'),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                if (issueData['role'] != widget.role)
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color:
+                                          _getStatusColor(issueData['status']),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      issueData['status'] ?? 'Solving',
+                                      style: TextStyle(
+                                        color: _getStatusTextColor(
+                                            issueData['status']),
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(
+                              height: 10,
+                            ),
                             // Images
                             if (imageUrls.isNotEmpty)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 5),
-                                child: Wrap(
-                                  spacing: 10,
-                                  runSpacing: 10,
-                                  children: imageUrls.map((url) {
-                                    return GestureDetector(
-                                      onTap: () {
-                                        showDialog(
-                                          context: context,
-                                          builder: (context) => Dialog(
-                                            child: Image.network(
-                                                url), // use the individual url
-                                          ),
-                                        );
-                                      },
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: Image.network(url,
-                                            height: 100), // display thumbnail
-                                      ),
-                                    );
-                                  }).toList(),
+                              SizedBox(
+                                width: MediaQuery.of(context).size.width * 0.8,
+                                child: Imageslider(
+                                  heightFactor: 0.2,
+                                  imageWidth: 400,
+                                  imageUrls: imageUrls,
                                 ),
                               ),
-
+                            const SizedBox(
+                              height: 10,
+                            ),
                             Text(
                               "Posted on: $formattedTime",
                               style: const TextStyle(
                                   fontSize: 11, color: Colors.grey),
                             ),
-                          ],
-                        ),
-                        trailing: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (issueData['role'] == widget.role)
-                              Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: _getStatusColor(issueData['status']),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: DropdownButton<String>(
-                                  value: issueData['status'],
-                                  dropdownColor:
-                                      _getStatusColor(issueData['status']),
-                                  iconEnabledColor:
-                                      _getStatusTextColor(issueData['status']),
-                                  underline:
-                                      const SizedBox(), // Remove underline
-                                  style: TextStyle(
-                                    color: _getStatusTextColor(
-                                        issueData['status']),
-                                  ),
-                                  onChanged: (newStatus) {
-                                    if (newStatus != null)
-                                      _changeStatus(newStatus);
-                                  },
-                                  items: const [
-                                    DropdownMenuItem<String>(
-                                      value: 'Solving',
-                                      child: Text('Solving'),
-                                    ),
-                                    DropdownMenuItem<String>(
-                                      value: 'Solved',
-                                      child: Text('Solved'),
-                                    ),
-                                    DropdownMenuItem<String>(
-                                      value: 'Not Solved',
-                                      child: Text('Not Solved'),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            if (issueData['role'] != widget.role)
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: _getStatusColor(issueData['status']),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  issueData['status'] ?? 'Solving',
-                                  style: TextStyle(
-                                    color: _getStatusTextColor(
-                                        issueData['status']),
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
                           ],
                         ),
                       ),

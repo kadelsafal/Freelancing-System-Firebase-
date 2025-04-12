@@ -70,11 +70,31 @@ class ChatTab extends StatelessWidget {
                 child: const Icon(Icons.delete, color: Colors.white),
               ),
               onDismissed: (direction) async {
-                await db.collection("chatrooms").doc(chatroomId).delete();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('Chatroom deleted successfully')),
-                );
+                try {
+                  // 1. Delete messages belonging to this chatroom
+                  final messagesSnapshot = await db
+                      .collection("messages")
+                      .where("chatroomsId", isEqualTo: chatroomId)
+                      .get();
+
+                  for (var doc in messagesSnapshot.docs) {
+                    await doc.reference.delete();
+                  }
+
+                  // 2. Delete the chatroom itself
+                  await db.collection("chatrooms").doc(chatroomId).delete();
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content:
+                            Text('Chatroom and messages deleted successfully')),
+                  );
+                } catch (e) {
+                  print("Error deleting chatroom and messages: $e");
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Failed to delete chatroom')),
+                  );
+                }
               },
               child: ListTile(
                 onTap: () {
