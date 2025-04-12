@@ -176,6 +176,7 @@ class _ApplyWithTeamModalSheetState extends State<ApplyWithTeamModalSheet> {
 
                   List<Map<String, dynamic>> teamMemberDetails = [];
 
+                  // Loop through each team member and fetch their details
                   for (String memberId in memberIds) {
                     final userDoc = await FirebaseFirestore.instance
                         .collection('users')
@@ -187,6 +188,7 @@ class _ApplyWithTeamModalSheetState extends State<ApplyWithTeamModalSheet> {
                       final resumeEntities =
                           userData['resume_entities'] as Map<String, dynamic>?;
 
+                      // Check if the resumeEntities exists before adding to teamMemberDetails
                       if (resumeEntities != null) {
                         teamMemberDetails.add({
                           'userId': memberId,
@@ -195,6 +197,15 @@ class _ApplyWithTeamModalSheetState extends State<ApplyWithTeamModalSheet> {
                           'workedAs': resumeEntities['WORKED AS'] ?? [],
                           'experienceYears':
                               resumeEntities['YEARS OF EXPERIENCE'] ?? [],
+                        });
+                      } else {
+                        // If no resumeEntities, still add the member with minimal data
+                        teamMemberDetails.add({
+                          'userId': memberId,
+                          'fullName': userData['Full Name'] ?? 'Unknown',
+                          'skills': [],
+                          'workedAs': [],
+                          'experienceYears': [],
                         });
                       }
                     }
@@ -208,6 +219,7 @@ class _ApplyWithTeamModalSheetState extends State<ApplyWithTeamModalSheet> {
                   final appliedTeams = List<Map<String, dynamic>>.from(
                       projectDoc.data()?['appliedTeams'] ?? []);
 
+                  // Check if the team has already applied
                   final alreadyApplied = appliedTeams.any((team) =>
                       team['teamId'] != null &&
                       team['teamId'] == selectedTeamId);
@@ -221,6 +233,7 @@ class _ApplyWithTeamModalSheetState extends State<ApplyWithTeamModalSheet> {
                     return;
                   }
 
+                  // Now update the project document with the new team details
                   await FirebaseFirestore.instance
                       .collection('projects')
                       .doc(widget.projectId)

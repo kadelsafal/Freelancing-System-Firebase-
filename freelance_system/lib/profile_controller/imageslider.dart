@@ -2,8 +2,15 @@ import 'package:flutter/material.dart';
 
 class Imageslider extends StatefulWidget {
   final List<String> imageUrls;
+  final double heightFactor; // e.g., 0.3 for 30% of screen height
+  final double? imageWidth; // Optional fixed width
 
-  const Imageslider({required this.imageUrls, super.key});
+  const Imageslider({
+    required this.imageUrls,
+    this.heightFactor = 0.3, // Default height factor
+    this.imageWidth,
+    super.key,
+  });
 
   @override
   State<Imageslider> createState() => _ImagesliderState();
@@ -27,14 +34,17 @@ class _ImagesliderState extends State<Imageslider> {
 
   @override
   Widget build(BuildContext context) {
-    // Use MediaQuery to dynamically adjust the height of the image slider
     final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    final double imageHeight = screenHeight * widget.heightFactor;
+    final double imageWidth = widget.imageWidth ?? screenWidth;
 
     return Column(
       children: [
         SizedBox(
-          height: screenHeight *
-              0.4, // Adjust height as a percentage of the screen height
+          height: imageHeight,
+          width: imageWidth,
           child: PageView.builder(
             controller: _controller,
             onPageChanged: (index) {
@@ -44,28 +54,48 @@ class _ImagesliderState extends State<Imageslider> {
             },
             itemCount: widget.imageUrls.length,
             itemBuilder: (context, index) {
-              return ClipRRect(
-                borderRadius: BorderRadius.circular(2),
-                child: Image.network(
-                  widget.imageUrls[index],
-                  width: double.infinity,
-                  fit: BoxFit.contain, // Ensures the entire image is visible
+              return GestureDetector(
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder: (_) => Dialog(
+                      backgroundColor: Colors.black,
+                      child: GestureDetector(
+                        onTap: () => Navigator.of(context).pop(),
+                        child: Image.network(
+                          widget.imageUrls[index],
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: Image.network(
+                    widget.imageUrls[index],
+                    width: imageWidth,
+                    height: imageHeight,
+                    fit: BoxFit.cover,
+                  ),
                 ),
               );
             },
           ),
         ),
-        SizedBox(height: 5), // Increased spacing for better layout
+        const SizedBox(height: 8),
         if (widget.imageUrls.length > 1)
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(
               widget.imageUrls.length,
               (index) => AnimatedContainer(
-                duration: Duration(milliseconds: 300),
-                margin: EdgeInsets.symmetric(horizontal: 4),
-                height: 10, // Slightly larger indicators
-                width: _currentPage == index ? 20 : 10,
+                duration: const Duration(milliseconds: 300),
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                height: 8,
+                width: _currentPage == index ? 20 : 8,
                 decoration: BoxDecoration(
                   color:
                       _currentPage == index ? Colors.deepPurple : Colors.grey,

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../Projects/tabs/issues_tab.dart';
 import '../../Projects/tabs/milestone_tab.dart';
+import '../../Projects/tabs/status/status_tab.dart';
 import '../../Projects/tabs/status_tab.dart';
 import '../../providers/userProvider.dart';
 

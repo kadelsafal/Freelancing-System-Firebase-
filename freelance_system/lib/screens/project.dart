@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:freelance_system/Projects/add_project.dart';
+import 'package:freelance_system/Projects/addProject/addproject_screen.dart';
+
 import 'package:freelance_system/freelancer/freelanced_projects.dart';
 import 'package:freelance_system/providers/userProvider.dart';
 import 'package:provider/provider.dart';

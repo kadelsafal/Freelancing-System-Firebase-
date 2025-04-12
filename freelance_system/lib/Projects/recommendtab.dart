@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:freelance_system/Projects/applicants/applicants_screen.dart';
 import 'applicants.dart'; // Import the Applicants screen
 
 class Recommended extends StatelessWidget {

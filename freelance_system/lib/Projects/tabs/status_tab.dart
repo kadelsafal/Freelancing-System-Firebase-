@@ -1,432 +1,450 @@
-import 'dart:convert';
-import 'dart:io';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
-import 'package:freelance_system/providers/userProvider.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:http/http.dart' as http;
-import 'package:provider/provider.dart';
+// import 'dart:convert';
+// import 'dart:io';
+// import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:flutter/material.dart';
+// import 'package:freelance_system/profile_controller/imageslider.dart';
+// import 'package:freelance_system/providers/userProvider.dart';
+// import 'package:image_picker/image_picker.dart';
+// import 'package:http/http.dart' as http;
+// import 'package:provider/provider.dart';
+// import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
-class StatusTab extends StatefulWidget {
-  final String projectId;
-  final String role;
+// class StatusTab extends StatefulWidget {
+//   final String projectId;
+//   final String role;
 
-  const StatusTab({
-    super.key,
-    required this.projectId,
-    required this.role,
-  });
+//   const StatusTab({
+//     super.key,
+//     required this.projectId,
+//     required this.role,
+//   });
 
-  @override
-  _StatusTabState createState() => _StatusTabState();
-}
+//   @override
+//   _StatusTabState createState() => _StatusTabState();
+// }
 
-class _StatusTabState extends State<StatusTab> {
-  final TextEditingController _statusUpdateController = TextEditingController();
-  final List<XFile> _selectedImages = [];
-  final List<bool> _imageLoadingStatus = [];
-  bool _isPostingUpdate = false;
+// class _StatusTabState extends State<StatusTab> {
+//   final TextEditingController _statusUpdateController = TextEditingController();
+//   final List<XFile> _selectedImages = [];
+//   final Map<String, PageController> _pageControllers = {};
+//   final Map<String, int> _currentPageIndex = {};
 
-  @override
-  void initState() {
-    super.initState();
-  }
+//   bool _isPostingUpdate = false;
 
-  Future<List<String?>> uploadImagesToCloudinary(List<XFile> imageFiles) async {
-    const cloudinaryUrl =
-        "https://api.cloudinary.com/v1_1/dnebaumu9/image/upload";
-    const uploadPreset = "Post Images";
-    const folder = "public_posts";
-    List<String?> uploadedUrls = [];
+//   Future<List<String>> uploadImagesToCloudinary(List<XFile> imageFiles) async {
+//     const cloudinaryUrl =
+//         "https://api.cloudinary.com/v1_1/dnebaumu9/image/upload";
+//     const uploadPreset = "Post Images";
+//     const folder = "public_posts";
 
-    try {
-      for (var imageFile in imageFiles) {
-        setState(() {
-          _imageLoadingStatus.add(true);
-        });
+//     List<String> uploadedUrls = [];
 
-        var request = http.MultipartRequest('POST', Uri.parse(cloudinaryUrl));
-        request.fields['upload_preset'] = uploadPreset;
-        request.fields['folder'] = folder;
-        request.files
-            .add(await http.MultipartFile.fromPath('file', imageFile.path));
+//     for (var imageFile in imageFiles) {
+//       var request = http.MultipartRequest('POST', Uri.parse(cloudinaryUrl))
+//         ..fields['upload_preset'] = uploadPreset
+//         ..fields['folder'] = folder
+//         ..files.add(await http.MultipartFile.fromPath('file', imageFile.path));
 
-        var response = await request.send();
-        if (response.statusCode == 200) {
-          var responseBody = await response.stream.bytesToString();
-          var jsonResponse = jsonDecode(responseBody);
-          uploadedUrls.add(jsonResponse['secure_url']);
-        } else {
-          uploadedUrls.add(null);
-        }
+//       var response = await request.send();
+//       if (response.statusCode == 200) {
+//         var responseBody = await response.stream.bytesToString();
+//         var jsonResponse = jsonDecode(responseBody);
+//         uploadedUrls.add(jsonResponse['secure_url']);
+//       }
+//     }
 
-        await Future.delayed(const Duration(seconds: 2));
-        setState(() {
-          _imageLoadingStatus.removeAt(_selectedImages.indexOf(imageFile));
-        });
-      }
-      return uploadedUrls;
-    } catch (e) {
-      print("Error uploading images: $e");
-      return [];
-    }
-  }
+//     return uploadedUrls;
+//   }
 
-  Future<void> _selectImage() async {
-    final picker = ImagePicker();
-    final pickedFiles = await picker.pickMultiImage();
-    if (pickedFiles != null) {
-      setState(() {
-        _selectedImages.addAll(pickedFiles
-            .where((file) => !_selectedImages.contains(file))
-            .toList());
-      });
-    }
-  }
+//   Future<void> _showImagePickerOptions() async {
+//     showModalBottomSheet(
+//       context: context,
+//       shape: const RoundedRectangleBorder(
+//         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+//       ),
+//       builder: (BuildContext context) {
+//         return SafeArea(
+//           child: Wrap(
+//             children: [
+//               ListTile(
+//                 leading: const Icon(Icons.photo_library),
+//                 title: const Text('Pick from Gallery'),
+//                 onTap: () async {
+//                   Navigator.of(context).pop();
+//                   final picker = ImagePicker();
+//                   final pickedFiles = await picker.pickMultiImage();
+//                   if (pickedFiles != null) {
+//                     setState(() {
+//                       _selectedImages.addAll(pickedFiles);
+//                     });
+//                   }
+//                 },
+//               ),
+//               ListTile(
+//                 leading: const Icon(Icons.camera_alt),
+//                 title: const Text('Take a Photo'),
+//                 onTap: () async {
+//                   Navigator.of(context).pop();
+//                   final picker = ImagePicker();
+//                   final photo =
+//                       await picker.pickImage(source: ImageSource.camera);
+//                   if (photo != null) {
+//                     setState(() {
+//                       _selectedImages.add(photo);
+//                     });
+//                   }
+//                 },
+//               ),
+//             ],
+//           ),
+//         );
+//       },
+//     );
+//   }
 
-  void _deleteImage(int index) {
-    setState(() {
-      _selectedImages.removeAt(index);
-      _imageLoadingStatus.removeAt(index);
-    });
-  }
+//   void _deleteImage(int index) {
+//     setState(() {
+//       _selectedImages.removeAt(index);
+//     });
+//   }
 
-  void _addStatusUpdate(String author, String projectId) async {
-    if (_statusUpdateController.text.isNotEmpty || _selectedImages.isNotEmpty) {
-      setState(() {
-        _isPostingUpdate = true;
-      });
+//   Future<void> _addStatusUpdate(String author, String projectId) async {
+//     if (_statusUpdateController.text.isEmpty && _selectedImages.isEmpty) return;
 
-      List<String?> imageUrls = [];
-      if (_selectedImages.isNotEmpty) {
-        imageUrls = await uploadImagesToCloudinary(_selectedImages);
-      }
+//     setState(() {
+//       _isPostingUpdate = true;
+//     });
 
-      await FirebaseFirestore.instance
-          .collection('projects')
-          .doc(projectId)
-          .collection('statusUpdates')
-          .add({
-        'author': author,
-        'text': _statusUpdateController.text,
-        'images': imageUrls.where((url) => url != null).toList(),
-        'role': widget.role,
-        'timestamp': Timestamp.now(),
-        'isSeenBy': [author], // Mark as seen by author immediately
-      });
+//     List<String> imageUrls = await uploadImagesToCloudinary(_selectedImages);
 
-      setState(() {
-        _selectedImages.clear();
-        _imageLoadingStatus.clear();
-        _statusUpdateController.clear();
-        _isPostingUpdate = false;
-      });
+//     await FirebaseFirestore.instance
+//         .collection('projects')
+//         .doc(projectId)
+//         .collection('statusUpdates')
+//         .add({
+//       'author': author,
+//       'text': _statusUpdateController.text,
+//       'images': imageUrls,
+//       'role': widget.role,
+//       'timestamp': Timestamp.now(),
+//       'isSeenBy': [author],
+//     });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Status update posted successfully!")));
-    }
-  }
+//     setState(() {
+//       _selectedImages.clear();
+//       _statusUpdateController.clear();
+//       _isPostingUpdate = false;
+//     });
 
-  // Modify _markAsSeen to handle unseen updates properly
-  Future<void> _markAsSeen(
-      String docId, List seenBy, String currentUser) async {
-    if (!seenBy.contains(currentUser)) {
-      await FirebaseFirestore.instance
-          .collection('projects')
-          .doc(widget.projectId)
-          .collection('statusUpdates')
-          .doc(docId)
-          .update({
-        'isSeenBy': FieldValue.arrayUnion(
-            [currentUser]), // Mark as seen by the current user
-      });
-    }
-  }
+//     ScaffoldMessenger.of(context).showSnackBar(
+//         const SnackBar(content: Text("Status update posted successfully!")));
+//   }
 
-  Future<void> _deleteStatus(String statusId) async {
-    await FirebaseFirestore.instance
-        .collection('projects')
-        .doc(widget.projectId)
-        .collection('statusUpdates')
-        .doc(statusId)
-        .delete();
-  }
+//   Future<void> _markAsSeen(
+//       String docId, List seenBy, String currentUser) async {
+//     if (!seenBy.contains(currentUser)) {
+//       await FirebaseFirestore.instance
+//           .collection('projects')
+//           .doc(widget.projectId)
+//           .collection('statusUpdates')
+//           .doc(docId)
+//           .update({
+//         'isSeenBy': FieldValue.arrayUnion([currentUser])
+//       });
+//     }
+//   }
 
-  @override
-  Widget build(BuildContext context) {
-    var userProvider = Provider.of<Userprovider>(context, listen: false);
-    String currentName = userProvider.userName;
+//   Future<void> _deleteStatus(String statusId) async {
+//     await FirebaseFirestore.instance
+//         .collection('projects')
+//         .doc(widget.projectId)
+//         .collection('statusUpdates')
+//         .doc(statusId)
+//         .delete();
+//   }
 
-    return StreamBuilder<DocumentSnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('projects')
-          .doc(widget.projectId)
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(child: Text("Error: ${snapshot.error}"));
-        } else if (!snapshot.hasData || !snapshot.data!.exists) {
-          return const Center(child: Text("Project not found"));
-        } else {
-          return Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              children: [
-                Expanded(
-                  child: StreamBuilder<QuerySnapshot>(
-                    stream: FirebaseFirestore.instance
-                        .collection('projects')
-                        .doc(widget.projectId)
-                        .collection('statusUpdates')
-                        .orderBy('timestamp', descending: true)
-                        .snapshots(),
-                    builder: (context, statusSnapshot) {
-                      if (statusSnapshot.connectionState ==
-                          ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      } else if (statusSnapshot.hasError) {
-                        return Center(
-                            child: Text("Error: ${statusSnapshot.error}"));
-                      } else if (!statusSnapshot.hasData ||
-                          statusSnapshot.data!.docs.isEmpty) {
-                        return const Center(child: Text("No status updates"));
-                      } else {
-                        final docs = statusSnapshot.data!.docs;
+//   @override
+//   void dispose() {
+//     _statusUpdateController.dispose();
+//     // Dispose controllers when widget is disposed
+//     for (var controller in _pageControllers.values) {
+//       controller.dispose();
+//     }
+//     super.dispose();
+//   }
 
-                        return ListView.builder(
-                          reverse: true,
-                          itemCount: docs.length,
-                          itemBuilder: (context, index) {
-                            var doc = docs[index];
-                            var statusData = doc.data() as Map<String, dynamic>;
-                            List seenBy = statusData['isSeenBy'] ?? [];
+//   @override
+//   Widget build(BuildContext context) {
+//     var userProvider = Provider.of<Userprovider>(context);
+//     String currentName = userProvider.userName;
 
-                            bool isSender = currentName == statusData['author'];
-                            bool isSeen = seenBy.contains(currentName);
+//     return StreamBuilder<DocumentSnapshot>(
+//       stream: FirebaseFirestore.instance
+//           .collection('projects')
+//           .doc(widget.projectId)
+//           .snapshots(),
+//       builder: (context, snapshot) {
+//         if (snapshot.connectionState == ConnectionState.waiting) {
+//           return const Center(child: CircularProgressIndicator());
+//         }
+//         if (snapshot.hasError) {
+//           return Center(child: Text("Error: ${snapshot.error}"));
+//         }
+//         if (!snapshot.hasData || !snapshot.data!.exists) {
+//           return const Center(child: Text("Project not found"));
+//         }
 
-                            // Mark as seen if it's not the sender and it's unseen
-                            if (!isSender && !isSeen) {
-                              _markAsSeen(doc.id, seenBy, currentName);
-                            }
+//         return Padding(
+//           padding: const EdgeInsets.all(12),
+//           child: Column(
+//             children: [
+//               Expanded(
+//                 child: StreamBuilder<QuerySnapshot>(
+//                   stream: FirebaseFirestore.instance
+//                       .collection('projects')
+//                       .doc(widget.projectId)
+//                       .collection('statusUpdates')
+//                       .orderBy('timestamp', descending: true)
+//                       .snapshots(),
+//                   builder: (context, statusSnapshot) {
+//                     if (statusSnapshot.connectionState ==
+//                         ConnectionState.waiting) {
+//                       return const Center(child: CircularProgressIndicator());
+//                     }
+//                     if (statusSnapshot.hasError) {
+//                       return Center(
+//                           child: Text("Error: ${statusSnapshot.error}"));
+//                     }
 
-                            return Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: GestureDetector(
-                                onTap: () async {
-                                  if (isSender) {
-                                    bool? confirmDelete = await showDialog(
-                                      context: context,
-                                      builder: (context) {
-                                        return AlertDialog(
-                                          title: const Text('Delete Status'),
-                                          content: const Text(
-                                              'Are you sure you want to delete this status update?'),
-                                          actions: <Widget>[
-                                            TextButton(
-                                              onPressed: () =>
-                                                  Navigator.pop(context, false),
-                                              child: const Text('Cancel'),
-                                            ),
-                                            TextButton(
-                                              onPressed: () =>
-                                                  Navigator.pop(context, true),
-                                              child: const Text('Delete'),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    );
-                                    if (confirmDelete == true) {
-                                      _deleteStatus(doc.id);
-                                    }
-                                  }
-                                },
-                                child: Row(
-                                  mainAxisAlignment: isSender
-                                      ? MainAxisAlignment.end
-                                      : MainAxisAlignment.start,
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(12),
-                                      margin: const EdgeInsets.symmetric(
-                                          vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: isSender
-                                            ? Colors.blue.shade100
-                                            : isSeen
-                                                ? const Color.fromARGB(
-                                                    255, 156, 255, 162)
-                                                : Colors.orange.shade100,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              CircleAvatar(
-                                                radius: 18,
-                                                child: Text(
-                                                  statusData['author'][0],
-                                                  style: const TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold),
-                                                ),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                statusData['author'],
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 14,
-                                                  color: Colors.black,
-                                                ),
-                                              ),
-                                              if (!isSeen && !isSender)
-                                                const Padding(
-                                                  padding: EdgeInsets.only(
-                                                      left: 8.0),
-                                                  child: Text(
-                                                    "🟢 Unseen",
-                                                    style: TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.bold),
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 5),
-                                          Text(
-                                            statusData['text'],
-                                            style: TextStyle(
-                                              fontWeight: !isSeen && !isSender
-                                                  ? FontWeight.bold
-                                                  : FontWeight.normal,
-                                            ),
-                                          ),
-                                          if (statusData['images'] != null &&
-                                              statusData['images'].isNotEmpty)
-                                            Column(
-                                              children: [
-                                                SizedBox(
-                                                  height: 100,
-                                                  child: Wrap(
-                                                    direction: Axis.horizontal,
-                                                    children: List.generate(
-                                                      statusData['images']
-                                                          .length,
-                                                      (index) {
-                                                        String imageUrl =
-                                                            statusData['images']
-                                                                [index];
-                                                        return GestureDetector(
-                                                          onTap: () {
-                                                            showDialog(
-                                                              context: context,
-                                                              builder: (context) => Dialog(
-                                                                  child: Image
-                                                                      .network(
-                                                                          imageUrl)),
-                                                            );
-                                                          },
-                                                          child: Padding(
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .all(8.0),
-                                                            child:
-                                                                Image.network(
-                                                              imageUrl,
-                                                              height: 100,
-                                                            ),
-                                                          ),
-                                                        );
-                                                      },
-                                                    ),
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 10),
-                                              ],
-                                            ),
-                                          Text(
-                                            "${(statusData['timestamp'] as Timestamp).toDate()}",
-                                            style: const TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.grey),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        );
-                      }
-                    },
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 10),
-                  child: TextField(
-                    maxLines: null,
-                    controller: _statusUpdateController,
-                    decoration: InputDecoration(
-                      labelText: "Post a Status Update",
-                      border: const OutlineInputBorder(),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _selectedImages.isEmpty
-                              ? Icons.image
-                              : Icons.add_a_photo,
-                        ),
-                        onPressed: _selectImage,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                if (_selectedImages.isNotEmpty)
-                  Wrap(
-                    children: List.generate(_selectedImages.length, (index) {
-                      return Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Image.file(
-                            File(_selectedImages[index].path),
-                            width: 80,
-                            height: 80,
-                            fit: BoxFit.cover,
-                          ),
-                          Positioned(
-                            top: -4,
-                            right: -4,
-                            child: IconButton(
-                              icon: const Icon(Icons.remove_circle),
-                              onPressed: () => _deleteImage(index),
-                            ),
-                          ),
-                        ],
-                      );
-                    }),
-                  ),
-                const SizedBox(height: 10),
-                ElevatedButton(
-                  onPressed: _isPostingUpdate
-                      ? null
-                      : () => _addStatusUpdate(currentName, widget.projectId),
-                  child: _isPostingUpdate
-                      ? const CircularProgressIndicator()
-                      : const Text("Post Update"),
-                ),
-              ],
-            ),
-          );
-        }
-      },
-    );
-  }
-}
+//                     final docs = statusSnapshot.data?.docs ?? [];
+//                     if (docs.isEmpty) {
+//                       return const Center(child: Text("No status updates"));
+//                     }
+
+//                     return ListView.builder(
+//                       reverse: true,
+//                       itemCount: docs.length,
+//                       itemBuilder: (context, index) {
+//                         var doc = docs[index];
+//                         var statusData = doc.data() as Map<String, dynamic>;
+//                         List seenBy = statusData['isSeenBy'] ?? [];
+
+//                         bool isSender = currentName == statusData['author'];
+//                         bool isSeen = seenBy.contains(currentName);
+
+//                         if (!isSender && !isSeen) {
+//                           _markAsSeen(doc.id, seenBy, currentName);
+//                         }
+
+//                         return Padding(
+//                           padding: const EdgeInsets.symmetric(vertical: 4.0),
+//                           child: GestureDetector(
+//                             onDoubleTap: () async {
+//                               if (isSender) {
+//                                 bool? confirmDelete = await showDialog(
+//                                   context: context,
+//                                   builder: (context) => AlertDialog(
+//                                     title: const Text('Delete Status'),
+//                                     content: const Text(
+//                                         'Are you sure you want to delete this status update?'),
+//                                     actions: [
+//                                       TextButton(
+//                                           onPressed: () =>
+//                                               Navigator.pop(context, false),
+//                                           child: const Text('Cancel')),
+//                                       TextButton(
+//                                           onPressed: () =>
+//                                               Navigator.pop(context, true),
+//                                           child: const Text('Delete')),
+//                                     ],
+//                                   ),
+//                                 );
+//                                 if (confirmDelete == true) {
+//                                   _deleteStatus(doc.id);
+//                                 }
+//                               }
+//                             },
+//                             child: Align(
+//                               alignment: isSender
+//                                   ? Alignment.centerRight
+//                                   : Alignment.centerLeft,
+//                               child: Container(
+//                                 padding: const EdgeInsets.all(12),
+//                                 decoration: BoxDecoration(
+//                                   color: isSender
+//                                       ? Colors.blue.shade100
+//                                       : isSeen
+//                                           ? Colors.green.shade100
+//                                           : Colors.orange.shade100,
+//                                   borderRadius: BorderRadius.circular(10),
+//                                 ),
+//                                 child: Column(
+//                                   crossAxisAlignment: CrossAxisAlignment.start,
+//                                   children: [
+//                                     Row(
+//                                       mainAxisSize: MainAxisSize.min,
+//                                       children: [
+//                                         CircleAvatar(
+//                                           radius: 16,
+//                                           child: Text(statusData['author'][0]),
+//                                         ),
+//                                         const SizedBox(width: 8),
+//                                         Text(statusData['author'],
+//                                             style: const TextStyle(
+//                                                 fontWeight: FontWeight.bold)),
+//                                         if (!isSeen && !isSender)
+//                                           const Padding(
+//                                             padding: EdgeInsets.only(left: 8),
+//                                             child: Text("🟢 Unseen",
+//                                                 style: TextStyle(
+//                                                     fontWeight:
+//                                                         FontWeight.bold)),
+//                                           ),
+//                                       ],
+//                                     ),
+//                                     const SizedBox(height: 10),
+//                                     if ((statusData['text'] as String)
+//                                         .isNotEmpty)
+//                                       Text(statusData['text']),
+//                                     const SizedBox(height: 15),
+//                                     if (statusData['images'] != null &&
+//                                         statusData['images'].isNotEmpty)
+//                                       SizedBox(
+//                                         width:
+//                                             MediaQuery.of(context).size.width *
+//                                                 0.5,
+//                                         child: Imageslider(
+//                                           heightFactor: 0.2,
+//                                           imageWidth: 200,
+//                                           imageUrls: List<String>.from(
+//                                               statusData['images']),
+//                                         ),
+//                                       ),
+//                                     Wrap(
+//                                       spacing: 4,
+//                                       children: seenBy.isNotEmpty
+//                                           ? seenBy
+//                                               .where((name) =>
+//                                                   name !=
+//                                                   statusData[
+//                                                       'author']) // Exclude sender from seen avatars
+//                                               .map((name) => CircleAvatar(
+//                                                     radius: 8,
+//                                                     child: Text(
+//                                                       name[
+//                                                           0], // First letter of the name
+//                                                       style: TextStyle(
+//                                                           fontSize: 10),
+//                                                     ),
+//                                                   ))
+//                                               .toList()
+//                                           : [],
+//                                     )
+//                                   ],
+//                                 ),
+//                               ),
+//                             ),
+//                           ),
+//                         );
+//                       },
+//                     );
+//                   },
+//                 ),
+//               ),
+//               if (widget.role != 'client')
+//                 Padding(
+//                   padding: const EdgeInsets.only(top: 8),
+//                   child: Column(
+//                     children: [
+//                       if (_selectedImages.isNotEmpty)
+//                         SizedBox(
+//                           height: 100,
+//                           child: ListView.builder(
+//                             scrollDirection: Axis.horizontal,
+//                             itemCount: _selectedImages.length,
+//                             itemBuilder: (context, index) {
+//                               return Padding(
+//                                 padding:
+//                                     const EdgeInsets.symmetric(horizontal: 8),
+//                                 child: Stack(
+//                                   children: [
+//                                     Image.file(
+//                                       File(_selectedImages[index].path),
+//                                       width: 80,
+//                                       height: 80,
+//                                       fit: BoxFit.cover,
+//                                     ),
+//                                     Positioned(
+//                                       top: 0,
+//                                       right: 0,
+//                                       child: IconButton(
+//                                         icon: const Icon(Icons.remove_circle),
+//                                         onPressed: () => _deleteImage(index),
+//                                       ),
+//                                     ),
+//                                   ],
+//                                 ),
+//                               );
+//                             },
+//                           ),
+//                         ),
+//                     ],
+//                   ),
+//                 ),
+//               const SizedBox(height: 25),
+//               TextField(
+//                 maxLines: null,
+//                 controller: _statusUpdateController,
+//                 decoration: InputDecoration(
+//                   labelText: "Post a Status Update",
+//                   border: const OutlineInputBorder(),
+//                   suffixIcon: IconButton(
+//                     icon: Icon(_selectedImages.isEmpty
+//                         ? Icons.image
+//                         : Icons.add_a_photo),
+//                     onPressed: _showImagePickerOptions,
+//                   ),
+//                 ),
+//               ),
+//               const SizedBox(height: 10),
+//               if (_selectedImages.isNotEmpty)
+//                 Wrap(
+//                   spacing: 8,
+//                   children: List.generate(_selectedImages.length, (index) {
+//                     return Stack(
+//                       children: [
+//                         Image.file(
+//                           File(_selectedImages[index].path),
+//                           width: 80,
+//                           height: 80,
+//                           fit: BoxFit.cover,
+//                         ),
+//                         Positioned(
+//                           top: -4,
+//                           right: -4,
+//                           child: IconButton(
+//                             icon: const Icon(Icons.remove_circle,
+//                                 color: Colors.red),
+//                             onPressed: () => _deleteImage(index),
+//                           ),
+//                         ),
+//                       ],
+//                     );
+//                   }),
+//                 ),
+//               const SizedBox(height: 10),
+//               ElevatedButton(
+//                 onPressed: _isPostingUpdate
+//                     ? null
+//                     : () => _addStatusUpdate(currentName, widget.projectId),
+//                 child: _isPostingUpdate
+//                     ? const CircularProgressIndicator(color: Colors.white)
+//                     : const Text("Post Update"),
+//               ),
+//             ],
+//           ),
+//         );
+//       },
+//     );
+//   }
+// }

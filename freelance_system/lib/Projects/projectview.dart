@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:freelance_system/Projects/applicantstab.dart';
+import 'package:freelance_system/Projects/allapplicants_tab/allapplicants.dart';
 import 'package:freelance_system/Projects/appointed_freelancer.dart';
-import 'package:freelance_system/Projects/TeamsTab.dart';
+import 'package:freelance_system/Projects/appointeduser/appointeduserui.dart';
+
 import 'package:freelance_system/Projects/recommendtab.dart';
+import 'package:freelance_system/Projects/teams/teamsTab.dart';
 import 'package:intl/intl.dart';
 
 class Projectview extends StatefulWidget {
@@ -295,9 +297,9 @@ class _ProjectviewState extends State<Projectview>
                               applicants: project['appliedIndividuals'] ??
                                   [], // Applied individuals
                             ),
-                            Teamstab(
-                                projectId: widget.projectId,
-                                appliedTeams: project['appliedTeams'] ?? []),
+                            TeamsTab(
+                                appliedTeams: appliedTeams,
+                                projectId: widget.projectId),
                           ],
                         ),
                       ),
