@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:freelance_system/admin/admin_screen.dart';
 import 'package:freelance_system/screens/signup_screen.dart';
 import 'package:freelance_system/screens/splash_screen.dart';
 
@@ -219,6 +220,42 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                     child: const Text("Don't have an account? Sign up"),
                   ),
+                ),
+
+                SizedBox(
+                  height: 50,
+                ),
+                Row(
+                  children: [
+                    Container(
+                      height: 50,
+                      width: 50,
+                      decoration: BoxDecoration(
+                        color: Colors.deepPurple,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => AdminLoginScreen()),
+                          );
+                          // Your logic here
+                          print("Button pressed");
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.deepPurple,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: EdgeInsets.zero, // removes default padding
+                          elevation: 0, // no shadow to blend with the box
+                        ),
+                        child: const SizedBox.shrink(), // no text or icon
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
