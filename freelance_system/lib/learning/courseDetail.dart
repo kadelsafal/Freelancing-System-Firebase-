@@ -1,8 +1,13 @@
+import 'package:esewa_flutter_sdk/esewa_payment.dart';
+import 'package:esewa_flutter_sdk/esewa_payment_success_result.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freelance_system/learning/chapterwidgets.dart';
 import 'package:intl/intl.dart';
+import 'package:khalti_flutter/khalti_flutter.dart';
+import 'package:esewa_flutter_sdk/esewa_config.dart';
+import 'package:esewa_flutter_sdk/esewa_flutter_sdk.dart';
 
 class CourseDetail extends StatefulWidget {
   final String courseId;
@@ -17,9 +22,8 @@ class CourseDetail extends StatefulWidget {
 class _CourseDetailState extends State<CourseDetail> {
   Map<String, dynamic>? courseData;
   List<Map<String, dynamic>> chapters = [];
-  bool isLoading = true;
   bool isPaid = false;
-  String? userId; // To store the user ID
+  String? userId;
 
   @override
   void initState() {
@@ -30,36 +34,26 @@ class _CourseDetailState extends State<CourseDetail> {
 
   Future<void> fetchChapters() async {
     try {
-      var chapterSnapshot = await FirebaseFirestore.instance
+      var snapshot = await FirebaseFirestore.instance
           .collection('courses')
           .doc(widget.courseId)
           .collection('chapters')
           .get();
 
-      List<Map<String, dynamic>> fetchedChapters =
-          chapterSnapshot.docs.map((doc) {
+      List<Map<String, dynamic>> fetchedChapters = snapshot.docs.map((doc) {
         var data = doc.data();
+        var chapterId = doc.id.trim();
 
-        // Extract the chapter number from the chapter ID, e.g., "Chapter 1" -> 1
-        String chapterId =
-            doc.id.trim(); // Remove any extra spaces from the doc ID
-        print("Chapter ID: $chapterId"); // Debugging: log the chapter ID
-
-        RegExp regExp = RegExp(r'(\d+)'); // Match the numeric part
-        var match = regExp.firstMatch(chapterId);
-
-        if (match != null) {
-          data['chapterNumber'] = int.tryParse(match.group(0) ?? '9999');
-        } else {
-          // If no match is found, log and set to 9999 (fallback)
-          print("No match found for chapter ID: $chapterId");
-          data['chapterNumber'] = 9999;
-        }
+        // Extract chapter number using RegExp
+        final match = RegExp(r'(\d+)').firstMatch(chapterId);
+        data['chapterNumber'] = match != null
+            ? int.tryParse(match.group(0) ?? '9999') ?? 9999
+            : 9999;
 
         return data;
       }).toList();
 
-      // Sort chapters by chapterNumber
+      // Sort by chapter number
       fetchedChapters
           .sort((a, b) => a['chapterNumber'].compareTo(b['chapterNumber']));
 
@@ -71,135 +65,248 @@ class _CourseDetailState extends State<CourseDetail> {
     }
   }
 
-  // Check if the user has paid for the course
   Future<void> checkPaymentStatus() async {
     try {
-      User? user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        userId = user.uid; // Store the userId
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        print("User not authenticated");
+        return;
+      }
 
-        // Query the user_courses collection to check if the payment has been made
-        var userCourseSnapshot = await FirebaseFirestore.instance
-            .collection('user_courses')
-            .where('courseId', isEqualTo: widget.courseId)
-            .where('userId', isEqualTo: userId)
-            .get();
+      userId = user.uid;
+      final snapshot = await FirebaseFirestore.instance
+          .collection('user_courses')
+          .where('courseId', isEqualTo: widget.courseId)
+          .where('userId', isEqualTo: userId)
+          .get();
 
-        if (userCourseSnapshot.docs.isNotEmpty) {
-          var paymentStatus = userCourseSnapshot.docs.first['paymentStatus'];
-          setState(() {
-            isPaid = paymentStatus == 'paid';
-          });
-        } else {
-          // If no payment record is found, set isPaid to false
-          setState(() {
-            isPaid = false;
-          });
-        }
-      } else {
-        print("User is not authenticated");
+      if (snapshot.docs.isNotEmpty) {
+        final status = snapshot.docs.first['paymentStatus'];
+        setState(() {
+          isPaid = status == 'paid';
+        });
       }
     } catch (e) {
       print("Error checking payment status: $e");
     }
   }
 
-  // Handle payment process
+  // Future<void> onPayNowPressed() async {
+  //   final price = double.tryParse('${courseData?['price'] ?? 0}') ?? 0.0;
+
+  //   if (price <= 0) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text('Invalid course price')),
+  //     );
+  //     return;
+  //   }
+
+  //   KhaltiScope.of(context).pay(
+  //     config: PaymentConfig(
+  //       amount: (price * 100).toInt(), // Khalti uses paisa
+  //       productIdentity: widget.courseId,
+  //       productName: widget.title,
+  //     ),
+  //     preferences: [PaymentPreference.khalti],
+  //     onSuccess: (success) async {
+  //       try {
+  //         final user = FirebaseAuth.instance.currentUser;
+  //         if (user == null) return;
+
+  //         final uid = user.uid;
+  //         final ref = FirebaseFirestore.instance.collection('user_courses');
+
+  //         final existing = await ref
+  //             .where('courseId', isEqualTo: widget.courseId)
+  //             .where('userId', isEqualTo: uid)
+  //             .get();
+
+  //         if (existing.docs.isEmpty) {
+  //           await ref.add({
+  //             'courseId': widget.courseId,
+  //             'userId': uid,
+  //             'paymentStatus': 'paid',
+  //             'paymentDate': Timestamp.now(),
+  //           });
+
+  //           await FirebaseFirestore.instance
+  //               .collection('courses')
+  //               .doc(widget.courseId)
+  //               .update({'appliedUsers': FieldValue.increment(1)});
+  //         } else {
+  //           await ref.doc(existing.docs.first.id).update({
+  //             'paymentStatus': 'paid',
+  //             'paymentDate': Timestamp.now(),
+  //           });
+  //         }
+
+  //         setState(() {
+  //           isPaid = true;
+  //         });
+
+  //         ScaffoldMessenger.of(context).showSnackBar(
+  //           const SnackBar(content: Text('Payment successful!')),
+  //         );
+  //       } catch (e, stackTrace) {
+  //         print("Firestore error after payment: $e\n$stackTrace");
+  //         ScaffoldMessenger.of(context).showSnackBar(
+  //           const SnackBar(
+  //               content: Text('Payment succeeded but something went wrong.')),
+  //         );
+  //       }
+  //     },
+  //     onFailure: (failure) {
+  //       print("Khalti Payment Failed: ${failure.message}");
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(content: Text('Payment failed: ${failure.message}')),
+  //       );
+  //     },
+  //     onCancel: () {
+  //       print("Khalti payment cancelled by user.");
+  //     },
+  //   );
+  // }
+
   Future<void> onPayNowPressed() async {
-    // Simulate a payment process (You can integrate an actual payment gateway here)
-    setState(() {
-      isPaid = true; // Set the payment status to paid
-    });
+    final price = double.tryParse('${courseData?['price'] ?? 0}') ?? 0.0;
 
-    // Store the payment status in the user_courses collection
+    if (price <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Invalid course price')),
+      );
+      return;
+    }
+
+    verify(EsewaPaymentSuccessResult result) {
+      // This is called when the payment is successful
+    }
+
     try {
-      User? user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        String userId = user.uid; // Get the current user's ID
+      EsewaFlutterSdk.initPayment(
+          esewaConfig: EsewaConfig(
+            environment: Environment.test, // Change to .live for production
+            clientId: 'JB0BBQ4aD0UqIThFJwAKBgAXEUkEGQUBBAwdOgABHD4DChwUAB0R',
+            secretId: 'BhwIWQQADhIYSxILExMcAgFXFhcOBwAKBgAXEQ==',
+          ),
+          esewaPayment: EsewaPayment(
+              productId: widget.courseId,
+              productName: widget.title,
+              productPrice: price.toStringAsFixed(2),
+              callbackUrl: ''),
+          onPaymentSuccess: (EsewaPaymentSuccessResult result) async {
+            debugPrint("Success");
+            verify(result);
 
-        // Check if the user already has an existing record
-        var userCourseSnapshot = await FirebaseFirestore.instance
-            .collection('user_courses')
-            .where('courseId', isEqualTo: widget.courseId)
-            .where('userId', isEqualTo: userId)
-            .get();
+            final uid = FirebaseAuth.instance.currentUser?.uid;
+            if (uid == null) return;
 
-        if (userCourseSnapshot.docs.isEmpty) {
-          // If there's no record, add a new one
-          await FirebaseFirestore.instance.collection('user_courses').add({
-            'courseId': widget.courseId,
-            'userId': userId, // Store the userId
-            'paymentStatus': 'paid',
-            'paymentDate': Timestamp.now(),
-          });
-          // After successfully adding payment, update the appliedUser count in the course
-          await FirebaseFirestore.instance
-              .collection('courses')
-              .doc(widget.courseId)
-              .update({
-            'appliedUsers':
-                FieldValue.increment(1), // Increment the appliedUser count by 1
-          });
-        } else {
-          // If there's an existing record, update the payment status
-          await FirebaseFirestore.instance
-              .collection('user_courses')
-              .doc(userCourseSnapshot.docs.first.id)
-              .update({
-            'paymentStatus': 'paid',
-            'paymentDate': Timestamp.now(),
-          });
-        }
+            final ref = FirebaseFirestore.instance.collection('user_courses');
 
-        // Optionally, you can show a confirmation message or proceed to next screen
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Payment successful!')),
-        );
-      } else {
-        print("User is not authenticated");
-      }
+            final existing = await ref
+                .where('courseId', isEqualTo: widget.courseId)
+                .where('userId', isEqualTo: uid)
+                .get();
+
+            final transactionId = result.refId ?? 'N/A';
+            final paidAmount = price ?? 'N/A';
+
+            // Prepare full payment result as a map
+            final paymentData = {
+              'productId': result.productId,
+              'productName': result.productName,
+              'totalAmount': result.totalAmount,
+              'referenceId': result.refId,
+              'status': result.status,
+              'merchantName': result.merchantName,
+              'message': result.message,
+              'timestamp': Timestamp.now(),
+            };
+
+            if (existing.docs.isEmpty) {
+              await ref.add({
+                'courseId': widget.courseId,
+                'userId': uid,
+                'paymentStatus': 'paid',
+                'paymentDate': Timestamp.now(),
+                'transactionId': transactionId,
+                'paidAmount': paidAmount,
+                'paymentResult': paymentData, // storing full eSewa result
+              });
+
+              await FirebaseFirestore.instance
+                  .collection('courses')
+                  .doc(widget.courseId)
+                  .update({'appliedUsers': FieldValue.increment(1)});
+            } else {
+              await ref.doc(existing.docs.first.id).update({
+                'paymentStatus': 'paid',
+                'paymentDate': Timestamp.now(),
+                'transactionId': transactionId,
+                'paidAmount': paidAmount,
+                'paymentResult': paymentData, // storing full eSewa result
+              });
+            }
+
+            setState(() {
+              isPaid = true;
+            });
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Payment successful via eSewa!')),
+            );
+
+            showInvoiceDialog(context, result); // Optional invoice popup
+          },
+          onPaymentFailure: () {
+            debugPrint("Failure");
+          },
+          onPaymentCancellation: () {
+            debugPrint("Cancellation");
+          });
     } catch (e) {
-      print("Error storing payment status: $e");
+      print("Esewa Exception: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('An error occurred during payment')),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-      ),
+      appBar: AppBar(title: Text(widget.title)),
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
             .collection('courses')
             .doc(widget.courseId)
-            .snapshots(), // Listen for real-time updates in the course data
+            .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return const Center(child: Text('Error loading course data'));
-          } else if (!snapshot.hasData || !snapshot.data!.exists) {
-            return const Center(child: Text('Course not found'));
           }
 
-          // Get course data from snapshot
-          var courseData = snapshot.data!.data() as Map<String, dynamic>;
+          if (snapshot.hasError ||
+              !snapshot.hasData ||
+              !snapshot.data!.exists) {
+            return const Center(
+                child: Text('Course not found or failed to load.'));
+          }
+
+          courseData = snapshot.data!.data() as Map<String, dynamic>;
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Title
                 Text(
-                  courseData['title'] ?? "No title available",
+                  courseData?['title'] ?? "No title available",
                   style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  softWrap: true,
+                      fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 25),
+
                 // Description
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -207,107 +314,86 @@ class _CourseDetailState extends State<CourseDetail> {
                     border: Border.all(color: Colors.deepPurple, width: 2),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      courseData['description'] ?? "No description available",
-                      style: const TextStyle(fontSize: 16, height: 1.5),
-                      textAlign: TextAlign.justify,
-                      softWrap: true,
-                    ),
+                  child: Text(
+                    courseData?['description'] ?? "No description available",
+                    style: const TextStyle(fontSize: 16, height: 1.5),
+                    textAlign: TextAlign.justify,
                   ),
                 ),
                 const SizedBox(height: 30),
 
                 // Benefits
-                if (courseData['benefits'] != null)
+                if (courseData?['benefits'] is List)
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        "Benefits of this Course:",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      const Text("Benefits of this Course:",
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 5),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: (courseData['benefits'] as List)
-                            .map<Widget>((benefit) => Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 4),
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      const Text("• ",
-                                          style: TextStyle(fontSize: 16)),
-                                      SizedBox(width: 5),
-                                      Expanded(
-                                        child: Text(
-                                          benefit,
-                                          style: const TextStyle(fontSize: 16),
-                                          softWrap: true,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ))
-                            .toList(),
+                      ...List<Widget>.from(
+                        (courseData!['benefits'] as List).map((benefit) =>
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text("• ",
+                                      style: TextStyle(fontSize: 16)),
+                                  const SizedBox(width: 5),
+                                  Expanded(
+                                      child: Text(benefit,
+                                          style:
+                                              const TextStyle(fontSize: 16))),
+                                ],
+                              ),
+                            )),
                       ),
                       const SizedBox(height: 30),
                     ],
                   ),
 
-                // Skills covered
-                if (courseData['skills'] != null)
+                // Skills
+                if (courseData?['skills'] is List)
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        "Skills Covered:",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      const Text("Skills Covered:",
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 10),
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
-                        children: (courseData['skills'] as List)
-                            .map<Widget>((skill) => Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: Colors.purple,
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Text(
-                                    skill,
-                                    style: const TextStyle(
-                                        color: Colors.white, fontSize: 14),
-                                  ),
-                                ))
-                            .toList(),
+                        children: List<Widget>.from(
+                          (courseData!['skills'] as List)
+                              .map((skill) => Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: Colors.purple,
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Text(skill,
+                                        style: const TextStyle(
+                                            color: Colors.white, fontSize: 14)),
+                                  )),
+                        ),
                       ),
                       const SizedBox(height: 30),
                     ],
                   ),
 
-                // Price and Pay Now Button
+                // Price and Payment
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      " Rs. ${courseData['price'] ?? "Not available"}",
+                      "Rs. ${courseData?['price'] ?? "N/A"}",
                       style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.red,
-                      ),
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red),
                     ),
                     ElevatedButton(
                       onPressed: isPaid ? null : onPayNowPressed,
@@ -316,13 +402,11 @@ class _CourseDetailState extends State<CourseDetail> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 20, vertical: 12),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+                            borderRadius: BorderRadius.circular(10)),
                       ),
                       child: Text(
                         isPaid ? "Paid" : "Pay Now",
-                        style:
-                            const TextStyle(fontSize: 14, color: Colors.white),
+                        style: const TextStyle(color: Colors.white),
                       ),
                     ),
                   ],
@@ -330,56 +414,87 @@ class _CourseDetailState extends State<CourseDetail> {
                 const SizedBox(height: 10),
 
                 // Instructor
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Instructor: ${courseData['username'] ?? "Unknown"}",
-                      style:
-                          const TextStyle(fontSize: 16, color: Colors.blueGrey),
-                    ),
-                  ],
+                Text(
+                  "Instructor: ${courseData?['username'] ?? "Unknown"}",
+                  style: const TextStyle(fontSize: 16, color: Colors.blueGrey),
                 ),
+
                 const SizedBox(height: 10),
 
-                // Enrolled Users
+                // Enrolled users
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Text(
-                      "Enrolled Users: ${courseData['appliedUsers'] ?? 0}",
+                      "Enrolled Users: ${courseData?['appliedUsers'] ?? 0}",
                       style: const TextStyle(fontSize: 16, color: Colors.grey),
                     ),
-                    Icon(
-                      Icons.person_2,
-                      size: 24,
-                      color: Colors.deepPurple,
-                    ),
+                    const Icon(Icons.person_2, color: Colors.deepPurple),
                   ],
                 ),
 
                 const SizedBox(height: 10),
 
-                // Posted At
+                // Created At
                 Text(
-                  "Posted At: ${DateFormat('yyyy-MM-dd').format((courseData['createdAt'] as Timestamp).toDate())}",
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey,
-                  ),
+                  "Posted At: ${_formatDate(courseData?['createdAt'])}",
+                  style: const TextStyle(fontSize: 16, color: Colors.grey),
                 ),
+
                 const SizedBox(height: 30),
 
-                // Chapters Widget
+                // Chapters widget
                 ChaptersWidget(
-                    courseId: widget.courseId,
-                    chapters: chapters,
-                    isPaid: isPaid),
+                  courseId: widget.courseId,
+                  chapters: chapters,
+                  isPaid: isPaid,
+                ),
+
                 const SizedBox(height: 10),
               ],
             ),
           );
         },
+      ),
+    );
+  }
+
+  String _formatDate(dynamic timestamp) {
+    try {
+      return DateFormat('yyyy-MM-dd').format((timestamp as Timestamp).toDate());
+    } catch (_) {
+      return "Unknown";
+    }
+  }
+
+  void showInvoiceDialog(
+      BuildContext context, EsewaPaymentSuccessResult result) {
+    final now = DateTime.now();
+    final formattedDate = DateFormat.yMMMMd().add_jm().format(now);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Payment Invoice'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("🧾 Course: ${widget.title}"),
+            Text("📚 Course ID: ${widget.courseId}"),
+            Text("💳 Paid: Rs. ${courseData?['price'] ?? '0'}"),
+            Text("🔐 Transaction ID: ${result.refId ?? 'N/A'}"),
+            Text("⏰ Date: $formattedDate"),
+            const SizedBox(height: 12),
+            const Text("✅ Payment Method: eSewa"),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text("Close"),
+          )
+        ],
       ),
     );
   }

@@ -1,9 +1,6 @@
 import 'dart:io';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:syncfusion_flutter_pdf/pdf.dart';
-import 'dart:typed_data';
 
 class PaymentSystem extends StatefulWidget {
   const PaymentSystem({super.key});
@@ -13,111 +10,171 @@ class PaymentSystem extends StatefulWidget {
 }
 
 class _PaymentSystemState extends State<PaymentSystem> {
-  String extractedExperience = "No experience extracted yet.";
-  bool isLoading = false;
+  File? uploadedReceipt;
+  bool isUploading = false;
 
-  Future<void> pickAndExtractExperience() async {
-    setState(() {
-      isLoading = true;
-    });
+  Future<void> pickReceipt() async {
+    setState(() => isUploading = true);
 
-    // Step 1: Pick a PDF file
-    FilePickerResult? result = await FilePicker.platform
-        .pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
-    if (result == null) {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom, allowedExtensions: ['pdf', 'jpg', 'png']);
+    if (result != null) {
       setState(() {
-        isLoading = false;
+        uploadedReceipt = File(result.files.single.path!);
+        isUploading = false;
       });
-      return; // User canceled the picker
+    } else {
+      setState(() => isUploading = false);
     }
-
-    File pdfFile = File(result.files.single.path!);
-
-    // Step 2: Extract experience section
-    String experienceText = await extractExperienceFromPdf(pdfFile.path);
-
-    // Step 3: Store extracted experience in Firestore
-    await storeExperienceInFirestore("user123", experienceText);
-
-    setState(() {
-      extractedExperience = experienceText;
-      isLoading = false;
-    });
-  }
-
-  Future<String> extractExperienceFromPdf(String pdfPath) async {
-    try {
-      // Load the PDF document
-      final File file = File(pdfPath);
-      final Uint8List bytes = await file.readAsBytes();
-      final PdfDocument document = PdfDocument(inputBytes: bytes);
-
-      // Extract text from the entire document
-      String fullText = PdfTextExtractor(document).extractText();
-      print("Full Text from PDF:");
-      print(fullText); // Debugging: print full text to understand the structure
-
-      // Close the document
-      document.dispose();
-
-      // Extract "Experience" section using regex
-      RegExp exp = RegExp(
-        r'Experience[\s\S]*?(?=(Education|Skills|Projects|Certifications|Activities|$))',
-        caseSensitive: false,
-      );
-
-      // Perform the regex match
-      Match? match = exp.firstMatch(fullText);
-
-      // Debugging: Print the extracted experience section
-      String experienceSection =
-          match?.group(0)?.trim() ?? "No experience section found.";
-      print("Extracted Experience Section: ");
-      print(experienceSection); // This will print the extracted experience
-      print("---------------");
-
-      // Optionally, print the length of the extracted section for debugging
-      print("Length of Extracted Experience: ${experienceSection.length}");
-
-      return experienceSection;
-    } catch (e) {
-      return "Error extracting experience: $e";
-    }
-  }
-
-  Future<void> storeExperienceInFirestore(
-      String userId, String experience) async {
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
-
-    await firestore.collection('users').doc(userId).set({
-      'experience': experience,
-    }, SetOptions(merge: true));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('PDF Experience Extractor')),
-      body: Center(
-        child: Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ElevatedButton(
-                onPressed: isLoading ? null : pickAndExtractExperience,
-                child: isLoading
-                    ? CircularProgressIndicator()
-                    : Text('Select PDF & Extract Experience'),
+      backgroundColor: const Color(0xFFF5F6FA),
+      appBar: AppBar(
+        title: const Text('Payments'),
+        backgroundColor: Colors.deepPurple,
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.deepPurple.shade50,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.deepPurple.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  )
+                ],
               ),
-              SizedBox(height: 20),
-              Text(
-                extractedExperience,
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text("Freelancer Payment Summary",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      )),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: const [
+                      Text("Total Earnings:", style: TextStyle(fontSize: 16)),
+                      Text("₹ 25,000",
+                          style: TextStyle(fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: const [
+                      Text("Pending Payments:", style: TextStyle(fontSize: 16)),
+                      Text("₹ 5,000", style: TextStyle(color: Colors.orange)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: const [
+                      Text("Last Paid:", style: TextStyle(fontSize: 16)),
+                      Text("March 28, 2025",
+                          style: TextStyle(color: Colors.green)),
+                    ],
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 30),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.08),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
+                  )
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text("Upload Payment Receipt",
+                      style:
+                          TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 12),
+                  ElevatedButton.icon(
+                    onPressed: isUploading ? null : pickReceipt,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepPurple,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 14),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                    ),
+                    icon: const Icon(
+                      Icons.upload_file,
+                      color: Colors.white,
+                    ),
+                    label: Text(
+                      isUploading ? "Uploading..." : "Choose File",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  if (uploadedReceipt != null) ...[
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        const Icon(Icons.insert_drive_file,
+                            color: Colors.deepPurple),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            uploadedReceipt!.path.split('/').last,
+                            style: const TextStyle(fontSize: 14),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ]
+                ],
+              ),
+            ),
+            const SizedBox(height: 30),
+            ElevatedButton(
+              onPressed: uploadedReceipt == null
+                  ? null
+                  : () {
+                      // Simulate payment confirmation or Firestore write
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                          content:
+                              Text('Payment receipt uploaded successfully!')));
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child:
+                  const Text("Confirm Payment", style: TextStyle(fontSize: 16)),
+            )
+          ],
         ),
       ),
     );

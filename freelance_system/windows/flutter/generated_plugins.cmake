@@ -8,7 +8,6 @@ list(APPEND FLUTTER_PLUGIN_LIST
   firebase_auth
   firebase_core
   firebase_storage
-  pdfx
   permission_handler_windows
   printing
   url_launcher_windows

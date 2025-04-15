@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:freelance_system/learning/addcourse.dart';
 import 'package:freelance_system/learning/courses.dart';
 import 'package:freelance_system/screens/profile.dart';
 import 'package:freelance_system/screens/splash_screen.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/userProvider.dart';
 
 class MyDrawer extends StatefulWidget {

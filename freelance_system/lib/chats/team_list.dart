@@ -22,10 +22,22 @@ class TeamList extends StatelessWidget {
           .orderBy('lastMessageTime', descending: true)
           .snapshots(),
       builder: (context, snapshot) {
-        // Only use the snapshot data if available; otherwise, fall back to local list
-        final teamDocs = snapshot.hasData
-            ? snapshot.data!.docs
-            : []; // Ensure no teams are added when there is no snapshot data
+        // Handle loading and error states
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Center(child: Text('No teams found.'));
+        }
+
+        // Mark messages as seen after data has been received
+
+        final teamDocs = snapshot.data!.docs;
 
         return ListView.builder(
           itemCount: teamDocs.length,

@@ -54,6 +54,8 @@ class _TeamChatScreenState extends State<TeamChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? "";
+
     return Scaffold(
       appBar: AppBar(
         title: InkWell(
@@ -102,6 +104,7 @@ class _TeamChatScreenState extends State<TeamChatScreen> {
                 }
 
                 final messages = snapshot.data?.docs ?? [];
+                TeamService.markMessagesAsSeen(snapshot.data!, currentUserId);
 
                 if (messages.isEmpty) {
                   return Center(
@@ -119,6 +122,21 @@ class _TeamChatScreenState extends State<TeamChatScreen> {
                   }
                 });
 
+                // 1. Map each seen user (excluding current user) to their last seen message index
+                Map<String, int> lastSeenByUser = {};
+                for (int i = 0; i < messages.length; i++) {
+                  final msg = messages[i].data() as Map<String, dynamic>;
+                  final seenBy = List<String>.from(msg['isSeenBy'] ?? []);
+                  final senderId = msg['sender'];
+
+                  for (String uid in seenBy) {
+                    if (uid != senderId) {
+                      lastSeenByUser[uid] =
+                          i; // keep updating to get their latest seen message
+                    }
+                  }
+                }
+
                 return ListView.builder(
                   controller: _scrollController,
                   padding: EdgeInsets.symmetric(horizontal: 10, vertical: 15),
@@ -129,6 +147,9 @@ class _TeamChatScreenState extends State<TeamChatScreen> {
                     final isCurrentUser = message['sender'] == currentUser?.uid;
                     final timestamp = message['timestamp'] as Timestamp?;
                     final senderName = message['senderName'] ?? 'Unknown User';
+                    final senderId = message['sender'];
+                    final isSeenBy =
+                        List<String>.from(message['isSeenBy'] ?? []);
 
                     String timeString = "";
                     if (timestamp != null) {
@@ -136,71 +157,115 @@ class _TeamChatScreenState extends State<TeamChatScreen> {
                       timeString = DateFormat('h:mm a').format(dateTime);
                     }
 
+                    List<String> seenAvatarsToShow = [];
+                    for (String userId in isSeenBy) {
+                      if (userId != senderId &&
+                          userId != currentUserId &&
+                          lastSeenByUser[userId] == index) {
+                        seenAvatarsToShow.add(userId);
+                      }
+                    }
+
                     return Align(
                       alignment: isCurrentUser
                           ? Alignment.centerRight
                           : Alignment.centerLeft,
-                      child: Container(
-                        constraints: BoxConstraints(
-                          maxWidth: MediaQuery.of(context).size.width * 0.75,
-                        ),
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        margin: EdgeInsets.symmetric(vertical: 5),
-                        decoration: BoxDecoration(
-                          color: isCurrentUser
-                              ? Theme.of(context).primaryColor
-                              : Colors.grey[300],
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 2,
-                              offset: Offset(0, 1),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // 👇 show name for both sender and receiver
+                      child: Column(
+                        crossAxisAlignment: isCurrentUser
+                            ? CrossAxisAlignment.end
+                            : CrossAxisAlignment.start,
+                        children: [
+                          if (!isCurrentUser)
                             Padding(
-                              padding: const EdgeInsets.only(bottom: 4.0),
+                              padding:
+                                  const EdgeInsets.only(bottom: 4.0, left: 4.0),
                               child: Text(
                                 senderName,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 12,
-                                  color: isCurrentUser
-                                      ? Colors.white70
-                                      : Colors.black87,
+                                  color: Colors.black87,
                                 ),
                               ),
                             ),
-                            Text(
-                              message['text'] ?? '',
-                              style: TextStyle(
-                                color: isCurrentUser
-                                    ? Colors.white
-                                    : Colors.black87,
-                                fontSize: 16,
-                              ),
-                            ),
-                            SizedBox(height: 2),
-                            Align(
-                              alignment: Alignment.bottomRight,
-                              child: Text(
-                                timeString,
-                                style: TextStyle(
-                                  fontSize: 10,
+                          Row(
+                            mainAxisAlignment: isCurrentUser
+                                ? MainAxisAlignment.end
+                                : MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              if (!isCurrentUser)
+                                Padding(
+                                  padding: EdgeInsets.all(8),
+                                  child: CircleAvatar(
+                                    radius: 20,
+                                    child: Text(senderName[0],
+                                        style: TextStyle(fontSize: 28)),
+                                  ),
+                                ),
+                              Container(
+                                padding: EdgeInsets.all(12),
+                                margin: EdgeInsets.symmetric(vertical: 4),
+                                decoration: BoxDecoration(
                                   color: isCurrentUser
-                                      ? Colors.white70
-                                      : Colors.black54,
+                                      ? Colors.blue[200]
+                                      : Colors.grey[300],
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(message['text'] ?? ''),
+                              ),
+                            ],
+                          ),
+                          SizedBox(
+                            height: 10,
+                          ),
+                          if (timeString.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                  top: 2.0, left: 4.0, right: 4.0),
+                              child: Align(
+                                alignment: Alignment.center,
+                                child: Text(
+                                  timeString,
+                                  style: TextStyle(
+                                      fontSize: 10, color: Colors.grey[600]),
                                 ),
                               ),
                             ),
-                          ],
-                        ),
+                          if (seenAvatarsToShow.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4.0),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: seenAvatarsToShow.map((userId) {
+                                  return FutureBuilder<String>(
+                                    future: TeamService.getUserNameById(userId),
+                                    builder: (context, snapshot) {
+                                      final name = snapshot.data ?? 'U';
+                                      final initial = name.isNotEmpty
+                                          ? name[0].toUpperCase()
+                                          : '?';
+
+                                      return Padding(
+                                        padding:
+                                            const EdgeInsets.only(right: 4.0),
+                                        child: CircleAvatar(
+                                          radius: 10,
+                                          backgroundColor: Colors.grey[400],
+                                          child: Text(
+                                            initial,
+                                            style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.white),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                        ],
                       ),
                     );
                   },

@@ -155,7 +155,7 @@ class _ResumeScreenState extends State<ResumeScreen> {
   }
 
   Future<void> uploadResumeForReview(File file) async {
-    var uri = Uri.parse("http://192.168.1.98:8000/process_resume/");
+    var uri = Uri.parse("http://10.22.22.112:8000/process_resume/");
     var request = http.MultipartRequest('POST', uri)
       ..files.add(await http.MultipartFile.fromPath('file', file.path));
     try {

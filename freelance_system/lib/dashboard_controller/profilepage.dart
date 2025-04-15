@@ -334,10 +334,9 @@ class _ProfilepageState extends State<Profilepage> {
                               // Add or update the chatroom with the latest message
                               await chatroomRef.set({
                                 "chatroom_id": chatroomId,
-                                "sender_id": currentUserId,
-                                "sender_name": currentUserName,
-                                "receiver_id": widget.userId,
-                                "receiver_name": widget.userName,
+                                "participants": [currentUserId, widget.userId],
+                                "participant1": currentUserName,
+                                "participant2": widget.userName,
                                 "last_message": lastMessage,
                                 "timestamp": FieldValue.serverTimestamp(),
                               }, SetOptions(merge: true));
@@ -349,8 +348,7 @@ class _ProfilepageState extends State<Profilepage> {
                                     builder: (context) => ChatroomScreen(
                                       chatroomId: chatroomId,
                                       chatroomName: widget.userName,
-                                      receiverId: widget.userId,
-                                      receiverName: widget.userName,
+                                      userId: widget.userId,
                                     ),
                                   ));
                             } catch (e) {

@@ -108,7 +108,7 @@ class _AdminScreenState extends State<AdminScreen> {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const CourseScreen()),
+                  MaterialPageRoute(builder: (_) => CourseScreen()),
                 );
               },
             ),
