@@ -99,4 +99,19 @@ class Userprovider extends ChangeNotifier {
       notifyListeners();
     });
   }
+
+  String rating = "0.0"; // Optional: Store locally if needed
+  Future<void> updateUserRating(double newRating) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId) // use already initialized userId
+          .update({'rating': newRating});
+
+      rating = newRating.toString();
+      notifyListeners();
+    } catch (e) {
+      print("Failed to update user rating: $e");
+    }
+  }
 }

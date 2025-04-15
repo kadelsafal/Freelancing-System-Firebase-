@@ -128,7 +128,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                   itemPadding: EdgeInsets.symmetric(horizontal: 2.0),
                   itemBuilder: (context, _) =>
                       Icon(Icons.star, size: 20, color: Colors.amber),
-                  onRatingUpdate: (rating) {
+                  onRatingUpdate: (rating) async {
+                    await userProvider.updateUserRating(rating);
                     setState(() {
                       // Here, update the yearsOfExperience (as int)
                       userProvider.yearsOfExperience =

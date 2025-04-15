@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:freelance_system/chats/chat_service.dart';
 import 'package:freelance_system/profile_controller/mypost.dart';
 import 'package:freelance_system/providers/userProvider.dart';
@@ -26,6 +27,8 @@ class _ProfilepageState extends State<Profilepage> {
   bool isFollowedByThem = false; // NEW
   String lastMessage = '';
 
+  double? experienceRating;
+
   @override
   void initState() {
     super.initState();
@@ -34,10 +37,26 @@ class _ProfilepageState extends State<Profilepage> {
   }
 
   Future<void> fetchInitialData() async {
-    userData = fetchUserData();
+    setState(() {
+      userData = fetchUserData(); // <- wrap this in setState
+    });
     await fetchFollowerCount();
     checkFollowStatus();
     await fetchLastMessage();
+  }
+
+  double getExperienceRating(int yearsOfExperience) {
+    if (yearsOfExperience >= 10) {
+      return 5.0; // 5 stars for 10+ years of experience
+    } else if (yearsOfExperience >= 5) {
+      return 4.0; // 4 stars for 5-9 years of experience
+    } else if (yearsOfExperience >= 2) {
+      return 3.0; // 3 stars for 2-4 years of experience
+    } else if (yearsOfExperience >= 1) {
+      return 2.0; // 2 stars for 1 year of experience
+    } else {
+      return 0.0; // No experience or 0 years, 0 stars
+    }
   }
 
   Future<Map<String, dynamic>> fetchUserData() async {
@@ -46,8 +65,49 @@ class _ProfilepageState extends State<Profilepage> {
           .collection('users')
           .doc(widget.userId)
           .get();
+
       if (userSnapshot.exists) {
-        return userSnapshot.data() as Map<String, dynamic>;
+        final userMap = userSnapshot.data() as Map<String, dynamic>?;
+
+        if (userMap == null) {
+          return {};
+        }
+
+        var resumeEntities = userMap['resume_entities'] ?? {};
+        var yearsOfExperience = [];
+
+        if (resumeEntities is Map &&
+            resumeEntities['YEARS OF EXPERIENCE'] is List) {
+          yearsOfExperience = resumeEntities['YEARS OF EXPERIENCE'];
+        }
+
+// Safely parse the first item to int
+        int firstYearOfExperience = 0;
+        if (yearsOfExperience.isNotEmpty) {
+          var rawValue = yearsOfExperience[0];
+          if (rawValue is int) {
+            firstYearOfExperience = rawValue;
+          } else if (rawValue is String) {
+            firstYearOfExperience = int.tryParse(rawValue) ?? 0;
+          }
+        }
+
+        setState(() {
+          experienceRating = getExperienceRating(firstYearOfExperience);
+        });
+
+        return {
+          'fullName': userMap['Full Name'] ?? '',
+          'email': userMap['email'] ?? '',
+          'followed': userMap['followed'] ?? 0,
+          'followers': userMap['followers'] ?? 0,
+          'id': userMap['id'] ?? '',
+          'phone': userMap['phone'] ?? '',
+          'rating': userMap['rating'] ?? 0.0,
+          'resumeEntities': resumeEntities,
+          'yearsOfExperience': firstYearOfExperience,
+          ...userMap,
+        };
       } else {
         return {};
       }
@@ -282,23 +342,38 @@ class _ProfilepageState extends State<Profilepage> {
                           ),
                         ],
                       ),
-                      Column(
-                        children: [
-                          Text(
-                            rating.toStringAsFixed(1),
-                            style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                          Text(
-                            "Rating",
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        ],
-                      ),
                     ],
                   ),
                   SizedBox(height: 20),
-
+                  Column(
+                    children: [
+                      RatingBar.builder(
+                        initialRating: experienceRating ??
+                            0, // Use the dynamically calculated rating
+                        minRating: 1,
+                        direction: Axis.horizontal,
+                        allowHalfRating: true,
+                        itemCount: 5,
+                        itemSize: 30.0,
+                        itemPadding: EdgeInsets.symmetric(horizontal: 1.0),
+                        itemBuilder: (context, _) => Icon(
+                          Icons.star,
+                          color: Colors.amber,
+                        ),
+                        onRatingUpdate: (rating) {
+                          // Optional: Update rating if needed
+                          experienceRating = rating;
+                        },
+                      ),
+                      Text(
+                        "Rating",
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                      Text("Rated: ${experienceRating}",
+                          style: TextStyle(fontSize: 16)),
+                    ],
+                  ),
+                  SizedBox(height: 20),
                   // Follow and Message Buttons
                   // Follow & Message Buttons
                   Row(
