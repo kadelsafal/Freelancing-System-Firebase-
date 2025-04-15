@@ -29,18 +29,26 @@ class Userprovider extends ChangeNotifier {
   Future<void> getUserDetails() async {
     var authUser = FirebaseAuth.instance.currentUser;
 
-    await db.collection('users').doc(authUser!.uid).get().then((dataSnapshot) {
-      // User details
-      userName = dataSnapshot.data()?["Full Name"] ?? "";
-      userEmail = dataSnapshot.data()?["email"] ?? "";
-      userId = dataSnapshot.data()?["id"] ?? "";
-      userphn = dataSnapshot.data()?["phone"] ?? "";
-      followed = (dataSnapshot.data()?["followed"] ?? 0).toString();
-      followers = (dataSnapshot.data()?["followers"] ?? 0).toString();
+    if (authUser == null) {
+      print("⚠️ No user is currently logged in.");
+      return;
+    }
 
-      // Resume entities
-      resumeEntities = dataSnapshot.data()?["resume_entities"] ?? {};
+    try {
+      var snapshot = await db.collection('users').doc(authUser.uid).get();
 
+      if (!snapshot.exists) return;
+
+      final data = snapshot.data();
+
+      userName = data?["Full Name"] ?? "";
+      userEmail = data?["email"] ?? "";
+      userId = data?["id"] ?? "";
+      userphn = data?["phone"] ?? "";
+      followed = (data?["followed"] ?? 0).toString();
+      followers = (data?["followers"] ?? 0).toString();
+
+      resumeEntities = data?["resume_entities"] ?? {};
       collegeName = List<String>.from(resumeEntities["COLLEGE NAME"] ?? []);
       companiesWorkedAt =
           List<String>.from(resumeEntities["COMPANIES WORKED AT"] ?? []);
@@ -56,7 +64,9 @@ class Userprovider extends ChangeNotifier {
               : "";
 
       notifyListeners();
-    });
+    } catch (e) {
+      print("❌ Error fetching user details: $e");
+    }
   }
 
   // Fetch details for any other user based on userId

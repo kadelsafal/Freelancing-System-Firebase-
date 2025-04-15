@@ -208,6 +208,25 @@ class TeamService {
     });
   }
 
+  static Stream<bool> isLastMessageUnseen(String teamId, String currentUserId) {
+    return FirebaseFirestore.instance
+        .collection('teams')
+        .doc(teamId)
+        .collection('messages')
+        .orderBy('timestamp', descending: true)
+        .limit(1)
+        .snapshots()
+        .map((snapshot) {
+      if (snapshot.docs.isEmpty) return false;
+
+      final message = snapshot.docs.first.data();
+      final sender = message['sender'];
+      final isSeenBy = List<String>.from(message['isSeenBy'] ?? []);
+
+      return sender != currentUserId && !isSeenBy.contains(currentUserId);
+    });
+  }
+
   // Get the stream of user teams from Firestore
   static Stream<List<Map<String, dynamic>>> getUserTeamsStream(String userId) {
     return FirebaseFirestore.instance

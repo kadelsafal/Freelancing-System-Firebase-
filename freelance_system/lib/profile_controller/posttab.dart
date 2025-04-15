@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../profile_controller/showAddPostDialog.dart';
 import '../profile_controller/mypost.dart';
@@ -69,7 +70,10 @@ class PostTab extends StatelessWidget {
           SizedBox(height: 40),
 
           // User Posts Section
-          MyPost(userId: userProvider.userId),
+          MyPost(
+              userId: userProvider.userId,
+              isOwnProfile: FirebaseAuth.instance.currentUser!.uid ==
+                  userProvider.userId),
         ],
       ),
     );

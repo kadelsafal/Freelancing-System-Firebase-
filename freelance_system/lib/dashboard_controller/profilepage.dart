@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:freelance_system/chats/chat_service.dart';
+import 'package:freelance_system/profile_controller/mypost.dart';
 import 'package:freelance_system/providers/userProvider.dart';
 import 'package:provider/provider.dart';
 import '../chats/chatroom_screen.dart';
@@ -17,9 +19,11 @@ class Profilepage extends StatefulWidget {
 
 class _ProfilepageState extends State<Profilepage> {
   late Future<Map<String, dynamic>> userData;
-  bool isFollowing = false;
+
   int followers = 0;
   int followed = 0;
+  bool isFollowing = false;
+  bool isFollowedByThem = false; // NEW
   String lastMessage = '';
 
   @override
@@ -72,37 +76,40 @@ class _ProfilepageState extends State<Profilepage> {
 
   Future<void> checkFollowStatus() async {
     final currentUserId = FirebaseAuth.instance.currentUser!.uid;
-    final followingDoc = await FirebaseFirestore.instance
+    final db = FirebaseFirestore.instance;
+
+    final followingDoc = await db
         .collection('users')
         .doc(currentUserId)
         .collection('following')
         .doc(widget.userId)
         .get();
 
+    final followedByThemDoc = await db
+        .collection('users')
+        .doc(widget.userId)
+        .collection('following')
+        .doc(currentUserId)
+        .get();
+
     setState(() {
       isFollowing = followingDoc.exists;
+      isFollowedByThem = followedByThemDoc.exists;
     });
   }
 
   Future<void> fetchLastMessage() async {
     try {
       final currentUserId = FirebaseAuth.instance.currentUser!.uid;
-      final chatroomId = currentUserId.compareTo(widget.userId) < 0
-          ? "$currentUserId-${widget.userId}"
-          : "${widget.userId}-$currentUserId";
 
-      final messagesCollection = FirebaseFirestore.instance
-          .collection('chatrooms')
-          .doc(chatroomId)
-          .collection('messages');
-      final lastMessageSnapshot = await messagesCollection
-          .orderBy('timestamp', descending: true)
-          .limit(1)
-          .get();
+      final message = await ChatService.getLastMessage(
+        currentUserId: currentUserId,
+        otherUserId: widget.userId,
+      );
 
-      if (lastMessageSnapshot.docs.isNotEmpty) {
+      if (message != null) {
         setState(() {
-          lastMessage = lastMessageSnapshot.docs.first['text'] ?? '';
+          lastMessage = message;
         });
       }
     } catch (e) {
@@ -110,34 +117,65 @@ class _ProfilepageState extends State<Profilepage> {
     }
   }
 
-  Future<void> sendFollowNotification(
-      String currentUserId, String currentUserName) async {
-    try {
-      final db = FirebaseFirestore.instance;
-      await db
-          .collection('users')
-          .doc(widget.userId)
-          .collection('notifications')
-          .add({
-        "type": "follow",
-        "fromUserId": currentUserId,
-        "fromUserName": currentUserName,
-        "timestamp": FieldValue.serverTimestamp(),
-        "seen": false, // Mark as unread
-      });
-    } catch (e) {
-      print("Error sending follow notification: $e");
-    }
+  Future<void> followUser(String targetUserId, String targetUserName) async {
+    final currentUserId = FirebaseAuth.instance.currentUser!.uid;
+    final db = FirebaseFirestore.instance;
+
+    final currentUserDoc =
+        await db.collection('users').doc(currentUserId).get();
+    final currentUserName = currentUserDoc['Full Name'] ?? '';
+
+    // Add to following
+    await db
+        .collection('users')
+        .doc(currentUserId)
+        .collection('following')
+        .doc(targetUserId)
+        .set({
+      'timestamp': FieldValue.serverTimestamp(),
+      'fullName': targetUserName,
+    });
+
+    // Add to followers
+    await db
+        .collection('users')
+        .doc(targetUserId)
+        .collection('followers')
+        .doc(currentUserId)
+        .set({
+      'timestamp': FieldValue.serverTimestamp(),
+      'fullName': currentUserName,
+    });
+
+    // Update counts
+    await db.collection('users').doc(currentUserId).update({
+      'followed': FieldValue.increment(1),
+    });
+    await db.collection('users').doc(targetUserId).update({
+      'followers': FieldValue.increment(1),
+    });
+
+    // 🔔 Add notification
+    await db
+        .collection('users')
+        .doc(targetUserId)
+        .collection('notifications')
+        .add({
+      'type': 'follow',
+      'fromUserId': currentUserId,
+      'fromUserName': currentUserName,
+      'message': '$currentUserName followed you',
+      'seen': false,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
   }
 
   Future<void> handleFollow() async {
     final currentUserId = FirebaseAuth.instance.currentUser!.uid;
-    final currentUserName =
-        Provider.of<Userprovider>(context, listen: false).userName;
-    final db = FirebaseFirestore.instance;
 
     if (isFollowing) {
       // Unfollow logic
+      final db = FirebaseFirestore.instance;
       await db
           .collection('users')
           .doc(currentUserId)
@@ -164,34 +202,8 @@ class _ProfilepageState extends State<Profilepage> {
         followers--;
       });
     } else {
-      // Follow logic
-      await db
-          .collection('users')
-          .doc(currentUserId)
-          .collection('following')
-          .doc(widget.userId)
-          .set({
-        "timestamp": FieldValue.serverTimestamp(),
-        "fullName": widget.userName,
-      });
-      await db
-          .collection('users')
-          .doc(widget.userId)
-          .collection('followers')
-          .doc(currentUserId)
-          .set({
-        "timestamp": FieldValue.serverTimestamp(),
-        "fullName": currentUserName,
-      });
-      await db
-          .collection('users')
-          .doc(currentUserId)
-          .update({"followed": FieldValue.increment(1)});
-      await db
-          .collection('users')
-          .doc(widget.userId)
-          .update({"followers": FieldValue.increment(1)});
-
+      // Follow logic using the followUser function
+      await followUser(widget.userId, widget.userName);
       setState(() {
         isFollowing = true;
         followers++;
@@ -288,10 +300,21 @@ class _ProfilepageState extends State<Profilepage> {
                   SizedBox(height: 20),
 
                   // Follow and Message Buttons
+                  // Follow & Message Buttons
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      if (!isFollowing)
+                      if (!isFollowing && isFollowedByThem)
+                        ElevatedButton(
+                          onPressed: handleFollow,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange,
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 40, vertical: 12),
+                          ),
+                          child: Text("Follow Back"),
+                        ),
+                      if (!isFollowing && !isFollowedByThem)
                         ElevatedButton(
                           onPressed: handleFollow,
                           style: ElevatedButton.styleFrom(
@@ -301,7 +324,7 @@ class _ProfilepageState extends State<Profilepage> {
                           ),
                           child: Text("Follow"),
                         ),
-                      if (isFollowing) ...[
+                      if (isFollowing)
                         ElevatedButton(
                           onPressed: handleFollow,
                           style: ElevatedButton.styleFrom(
@@ -311,50 +334,39 @@ class _ProfilepageState extends State<Profilepage> {
                           ),
                           child: Text("Following"),
                         ),
+                      if (isFollowing || isFollowedByThem)
                         ElevatedButton(
                           onPressed: () async {
                             try {
                               final currentUserId =
                                   FirebaseAuth.instance.currentUser!.uid;
                               final currentUserName = Provider.of<Userprovider>(
-                                context,
-                                listen: false,
-                              ).userName;
+                                      context,
+                                      listen: false)
+                                  .userName;
 
                               final chatroomId =
-                                  currentUserId.compareTo(widget.userId) < 0
-                                      ? "$currentUserId-${widget.userId}"
-                                      : "${widget.userId}-$currentUserId";
+                                  await ChatService.createOrUpdateChatroom(
+                                currentUserId: currentUserId,
+                                currentUserName: currentUserName,
+                                otherUserId: widget.userId,
+                                otherUserName: widget.userName,
+                                lastMessage: lastMessage,
+                              );
 
-                              // Get the reference to the chatroom
-                              final chatroomRef = FirebaseFirestore.instance
-                                  .collection('chatrooms')
-                                  .doc(chatroomId);
-
-                              // Add or update the chatroom with the latest message
-                              await chatroomRef.set({
-                                "chatroom_id": chatroomId,
-                                "participants": [currentUserId, widget.userId],
-                                "participant1": currentUserName,
-                                "participant2": widget.userName,
-                                "last_message": lastMessage,
-                                "timestamp": FieldValue.serverTimestamp(),
-                              }, SetOptions(merge: true));
-
-                              // Navigate to the ChatroomScreen
                               Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ChatroomScreen(
-                                      chatroomId: chatroomId,
-                                      chatroomName: widget.userName,
-                                      userId: widget.userId,
-                                    ),
-                                  ));
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ChatroomScreen(
+                                    chatroomId: chatroomId,
+                                    chatroomName: widget.userName,
+                                    userId: widget.userId,
+                                  ),
+                                ),
+                              );
                             } catch (e) {
-                              print("Error opening chatroom: $e");
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
+                                const SnackBar(
                                     content: Text(
                                         "Failed to open chatroom. Please try again.")),
                               );
@@ -367,9 +379,41 @@ class _ProfilepageState extends State<Profilepage> {
                           ),
                           child: Text("Message"),
                         ),
-                      ],
                     ],
                   ),
+                  SizedBox(height: 20),
+
+// Show Posts if both follow each other
+                  if (isFollowing && isFollowedByThem)
+                    MyPost(
+                      userId: widget.userId,
+                      isOwnProfile: FirebaseAuth.instance.currentUser!.uid ==
+                          widget.userId,
+                    )
+                  else
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Container(
+                        padding: EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.lock_outline, color: Colors.blue),
+                            SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                "Follow each other to view posts. Start connecting now!",
+                                style: TextStyle(
+                                    fontSize: 16, color: Colors.black87),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                 ],
               ),
             );

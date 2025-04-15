@@ -5,8 +5,8 @@ import 'package:intl/intl.dart';
 
 class MyPost extends StatefulWidget {
   final String userId;
-
-  const MyPost({super.key, required this.userId});
+  final bool isOwnProfile;
+  const MyPost({super.key, required this.userId, required this.isOwnProfile});
 
   @override
   _MyPostState createState() => _MyPostState();
@@ -21,7 +21,7 @@ class _MyPostState extends State<MyPost> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "My Posts",
+            " Posts",
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
           SizedBox(height: 10),
@@ -97,18 +97,20 @@ class _MyPostState extends State<MyPost> {
                                       ),
                                     ],
                                   ),
-                                  IconButton(
-                                    icon: Icon(
-                                      Icons.delete,
-                                      color: Colors.red,
+                                  if (widget.isOwnProfile) ...[
+                                    IconButton(
+                                      icon: Icon(
+                                        Icons.delete,
+                                        color: Colors.red,
+                                      ),
+                                      onPressed: () async {
+                                        await FirebaseFirestore.instance
+                                            .collection('posts')
+                                            .doc(post.id)
+                                            .delete();
+                                      },
                                     ),
-                                    onPressed: () async {
-                                      await FirebaseFirestore.instance
-                                          .collection('posts')
-                                          .doc(post.id)
-                                          .delete();
-                                    },
-                                  ),
+                                  ]
                                 ],
                               ),
                               Text(

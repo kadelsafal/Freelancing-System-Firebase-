@@ -10,6 +10,25 @@ class ChatTab extends StatelessWidget {
 
   ChatTab({super.key});
 
+  Future<bool> _isLastMessageUnseen(String chatroomId) async {
+    final messagesSnapshot = await db
+        .collection('chatrooms')
+        .doc(chatroomId)
+        .collection('messages')
+        .orderBy('timestamp', descending: true)
+        .limit(1)
+        .get();
+
+    if (messagesSnapshot.docs.isNotEmpty) {
+      final message = messagesSnapshot.docs.first.data();
+      final seenBy = List<String>.from(message['isSeenBy'] ?? []);
+      final senderId = message['senderId'];
+      return !seenBy.contains(user!.uid) && senderId != user!.uid;
+    }
+
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
@@ -46,7 +65,6 @@ class ChatTab extends StatelessWidget {
             final participant1Name = data['participant1'] ?? '';
             final participant2Name = data['participant2'] ?? '';
 
-            // Identify the name of the *other* user
             final isParticipant1 =
                 participants.isNotEmpty && participants[0] == user!.uid;
             final chatroomTitle =
@@ -56,71 +74,97 @@ class ChatTab extends StatelessWidget {
                 ? DateFormat('HH:mm').format(timestamp.toDate())
                 : 'No timestamp';
 
-            return Dismissible(
-              key: Key(chatroomId),
-              direction: DismissDirection.endToStart,
-              background: Container(
-                color: Colors.red,
-                alignment: Alignment.centerRight,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: const Icon(Icons.delete, color: Colors.white),
-              ),
-              onDismissed: (direction) async {
-                try {
-                  // Delete messages
-                  final messagesSnapshot = await db
-                      .collection("messages")
-                      .where("chatroomsId", isEqualTo: chatroomId)
-                      .get();
+            return FutureBuilder<bool>(
+              future: _isLastMessageUnseen(chatroomId),
+              builder: (context, seenSnapshot) {
+                final isUnseen = seenSnapshot.data ?? false;
 
-                  for (var doc in messagesSnapshot.docs) {
-                    await doc.reference.delete();
-                  }
+                return Dismissible(
+                  key: Key(chatroomId),
+                  direction: DismissDirection.endToStart,
+                  background: Container(
+                    color: Colors.red,
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: const Icon(Icons.delete, color: Colors.white),
+                  ),
+                  onDismissed: (direction) async {
+                    try {
+                      final messagesSnapshot = await db
+                          .collection("messages")
+                          .where("chatroomsId", isEqualTo: chatroomId)
+                          .get();
 
-                  // Delete chatroom
-                  await db.collection("chatrooms").doc(chatroomId).delete();
+                      for (var doc in messagesSnapshot.docs) {
+                        await doc.reference.delete();
+                      }
 
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('Chatroom deleted successfully')),
-                  );
-                } catch (e) {
-                  print("Error deleting chatroom: $e");
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Failed to delete chatroom')),
-                  );
-                }
-              },
-              child: ListTile(
-                onTap: () {
-                  final otherUserId =
-                      participants.firstWhere((id) => id != user!.uid);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ChatroomScreen(
-                        chatroomName: chatroomTitle,
-                        chatroomId: chatroomId,
-                        userId: otherUserId,
+                      await db.collection("chatrooms").doc(chatroomId).delete();
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Chatroom deleted successfully')),
+                      );
+                    } catch (e) {
+                      print("Error deleting chatroom: $e");
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Failed to delete chatroom')),
+                      );
+                    }
+                  },
+                  child: ListTile(
+                    onTap: () {
+                      final otherUserId =
+                          participants.firstWhere((id) => id != user!.uid);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ChatroomScreen(
+                            chatroomName: chatroomTitle,
+                            chatroomId: chatroomId,
+                            userId: otherUserId,
+                          ),
+                        ),
+                      );
+                    },
+                    leading: CircleAvatar(
+                      child: Text(
+                        chatroomTitle.isNotEmpty ? chatroomTitle[0] : "",
+                        style: TextStyle(
+                          fontWeight:
+                              isUnseen ? FontWeight.bold : FontWeight.normal,
+                        ),
                       ),
                     ),
-                  );
-                },
-                leading: CircleAvatar(
-                  child: Text(chatroomTitle.isNotEmpty ? chatroomTitle[0] : ""),
-                ),
-                title: Text(chatroomTitle),
-                subtitle: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                        child:
-                            Text(lastMessage, overflow: TextOverflow.ellipsis)),
-                    const SizedBox(width: 8),
-                    Text(formattedTimestamp),
-                  ],
-                ),
-              ),
+                    title: Text(chatroomTitle),
+                    subtitle: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            lastMessage,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontWeight: isUnseen
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          formattedTimestamp,
+                          style: TextStyle(
+                            fontWeight:
+                                isUnseen ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
             );
           },
         );

@@ -127,17 +127,6 @@ class _DashboardState extends State<Dashboard> {
                   ),
                 ],
               ),
-              IconButton(
-                onPressed: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => ChatPage()));
-                },
-                icon: const Icon(
-                  Icons.telegram,
-                  size: 40,
-                  color: Color.fromARGB(255, 0, 0, 0),
-                ),
-              ),
             ],
           ),
           backgroundColor: const Color.fromARGB(0, 255, 255, 255),
@@ -226,11 +215,14 @@ class _DashboardState extends State<Dashboard> {
                       return const Center(child: Text("No users found."));
                     }
 
-                    // Filter results dynamically for case insensitivity
+                    // Filter results dynamically for case-insensitive match and excluding current user
                     var users = snapshot.data!.docs.where((userDoc) {
                       String fullName =
                           userDoc['Full Name'].toString().toLowerCase();
-                      return fullName.contains(searchQuery);
+                      String uid =
+                          userDoc['id'] ?? userDoc.id; // fallback to doc.id
+                      return fullName.contains(searchQuery.toLowerCase()) &&
+                          uid != currentUserId;
                     }).toList();
 
                     if (users.isEmpty) {

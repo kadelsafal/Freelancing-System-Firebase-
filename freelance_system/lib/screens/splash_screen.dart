@@ -20,13 +20,15 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     _loadToggleState();
-    Future.delayed(Duration(seconds: 2), () {
+    Future.delayed(Duration(seconds: 2), () async {
+      User? user = FirebaseAuth.instance.currentUser;
       if (user == null) {
         openLogin();
       } else {
+        await Provider.of<Userprovider>(context, listen: false)
+            .getUserDetails();
         openDashboard();
       }
     });
@@ -48,7 +50,6 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   void openDashboard() {
-    Provider.of<Userprovider>(context, listen: false).getUserDetails();
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(

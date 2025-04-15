@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:freelance_system/chats/chat_page.dart';
 import 'package:freelance_system/screens/dashboard.dart';
 import 'package:freelance_system/screens/project.dart';
 import 'package:freelance_system/screens/resume.dart';
@@ -17,6 +18,7 @@ class _NavigationMenuState extends State<NavigationMenu> {
   late PageController _pageController;
 
   late final List<Widget> screens;
+  int unseenMessagesCount = 0;
 
   @override
   void initState() {
@@ -29,7 +31,7 @@ class _NavigationMenuState extends State<NavigationMenu> {
       _safeScreen(const ProjectScreen()),
       _safeScreen(const ResumeScreen()),
       _safeScreen(const LearningHub()),
-      _safeScreen(const PaymentSystem()),
+      _safeScreen(const ChatPage()),
     ];
   }
 
@@ -97,9 +99,9 @@ class _NavigationMenuState extends State<NavigationMenu> {
               label: "E-learning",
             ),
             NavigationDestination(
-              icon: Icon(Icons.payment_outlined),
-              selectedIcon: Icon(Icons.payment_outlined, color: Colors.blue),
-              label: "Payments",
+              icon: Icon(Icons.telegram),
+              selectedIcon: Icon(Icons.telegram_outlined, color: Colors.blue),
+              label: "Chats",
             )
           ],
         ),
