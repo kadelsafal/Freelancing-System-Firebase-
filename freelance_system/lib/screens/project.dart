@@ -1,6 +1,7 @@
+import 'dart:ui';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:freelance_system/Projects/addProject/addproject_screen.dart';
-
 import 'package:freelance_system/freelancer/freelanced_projects.dart';
 import 'package:freelance_system/providers/userProvider.dart';
 import 'package:provider/provider.dart';
@@ -18,86 +19,156 @@ class _ProjectScreenState extends State<ProjectScreen> {
 
   @override
   Widget build(BuildContext context) {
-    var userProvider = Provider.of<Userprovider>(context);
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return const Scaffold(
+        body: Center(
+          child: Text('Please login to view projects'),
+        ),
+      );
+    }
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: const Color(0xFF1976D2),
+        foregroundColor: Colors.white,
+        elevation: 0,
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              "Project",
-              style: TextStyle(fontSize: 24),
+            const Text(
+              "Projects",
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
-            Row(
-              mainAxisSize: MainAxisSize
-                  .min, // Ensuring that the row takes only required space
-              children: [
-                Text(
-                  isClient ? "Client Mode" : "Freelancing Mode",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(width: 2),
-                Switch(
-                  value: isClient,
-                  onChanged: (value) {
-                    setState(() {
-                      isClient = value;
-                    });
-                  },
-                  activeTrackColor: Color.fromARGB(255, 57, 0, 98),
-                  inactiveTrackColor: Color.fromARGB(255, 57, 0, 98),
-                  thumbColor: WidgetStateProperty.resolveWith(
-                    (states) {
-                      return Colors.white;
-                    },
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isClient ? Icons.business : Icons.work,
+                    color: Colors.white,
+                    size: 18,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  Text(
+                    isClient ? "Client Mode" : "Freelancer Mode",
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Transform.scale(
+                    scale: 0.8,
+                    child: Switch(
+                      value: isClient,
+                      onChanged: (value) {
+                        setState(() {
+                          isClient = value;
+                        });
+                      },
+                      activeColor: Colors.white,
+                      activeTrackColor: Colors.white.withOpacity(0.4),
+                      inactiveThumbColor: Colors.grey[300],
+                      inactiveTrackColor: Colors.grey[400],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
       ),
       body: isClient
-          ? SingleChildScrollView(
-              child: Column(
-                children: [
-                  // Show AddProject button only if in Client Mode
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Container(
-                          padding: EdgeInsets.all(2),
-                          decoration: BoxDecoration(
-                            color:
-                                Color.fromARGB(255, 57, 0, 98), // Purple color
-                            borderRadius:
-                                BorderRadius.circular(50), // Circular border
-                          ),
-                          child: IconButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => AddProject(),
-                                ),
-                              );
-                            },
-                            icon: Icon(Icons.add, color: Colors.white),
-                            iconSize: 30,
-                          ),
+          ? Stack(
+              children: [
+                Container(
+                  color: Colors.grey[50],
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 80.0),
+                    child: SingleChildScrollView(
+                      child: Projectpost(userId: user.uid),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 16,
+                  left: 16,
+                  right: 16,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1976D2),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF1976D2).withOpacity(0.2),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const AddProject(),
+                            ),
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 16,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.add,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              const Text(
+                                "Add New Project",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                  // Show Projectpost for Client mode
-                  Center(child: Projectpost(userId: userProvider.userId)),
-                ],
-              ),
+                ),
+              ],
             )
-          : FreelancedProjects(), // Show FreelancedProjects for Freelancer mode
+          : const FreelancedProjects(),
     );
   }
 }

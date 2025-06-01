@@ -14,6 +14,11 @@ void showTeamCreationDialog(
     context: context,
     builder: (BuildContext context) {
       return Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        elevation: 0,
+        backgroundColor: Colors.white,
         child: FutureBuilder<List<Map<String, dynamic>>>(
           future: (() async {
             final currentUser = FirebaseAuth.instance.currentUser;
@@ -22,8 +27,11 @@ void showTeamCreationDialog(
 
             if (currentUser != null &&
                 !users.any((user) => user['id'] == currentUser.uid)) {
-              String? fullName =
-                  await UserService.getUserFullName(currentUser.uid);
+              final profile = await UserService.getUserProfile(currentUser.uid);
+              String? fullName = profile?['Full Name'] ??
+                  profile?['fullName'] ??
+                  profile?['displayName'];
+
               users.add({
                 "id": currentUser.uid,
                 "Full Name": fullName ?? "You",
@@ -34,12 +42,50 @@ void showTeamCreationDialog(
           })(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+              return Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Center(
+                  child: CircularProgressIndicator(
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(Color(0xFF1976D2)),
+                    strokeWidth: 3,
+                  ),
+                ),
+              );
             }
             if (snapshot.hasError) {
               return Container(
-                padding: EdgeInsets.all(20),
-                child: Center(child: Text("Error: ${snapshot.error}")),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        color: Color(0xFF1976D2),
+                        size: 48,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        "Error: ${snapshot.error}",
+                        style: const TextStyle(
+                          color: Color(0xFF1976D2),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
               );
             }
 
@@ -47,32 +93,129 @@ void showTeamCreationDialog(
 
             return Container(
               width: double.maxFinite,
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    "Create a New Team",
-                    style: Theme.of(context).textTheme.titleLarge,
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF1976D2), Color(0xFF2196F3)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.group_add, color: Colors.white, size: 32),
+                        SizedBox(width: 16),
+                        Text(
+                          "Create a New Team",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 24),
                   TextField(
                     controller: teamNameController,
                     decoration: InputDecoration(
                       labelText: 'Team Name',
                       hintText: 'Enter team name',
-                      border: OutlineInputBorder(),
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: const Color(0xFF1976D2).withOpacity(0.2),
+                          width: 1,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                            color: Color(0xFF1976D2), width: 2),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: const Color(0xFF1976D2).withOpacity(0.2),
+                          width: 1,
+                        ),
+                      ),
+                      prefixIcon: Container(
+                        padding: const EdgeInsets.all(12),
+                        child:
+                            const Icon(Icons.group, color: Color(0xFF1976D2)),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                      labelStyle: const TextStyle(
+                        color: Color(0xFF1976D2),
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
-                  SizedBox(height: 16),
-                  Text(
-                    "Select Team Members (min 3):",
-                    style: Theme.of(context).textTheme.bodyLarge,
+                  const SizedBox(height: 24),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1976D2).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.people, color: Color(0xFF1976D2)),
+                        SizedBox(width: 12),
+                        Text(
+                          "Select Team Members (min 3)",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1976D2),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 16),
                   users.isEmpty
-                      ? Center(child: Text("No mutual connections available"))
+                      ? Center(
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1976D2).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.info_outline,
+                                    color: Color(0xFF1976D2)),
+                                const SizedBox(width: 12),
+                                Text(
+                                  "No mutual connections available",
+                                  style: TextStyle(
+                                    color: const Color(0xFF1976D2)
+                                        .withOpacity(0.8),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
                       : Flexible(
                           child: _buildUserSelection(
                               users,
@@ -97,27 +240,59 @@ Widget _buildUserSelection(
     VoidCallback refreshTeams,
     TextEditingController teamNameController,
     String? selectedAdminId) {
-  List<String> selectedUserIds = [
-    selectedAdminId!
-  ]; // Ensure the current user is in the list
+  List<String> selectedUserIds = [selectedAdminId!];
 
   return StatefulBuilder(
     builder: (context, setState) {
-      return Container(
-        width: double.maxFinite,
-        height: 350,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Admin selection dropdown
-            DropdownButtonFormField<String>(
+      return Column(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: const Color(0xFF1976D2).withOpacity(0.2),
+                width: 1,
+              ),
+            ),
+            child: DropdownButtonFormField<String>(
               decoration: InputDecoration(
                 labelText: 'Select Team Admin',
-                border: OutlineInputBorder(),
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide:
+                      const BorderSide(color: Color(0xFF1976D2), width: 2),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                labelStyle: const TextStyle(
+                  color: Color(0xFF1976D2),
+                  fontWeight: FontWeight.w500,
+                ),
+                prefixIcon: Container(
+                  padding: const EdgeInsets.all(12),
+                  child: const Icon(Icons.admin_panel_settings,
+                      color: Color(0xFF1976D2)),
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 16),
               ),
+              dropdownColor: Colors.white,
+              icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF1976D2)),
               hint: Text(
                 'Choose an admin for this team',
-                style: TextStyle(fontSize: 14),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w400,
+                ),
               ),
               value: selectedAdminId,
               items: users.map((user) {
@@ -126,25 +301,44 @@ Widget _buildUserSelection(
                     user["fullName"] ??
                     user["displayName"] ??
                     "User";
+                String profileImage = user["profileImage"] ?? "";
 
                 return DropdownMenuItem<String>(
                   value: userId,
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        backgroundColor: Colors.blue,
-                        radius: 12,
-                        child: Text(
-                          fullName.isNotEmpty ? fullName[0].toUpperCase() : "?",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          backgroundColor: const Color(0xFF1976D2),
+                          radius: 16,
+                          backgroundImage: (profileImage.isNotEmpty)
+                              ? NetworkImage(profileImage)
+                              : null,
+                          child: (profileImage.isEmpty)
+                              ? Text(
+                                  fullName.isNotEmpty
+                                      ? fullName[0].toUpperCase()
+                                      : "?",
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                )
+                              : null,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          fullName,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF1976D2),
                           ),
                         ),
-                      ),
-                      SizedBox(width: 8),
-                      Text(fullName),
-                    ],
+                      ],
+                    ),
                   ),
                 );
               }).toList(),
@@ -157,11 +351,20 @@ Widget _buildUserSelection(
                 });
               },
             ),
-            SizedBox(height: 12),
-
-            // Member selection list
-            Expanded(
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: const Color(0xFF1976D2).withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
               child: ListView.builder(
+                padding: const EdgeInsets.all(8),
                 itemCount: users.length,
                 itemBuilder: (context, index) {
                   String userId = users[index]["id"];
@@ -169,78 +372,145 @@ Widget _buildUserSelection(
                       users[index]["fullName"] ??
                       users[index]["displayName"] ??
                       "User";
-
+                  String profileImage = users[index]["profileImage"] ?? "";
                   bool isAdmin = userId == selectedAdminId;
 
-                  return CheckboxListTile(
-                    secondary: CircleAvatar(
-                      backgroundColor: Colors.blue,
-                      child: Text(
-                        fullName.isNotEmpty ? fullName[0].toUpperCase() : "?",
-                        style: TextStyle(color: Colors.white),
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: const Color(0xFF1976D2).withOpacity(0.1),
+                        width: 1,
                       ),
                     ),
-                    title: Text(fullName),
-                    subtitle: isAdmin
-                        ? Text("Team Admin",
-                            style: TextStyle(color: Colors.blue))
-                        : null,
-                    value: selectedUserIds.contains(userId),
-                    onChanged: (bool? value) {
-                      setState(() {
-                        if (value == true) {
-                          selectedUserIds.add(userId);
-                        } else {
-                          if (isAdmin) {
-                            return;
+                    child: CheckboxListTile(
+                      secondary: CircleAvatar(
+                        backgroundColor: const Color(0xFF1976D2),
+                        radius: 16,
+                        backgroundImage: (profileImage.isNotEmpty)
+                            ? NetworkImage(profileImage)
+                            : null,
+                        child: (profileImage.isEmpty)
+                            ? Text(
+                                fullName.isNotEmpty
+                                    ? fullName[0].toUpperCase()
+                                    : "?",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                ),
+                              )
+                            : null,
+                      ),
+                      title: Text(
+                        fullName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF1976D2),
+                        ),
+                      ),
+                      subtitle: isAdmin
+                          ? Container(
+                              margin: const EdgeInsets.only(top: 4),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1976D2).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                "Team Admin",
+                                style: TextStyle(
+                                  color: Color(0xFF1976D2),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            )
+                          : null,
+                      value: selectedUserIds.contains(userId),
+                      activeColor: const Color(0xFF1976D2),
+                      checkColor: Colors.white,
+                      onChanged: (bool? value) {
+                        setState(() {
+                          if (value == true) {
+                            selectedUserIds.add(userId);
+                          } else {
+                            if (isAdmin) {
+                              return;
+                            }
+                            selectedUserIds.remove(userId);
                           }
-                          selectedUserIds.remove(userId);
-                        }
-                      });
-                    },
+                        });
+                      },
+                    ),
                   );
                 },
               ),
             ),
-
-            // Create team button
-            Padding(
-              padding: const EdgeInsets.only(top: 16.0),
-              child: ElevatedButton(
-                onPressed: () {
-                  String teamName = teamNameController.text.trim();
-
-                  if (teamName.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("Please enter a team name")));
-                    return;
-                  }
-
-                  if (selectedUserIds.length < 3) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text("Please select at least 3 members")));
-                    return;
-                  }
-
-                  if (selectedAdminId == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("Please select a team admin")));
-                    return;
-                  }
-
-                  TeamService.createTeam(
-                    teamName: teamName,
-                    adminId: selectedAdminId!,
-                    memberIds: selectedUserIds,
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                if (selectedUserIds.length < 3) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Please select at least 3 team members"),
+                      backgroundColor: Color(0xFF1976D2),
+                    ),
                   );
-                  Navigator.pop(context);
-                  refreshTeams();
-                },
-                child: const Text("Create Team"),
+                  return;
+                }
+                if (selectedAdminId == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Please select a team admin"),
+                      backgroundColor: Color(0xFF1976D2),
+                    ),
+                  );
+                  return;
+                }
+                if (teamNameController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Please enter a team name"),
+                      backgroundColor: Color(0xFF1976D2),
+                    ),
+                  );
+                  return;
+                }
+
+                TeamService.createTeam(
+                  teamName: teamNameController.text.trim(),
+                  adminId: selectedAdminId!,
+                  memberIds: selectedUserIds,
+                );
+                Navigator.pop(context);
+                refreshTeams();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1976D2),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: const Text(
+                "Create Team",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       );
     },
   );

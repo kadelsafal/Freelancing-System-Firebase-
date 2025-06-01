@@ -8,6 +8,7 @@ import 'package:freelance_system/providers/userProvider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ShowAddPostDialog extends StatefulWidget {
   const ShowAddPostDialog({super.key});
@@ -18,7 +19,8 @@ class ShowAddPostDialog extends StatefulWidget {
 
 class _ShowAddPostDialogState extends State<ShowAddPostDialog> {
   final ImagePicker _picker = ImagePicker();
-  final TextEditingController _statusController = TextEditingController();
+  final TextEditingController _postController = TextEditingController();
+  bool _isLoading = false;
 
   final List<XFile> _uploadedImages = []; // List to hold selected images
   bool _isPosting = false; // State to manage the loading indicator
@@ -26,6 +28,12 @@ class _ShowAddPostDialogState extends State<ShowAddPostDialog> {
   // To track loading state of each image
   final Map<int, bool> _imageLoadingStatus =
       {}; // Maps image index to loading state
+
+  @override
+  void dispose() {
+    _postController.dispose();
+    super.dispose();
+  }
 
   /// Upload images to Cloudinary
   Future<List<String?>> uploadImagesToCloudinary(List<XFile> imageFiles) async {
@@ -86,7 +94,7 @@ class _ShowAddPostDialogState extends State<ShowAddPostDialog> {
         "userId": userProvider.userId,
         "username": userProvider.userName,
         "imageUrls": imageUrls.isNotEmpty ? imageUrls : null,
-        "status": _statusController.text,
+        "status": _postController.text,
         "timestamp": timestamp,
         "likes": []
       };
@@ -136,7 +144,7 @@ class _ShowAddPostDialogState extends State<ShowAddPostDialog> {
 
   /// Handle the "Post" button click
   Future<void> _handlePost() async {
-    if (_statusController.text.isEmpty && _uploadedImages.isEmpty) {
+    if (_postController.text.isEmpty && _uploadedImages.isEmpty) {
       print("Status or an image is required.");
       return;
     }
@@ -163,78 +171,113 @@ class _ShowAddPostDialogState extends State<ShowAddPostDialog> {
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        child: Padding(
-          padding: const EdgeInsets.all(10.0),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Container(
+          padding: EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Dialog Header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  Text(
+                    "Create Post",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue,
+                    ),
+                  ),
                   IconButton(
-                    icon: const Icon(Icons.close),
+                    icon: Icon(Icons.close, color: Colors.blue),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
-                  const Text(
-                    "Add a Post/Status",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                  ),
-                  const SizedBox(width: 40),
                 ],
               ),
-              const SizedBox(height: 10),
+              Divider(color: Colors.blue.shade100),
+              SizedBox(height: 15),
               // Status Input Field
               TextField(
-                controller: _statusController,
-                minLines: 3,
-                maxLines: null,
+                controller: _postController,
+                maxLines: 5,
                 decoration: InputDecoration(
                   hintText: "What's on your mind?",
+                  hintStyle: TextStyle(color: Colors.grey),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: Colors.blue.shade200),
                   ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: Colors.blue),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: Colors.blue.shade200),
+                  ),
+                  filled: true,
+                  fillColor: Colors.blue.shade50,
                 ),
               ),
-              const SizedBox(height: 10),
-              // Display uploaded images with vertical scrolling and gap between images
+              SizedBox(height: 15),
+              // Display uploaded images
               if (_uploadedImages.isNotEmpty)
-                SizedBox(
-                  height: 250, // Set a fixed height for the image area
+                Container(
+                  height: 250,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.blue.shade200),
+                  ),
                   child: ListView.builder(
                     itemCount: _uploadedImages.length,
                     itemBuilder: (context, index) {
                       XFile image = _uploadedImages[index];
-
                       return Padding(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 8.0), // Add gap between images
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
                         child: Container(
-                          alignment:
-                              Alignment.center, // Center the progress indicator
+                          alignment: Alignment.center,
                           clipBehavior: Clip.none,
                           child: Stack(
                             children: [
                               _imageLoadingStatus[index] == true
-                                  ? const CircularProgressIndicator()
-                                  : Image.file(
-                                      File(image.path),
-                                      width: double.infinity,
-                                      height: 300,
-                                      fit: BoxFit.contain,
+                                  ? CircularProgressIndicator(
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.blue),
+                                    )
+                                  : ClipRRect(
+                                      borderRadius: BorderRadius.circular(10),
+                                      child: Image.file(
+                                        File(image.path),
+                                        width: double.infinity,
+                                        height: 300,
+                                        fit: BoxFit.contain,
+                                      ),
                                     ),
                               if (_imageLoadingStatus[index] == false)
                                 Positioned(
-                                  top: 20,
-                                  right: -10,
-                                  child: IconButton(
-                                    icon: const Icon(
-                                      Icons.remove_circle,
-                                      color: Color.fromARGB(255, 255, 5, 5),
-                                      size: 28,
+                                  top: 10,
+                                  right: 10,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
                                     ),
-                                    onPressed: () => _removeImage(index),
+                                    child: IconButton(
+                                      icon: Icon(
+                                        Icons.remove_circle,
+                                        color: Colors.red,
+                                        size: 28,
+                                      ),
+                                      onPressed: () => _removeImage(index),
+                                    ),
                                   ),
                                 ),
                             ],
@@ -244,34 +287,56 @@ class _ShowAddPostDialogState extends State<ShowAddPostDialog> {
                     },
                   ),
                 ),
-              const SizedBox(height: 10),
+              SizedBox(height: 15),
               // Action Buttons
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   ElevatedButton.icon(
                     onPressed: _pickImage,
-                    icon: const Icon(Icons.photo),
-                    label: const Text("Upload Pic"),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              // Post Button
-              _isPosting
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 40, vertical: 10),
-                      ),
-                      onPressed: _handlePost,
-                      child: const Text(
-                        "Post",
-                        style: TextStyle(fontSize: 16, color: Colors.white),
+                    icon: Icon(Icons.photo, color: Colors.white),
+                    label: Text("Add Photo"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
+                  ),
+                  _isPosting
+                      ? SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.blue),
+                          ),
+                        )
+                      : ElevatedButton(
+                          onPressed: _handlePost,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 30, vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: Text(
+                            "Post",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                ],
+              ),
             ],
           ),
         ),

@@ -2,14 +2,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserService {
   // user_service.dart
-  static Future<String?> getUserFullName(String userId) async {
+  // Fetch both full name and profile image
+  static Future<Map<String, dynamic>> getUserProfile(String userId) async {
     final doc =
         await FirebaseFirestore.instance.collection('users').doc(userId).get();
     final data = doc.data();
-    if (data != null) {
-      return data['Full Name'] ?? data['fullName'] ?? data['displayName'];
-    }
-    return null;
+
+    return {
+      'name':
+          data?['Full Name'] ?? data?['fullName'] ?? data?['displayName'] ?? '',
+      'profileImage': data?['profile_image'],
+    };
   }
 
   static Future<List<Map<String, dynamic>>> fetchMutualFollowers(
@@ -57,6 +60,7 @@ class UserService {
             "id": mutualId,
             "fullName": mutualUserDoc["Full Name"] ?? "Unknown User",
             "email": mutualUserDoc["email"] ?? "",
+            "profileImage": mutualUserDoc["profile_image"],
           });
         }
       }

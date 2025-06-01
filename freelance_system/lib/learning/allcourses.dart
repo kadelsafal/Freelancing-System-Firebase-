@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:freelance_system/learning/coursecard.dart'; // Import the updated CourseCard widget
+import 'package:firebase_auth/firebase_auth.dart';
 
 class Allcourses extends StatefulWidget {
   const Allcourses({super.key});
@@ -12,6 +13,31 @@ class Allcourses extends StatefulWidget {
 class _AllcoursesState extends State<Allcourses> {
   final CollectionReference coursesCollection =
       FirebaseFirestore.instance.collection('courses');
+
+  String? userId;
+  List<String> paidCourseIds = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserPaidCourses();
+  }
+
+  Future<void> _fetchUserPaidCourses() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    userId = user.uid;
+    var userCoursesSnapshot = await FirebaseFirestore.instance
+        .collection('user_courses')
+        .where('userId', isEqualTo: userId)
+        .where('paymentStatus', isEqualTo: 'paid')
+        .get();
+    setState(() {
+      paidCourseIds = userCoursesSnapshot.docs
+          .map((doc) => doc['courseId'] as String)
+          .toList();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +53,17 @@ class _AllcoursesState extends State<Allcourses> {
               return const Center(child: Text("No courses available"));
             }
 
-            final courses = snapshot.data!.docs;
+            final courses = snapshot.data!.docs.where((doc) {
+              var course = doc.data() as Map<String, dynamic>;
+              String courseId = course["courseId"];
+              // Only show verified courses and filter out paid ones
+              return (course['verified'] == true) &&
+                  !paidCourseIds.contains(courseId);
+            }).toList();
+
+            if (courses.isEmpty) {
+              return const Center(child: Text("No courses available"));
+            }
 
             return Padding(
               padding: const EdgeInsets.all(10.0),
@@ -41,8 +77,6 @@ class _AllcoursesState extends State<Allcourses> {
                 itemCount: courses.length,
                 itemBuilder: (context, index) {
                   var course = courses[index].data() as Map<String, dynamic>;
-
-                  // Add checks to ensure all fields exist
                   String title = course['title'] ?? "No Title";
                   String courseType = course["courseType"] ?? "Others";
                   double price = course['price']?.toDouble() ?? 0.0;

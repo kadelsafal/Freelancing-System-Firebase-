@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:freelance_system/dashboard_controller/mydrawer.dart';
+import 'package:freelance_system/navigation_bar.dart';
 import 'package:freelance_system/providers/userProvider.dart';
 import 'package:provider/provider.dart';
-import 'package:freelance_system/profile_controller/experiencetab.dart';
 import 'package:freelance_system/profile_controller/posttab.dart';
 import '../profile_controller/bottomsheet_profile.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:freelance_system/screens/login_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -13,24 +17,13 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
+class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<Userprovider>(context, listen: false).getUserDetails();
     });
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
   }
 
   String getRatingText(double rating) {
@@ -41,65 +34,158 @@ class _ProfileScreenState extends State<ProfileScreen>
     return "Poor";
   }
 
-  // This method returns rating based on years of experience
   double getExperienceRating(int yearsOfExperience) {
     if (yearsOfExperience >= 10) {
-      return 5.0; // 5 stars for 10+ years of experience
+      return 5.0;
     } else if (yearsOfExperience >= 5) {
-      return 4.0; // 4 stars for 5-9 years of experience
+      return 4.0;
     } else if (yearsOfExperience >= 2) {
-      return 3.0; // 3 stars for 2-4 years of experience
+      return 3.0;
     } else if (yearsOfExperience >= 1) {
-      return 2.0; // 2 stars for 1 year of experience
+      return 2.0;
     } else {
-      return 0.0; // No experience or 0 years, 0 stars
+      return 0.0;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     var userProvider = Provider.of<Userprovider>(context);
-
-    // Safely convert yearsOfExperience from String to int
     int yearsOfExperience = int.tryParse(userProvider.yearsOfExperience) ?? 0;
-
-    // Get the rating based on years of experience
     double experienceRating = getExperienceRating(yearsOfExperience);
 
     return Scaffold(
-      appBar: AppBar(title: Text("Profile")),
-      body: SingleChildScrollView(
-        child: Column(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            CircleAvatar(
-              radius: 50,
-              child: Text(
-                userProvider.userName.isNotEmpty
-                    ? userProvider.userName[0]
-                    : "?",
-                style: TextStyle(fontSize: 48),
+            Text(
+              "Profile",
+              style: TextStyle(
+                color: Colors.blue,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 20),
+            IconButton(
+              icon: Icon(Icons.logout, color: Colors.blue),
+              onPressed: () async {
+                bool? confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: Text('Logout'),
+                      content: Text('Are you sure you want to logout?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(true),
+                          child: Text('Logout'),
+                        ),
+                      ],
+                    );
+                  },
+                );
+
+                if (confirm == true) {
+                  await FirebaseAuth.instance.signOut();
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => LoginScreen()),
+                  );
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const SizedBox(height: 20),
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.blue,
+                  width: 3,
+                ),
+              ),
+              child: CircleAvatar(
+                radius: 60,
+                backgroundColor: Colors.blue.shade50,
+                backgroundImage:
+                    (userProvider.profileimage?.isNotEmpty ?? false)
+                        ? NetworkImage(userProvider.profileimage!)
+                        : null,
+                child: (userProvider.profileimage?.isEmpty ?? true)
+                    ? Text(
+                        userProvider.userName.isNotEmpty
+                            ? userProvider.userName[0]
+                            : "?",
+                        style: TextStyle(
+                          fontSize: 48,
+                          color: Colors.blue,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      )
+                    : null,
+              ),
+            ),
+            const SizedBox(height: 20),
             Text(
               userProvider.userName.toUpperCase(),
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 24,
+                color: Colors.blue,
+              ),
             ),
-            SizedBox(height: 15),
-
+            const SizedBox(height: 15),
             ElevatedButton(
               onPressed: () {
                 showModalBottomSheet(
                     context: context,
                     builder: (BuildContext context) {
                       return BottomsheetProfile();
-                    });
+                    }).then((value) async {
+                  // If the bottom sheet was closed with a successful update
+                  if (value == true) {
+                    // Refresh the profile screen
+                    await Provider.of<Userprovider>(context, listen: false)
+                        .getUserDetails();
+                    if (mounted) {
+                      setState(() {});
+                    }
+                  }
+                });
               },
-              child: Text("Edit Profile"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text(
+                "Edit Profile",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
-            SizedBox(height: 20),
-
-            // Followers, Followed, and Projects
+            const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -107,17 +193,32 @@ class _ProfileScreenState extends State<ProfileScreen>
                 verticalDivider(),
                 profileStat(userProvider.followed, "Followed"),
                 verticalDivider(),
-                profileStat("10", "Projects"),
+                StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('projects')
+                      .where('userId', isEqualTo: userProvider.userId)
+                      .where('status', isEqualTo: 'completed')
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    int completedProjects =
+                        snapshot.hasData ? snapshot.data!.docs.length : 0;
+                    return profileStat(
+                        completedProjects.toString(), "Projects");
+                  },
+                ),
               ],
             ),
-            SizedBox(height: 20),
-
-            // Rating Section based on years of experience
+            const SizedBox(height: 20),
             Column(
               children: [
-                Text("Your Rating: ",
-                    style:
-                        TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                Text(
+                  "Your Rating:",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Colors.blue,
+                  ),
+                ),
                 RatingBar.builder(
                   initialRating: experienceRating,
                   minRating: 0,
@@ -125,65 +226,40 @@ class _ProfileScreenState extends State<ProfileScreen>
                   allowHalfRating: true,
                   itemSize: 20,
                   itemCount: 5,
-                  itemPadding: EdgeInsets.symmetric(horizontal: 2.0),
+                  itemPadding: const EdgeInsets.symmetric(horizontal: 2.0),
                   itemBuilder: (context, _) =>
-                      Icon(Icons.star, size: 20, color: Colors.amber),
+                      const Icon(Icons.star, size: 20, color: Colors.amber),
                   onRatingUpdate: (rating) async {
                     await userProvider.updateUserRating(rating);
-                    setState(() {
-                      // Here, update the yearsOfExperience (as int)
-                      userProvider.yearsOfExperience =
-                          yearsOfExperience.toString();
-                    });
+                    if (mounted) {
+                      setState(() {
+                        userProvider.yearsOfExperience =
+                            yearsOfExperience.toString();
+                      });
+                    }
                   },
                 ),
-                SizedBox(height: 10),
-                Text(getRatingText(experienceRating),
-                    style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                Text("Rated: ${experienceRating.toStringAsFixed(1)}",
-                    style: TextStyle(fontSize: 16)),
-                SizedBox(height: 20),
+                const SizedBox(height: 10),
+                Text(
+                  getRatingText(experienceRating),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue,
+                  ),
+                ),
+                Text(
+                  "Rated: ${experienceRating.toStringAsFixed(1)}",
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.blue.shade700,
+                  ),
+                ),
+                const SizedBox(height: 20),
               ],
             ),
-
-            // TabBar
-            Padding(
-              padding: const EdgeInsets.only(left: 18.0, right: 18.0),
-              child: TabBar(
-                controller: _tabController,
-                labelColor: Colors.black,
-                labelStyle:
-                    TextStyle(fontWeight: FontWeight.bold), // Bold tab text
-                indicator: UnderlineTabIndicator(
-                  borderSide: BorderSide(
-                      width: 3.0,
-                      color: Colors.deepPurple), // Thicker indicator
-                ),
-                indicatorSize: TabBarIndicatorSize
-                    .tab, // Ensures the indicator is equal to the tab width
-                tabs: [
-                  Tab(text: "Posts"),
-                  Tab(text: "Experience"),
-                ],
-              ),
-            ),
-
-            // TabBarView
-            SizedBox(
-              height: 400, // Adjust based on content
-              child: Padding(
-                padding:
-                    const EdgeInsets.only(top: 20.0, left: 7.0, right: 7.0),
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    PostTab(),
-                    ExperienceTab(),
-                  ],
-                ),
-              ),
-            ),
+            const SizedBox(height: 20),
+            const PostTab(),
           ],
         ),
       ),
@@ -193,14 +269,29 @@ class _ProfileScreenState extends State<ProfileScreen>
   Widget profileStat(String value, String label) {
     return Column(
       children: [
-        Text(value,
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-        Text(label),
+        Text(
+          value,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            color: Colors.blue,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.blue.shade700,
+          ),
+        ),
       ],
     );
   }
 
   Widget verticalDivider() {
-    return Container(height: 40, width: 3, color: Colors.grey);
+    return Container(
+      height: 40,
+      width: 3,
+      color: Colors.blue.shade200,
+    );
   }
 }

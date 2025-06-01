@@ -147,161 +147,198 @@ class _FreelancerProjectscreenState extends State<FreelancerProjectscreen> {
                               );
                             },
                             child: Card(
-                              elevation: 5,
+                              elevation: 4,
                               shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10)),
+                                  borderRadius: BorderRadius.circular(15)),
                               color: Colors.white,
                               child: Padding(
-                                padding: EdgeInsets.all(8.0),
+                                padding: const EdgeInsets.all(16.0),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       title,
-                                      style: TextStyle(
-                                        color: Colors.deepPurple,
-                                        fontSize: 16,
+                                      style: const TextStyle(
+                                        color: Color(0xFF1976D2),
+                                        fontSize: 18,
                                         fontWeight: FontWeight.bold,
                                       ),
                                       overflow: isExpanded
                                           ? TextOverflow.visible
                                           : TextOverflow.ellipsis,
-                                      maxLines: isExpanded ? null : 5,
+                                      maxLines: isExpanded ? null : 2,
                                       softWrap: true,
                                     ),
-                                    SizedBox(
-                                      height: 8,
-                                    ),
+                                    const SizedBox(height: 12),
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Text(
-                                          "Deadline : $deadline",
-                                          style: TextStyle(
-                                              color: const Color.fromARGB(
-                                                  255, 255, 19, 19),
-                                              fontSize: 13),
+                                        Row(
+                                          children: [
+                                            const Icon(
+                                              Icons.person,
+                                              color: Color(0xFF1976D2),
+                                              size: 20,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            FutureBuilder<DocumentSnapshot>(
+                                              future: FirebaseFirestore.instance
+                                                  .collection('users')
+                                                  .doc(project['userId'])
+                                                  .get(),
+                                              builder: (context, userSnapshot) {
+                                                if (userSnapshot
+                                                        .connectionState ==
+                                                    ConnectionState.waiting) {
+                                                  return const Text(
+                                                    "Posted by: ...",
+                                                    style: TextStyle(
+                                                      color: Color(0xFF1976D2),
+                                                      fontSize: 14,
+                                                    ),
+                                                  );
+                                                } else if (userSnapshot
+                                                        .hasError ||
+                                                    !userSnapshot.hasData ||
+                                                    !userSnapshot
+                                                        .data!.exists) {
+                                                  return const Text(
+                                                    "Posted by: Unknown",
+                                                    style: TextStyle(
+                                                      color: Color(0xFF1976D2),
+                                                      fontSize: 14,
+                                                    ),
+                                                  );
+                                                } else {
+                                                  String posterName =
+                                                      userSnapshot.data![
+                                                              'Full Name'] ??
+                                                          'Unknown';
+                                                  return Text(
+                                                    "Posted by: $posterName",
+                                                    style: const TextStyle(
+                                                      color: Color(0xFF1976D2),
+                                                      fontSize: 14,
+                                                    ),
+                                                  );
+                                                }
+                                              },
+                                            ),
+                                          ],
                                         ),
-                                      ],
-                                    ),
-                                    Text(
-                                      "Description",
-                                      style: TextStyle(
-                                          color: Colors.black,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                    SizedBox(
-                                      height: 4,
-                                    ),
-                                    DescriptionWidget(description: description),
-                                    SizedBox(
-                                      height: 8,
-                                    ),
-                                    Row(
-                                      children: [
-                                        Text(
-                                          "Applied By : ",
-                                          style: TextStyle(
-                                              color: const Color.fromARGB(
-                                                  255, 144, 143, 143),
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                        SizedBox(width: 5),
-                                        Text(
-                                          '$appliedCount',
-                                          style: TextStyle(
-                                              color: const Color.fromARGB(
-                                                  255, 0, 0, 0),
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                        Icon(
-                                          Icons.person,
-                                          color: Colors.deepPurple,
-                                        )
-                                      ],
-                                    ),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      children: [
-                                        Text(
-                                          "Budget : ",
-                                          style: TextStyle(
-                                              color: const Color.fromARGB(
-                                                  255, 0, 0, 0),
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                        Text(
-                                          "${NumberFormat("#,##0", "en_US").format(budget)} Rs",
-                                          style: TextStyle(
-                                              color: const Color.fromARGB(
-                                                  255, 106, 0, 148),
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                      ],
-                                    ),
-                                    Text("Preferences",
-                                        style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold)),
-                                    SizedBox(height: 5),
-                                    Wrap(
-                                      spacing: 4.0, // Space between each item
-                                      runSpacing:
-                                          4.0, // Space between lines when wrapping
-                                      children: preferences.map((preference) {
-                                        return Chip(
-                                          label: Text(
-                                            preference,
-                                            style: TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                          padding: EdgeInsets.all(2),
-                                          backgroundColor: Colors.deepPurple
-                                              .shade100, // Optional: Change color
-                                        );
-                                      }).toList(),
-                                    ),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      children: [
                                         Container(
-                                          width: 100,
-                                          alignment: Alignment.center,
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 12, vertical: 6),
                                           decoration: BoxDecoration(
-                                            color: Colors
-                                                .deepPurple, // Set the background color
-                                            borderRadius: BorderRadius.circular(
-                                                10), // Apply border radius
+                                            color: const Color(0xFF1976D2)
+                                                .withOpacity(0.1),
+                                            borderRadius:
+                                                BorderRadius.circular(20),
                                           ),
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(4.0),
-                                            child: Text(
-                                              "Apply",
-                                              style: TextStyle(
-                                                color: Colors
-                                                    .white, // Set the text color to white
-                                              ),
+                                          child: Text(
+                                            "Deadline: $deadline",
+                                            style: const TextStyle(
+                                              color: Color(0xFF1976D2),
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.bold,
                                             ),
                                           ),
                                         ),
                                       ],
                                     ),
-                                    SizedBox(height: 10),
-                                    Text(
-                                      project['createdAt'] != null &&
-                                              project['createdAt'] is Timestamp
-                                          ? 'Posted on: ${DateFormat('yyyy-MM-dd HH:mm:ss').format((project['createdAt'] as Timestamp).toDate())}'
-                                          : 'Posted on: N/A', // Handle null values gracefully
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        const Text(
+                                          "Budget: ",
+                                          style: TextStyle(
+                                            color: Colors.black87,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Text(
+                                          "${NumberFormat("#,##0", "en_US").format(budget)} Rs",
+                                          style: const TextStyle(
+                                            color: Color(0xFF1976D2),
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    const Text(
+                                      "Required Skills",
                                       style: TextStyle(
-                                          fontSize: 13,
-                                          color: const Color.fromARGB(
-                                              255, 139, 139, 139)),
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Wrap(
+                                      spacing: 8.0,
+                                      runSpacing: 8.0,
+                                      children: preferences.map((preference) {
+                                        return Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 12, vertical: 6),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF1976D2)
+                                                .withOpacity(0.1),
+                                            borderRadius:
+                                                BorderRadius.circular(20),
+                                          ),
+                                          child: Text(
+                                            preference,
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF1976D2),
+                                            ),
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        ElevatedButton(
+                                          onPressed: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    ProjectDetailsScreen(
+                                                  projectId: projectId,
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor:
+                                                const Color(0xFF1976D2),
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 24, vertical: 12),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                          ),
+                                          child: const Text(
+                                            "View Details",
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),

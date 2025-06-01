@@ -34,29 +34,36 @@ class _PdfGeneratorState extends State<PdfGenerator> {
   }
 
   Future<void> _loadImageAndGeneratePdf() async {
-    // Load the image from the resume's imageUrl
-    await _loadImage();
+    try {
+      await _loadImage();
+      print("Image loaded successfully.");
 
-    // Once the image is loaded, generate the PDF
-    await _generatePdf();
+      await _generatePdf();
+      print("PDF generated successfully.");
 
-    // After the PDF is generated, generate the image for preview
-    await _generatePdfImage();
+      await _generatePdfImage();
+      print("PDF image generated successfully.");
+    } catch (e) {
+      print("Error generating PDF: $e");
+    }
 
-    setState(() {}); // Update the UI once both PDF and image are ready
+    setState(() {}); // Ensure UI updates
   }
 
   Future<void> _loadImage() async {
     if (widget.resume.imageUrl.isNotEmpty) {
       try {
-        // Load the image from a local file path
-        final file =
-            File(widget.resume.imageUrl); // Use File to read local files
-        resumeImageBytes = await file.readAsBytes();
+        final file = File(widget.resume.imageUrl);
+        if (await file.exists()) {
+          resumeImageBytes = await file.readAsBytes();
+        } else {
+          print("---Image file does not exist at: ${widget.resume.imageUrl}");
+        }
       } catch (e) {
-        // Handle image loading failure
         print("Failed to load image: $e");
       }
+    } else {
+      print("No image URL provided.");
     }
   }
 
@@ -93,18 +100,19 @@ class _PdfGeneratorState extends State<PdfGenerator> {
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
-    // Show loading indicator if the image bytes are not yet available
-    if (pdfImageBytes == null || resumeImageBytes == null) {
+    // Wait only for PDF image, not resume image
+    if (pdfImageBytes == null) {
       return Scaffold(
+        backgroundColor: Colors.white,
         appBar: AppBar(
           title: Text('Generating PDF...'),
         ),
-        body: Center(child: CircularProgressIndicator()),
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
 
-    // Once the image and PDF are ready, pass the image and PDF to the Preview widget
     return Preview(
       pdfimageBytes: pdfImageBytes,
       pdf: pdf,

@@ -195,7 +195,7 @@ class _RecommendState extends State<Recommend> {
                                         Text(
                                           title,
                                           style: TextStyle(
-                                            color: Colors.deepPurple,
+                                            color: Colors.blue,
                                             fontSize: 16,
                                             fontWeight: FontWeight.bold,
                                           ),
@@ -247,7 +247,7 @@ class _RecommendState extends State<Recommend> {
                                                   fontWeight: FontWeight.bold),
                                             ),
                                             Icon(Icons.person,
-                                                color: Colors.deepPurple),
+                                                color: Colors.blue),
                                           ],
                                         ),
                                         Row(
@@ -264,7 +264,7 @@ class _RecommendState extends State<Recommend> {
                                             Text(
                                               "${NumberFormat("#,##0", "en_US").format(budget)} Rs",
                                               style: TextStyle(
-                                                  color: Colors.deepPurple,
+                                                  color: Colors.blue,
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.bold),
                                             ),
@@ -290,7 +290,7 @@ class _RecommendState extends State<Recommend> {
                                               ),
                                               padding: EdgeInsets.all(2),
                                               backgroundColor:
-                                                  Colors.deepPurple.shade100,
+                                                  Colors.blue.shade100,
                                             );
                                           }).toList(),
                                         ),
@@ -302,7 +302,7 @@ class _RecommendState extends State<Recommend> {
                                               width: 100,
                                               alignment: Alignment.center,
                                               decoration: BoxDecoration(
-                                                color: Colors.deepPurple,
+                                                color: Colors.blue,
                                                 borderRadius:
                                                     BorderRadius.circular(10),
                                               ),

@@ -185,7 +185,7 @@ class _AppliedprojectState extends State<Appliedproject> {
                                     Text(
                                       title,
                                       style: TextStyle(
-                                        color: Colors.deepPurple,
+                                        color: Colors.blue,
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -234,8 +234,7 @@ class _AppliedprojectState extends State<Appliedproject> {
                                               fontSize: 16,
                                               fontWeight: FontWeight.bold),
                                         ),
-                                        Icon(Icons.person,
-                                            color: Colors.deepPurple)
+                                        Icon(Icons.person, color: Colors.blue)
                                       ],
                                     ),
                                     Row(
@@ -251,7 +250,7 @@ class _AppliedprojectState extends State<Appliedproject> {
                                         Text(
                                           "${NumberFormat("#,##0", "en_US").format(budget)} Rs",
                                           style: TextStyle(
-                                              color: Colors.deepPurple,
+                                              color: Colors.blue,
                                               fontSize: 16,
                                               fontWeight: FontWeight.bold),
                                         ),
@@ -274,8 +273,8 @@ class _AppliedprojectState extends State<Appliedproject> {
                                                 fontWeight: FontWeight.bold),
                                           ),
                                           padding: EdgeInsets.all(2),
-                                          backgroundColor:
-                                              Colors.deepPurple.shade100,
+                                          backgroundColor: const Color.fromARGB(
+                                              255, 186, 222, 255),
                                         );
                                       }).toList(),
                                     ),
@@ -306,7 +305,7 @@ class _AppliedprojectState extends State<Appliedproject> {
                                           decoration: BoxDecoration(
                                             color: buttonLabel == "Rejected"
                                                 ? Colors.grey
-                                                : Colors.deepPurple,
+                                                : Colors.blue,
                                             borderRadius:
                                                 BorderRadius.circular(10),
                                           ),
@@ -359,9 +358,20 @@ class _AppliedprojectState extends State<Appliedproject> {
       return members.any((member) => member['fullName'] == currentName);
     });
 
-    // Check if the user is appointed as a freelancer or in a team
+    // Check if the user is appointed as a freelancer
     bool isUserAppointedFreelancer = appointedFreelancer == currentName;
-    bool isUserAppointedTeam = appointedTeamId != null && isUserPartOfTeam;
+
+    // Check if the user is part of the appointed team
+    bool isUserAppointedTeam = false;
+    if (appointedTeamId != null) {
+      isUserAppointedTeam = appliedTeams.any((team) {
+        if (team['teamId'] == appointedTeamId) {
+          List<dynamic> members = team['members'] ?? [];
+          return members.any((member) => member['fullName'] == currentName);
+        }
+        return false;
+      });
+    }
 
     // If the user is appointed as a freelancer or part of a team, return "Appointed"
     if (isUserAppointedFreelancer || isUserAppointedTeam) {
@@ -370,7 +380,7 @@ class _AppliedprojectState extends State<Appliedproject> {
     // If the user has applied but no one has been appointed, return "On-Hold"
     else if ((hasUserAppliedIndividually || isUserPartOfTeam) &&
         (appointedFreelancer == null && appointedTeamId == null)) {
-      return "On-Hold"; // User has applied but no one is appointed
+      return "On-Hold";
     }
     // Otherwise, the user hasn't applied or was rejected after an appointment, show "Rejected"
     else {

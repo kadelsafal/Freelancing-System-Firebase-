@@ -1,0 +1,10 @@
+//Note: Please update the api link according to your system in the file
+resume (Uploadresumereview Function)
+
+lib -> screens -> resume.dart // file link
+
+Also to run the model 
+write the compand in your terminal as follows:
+
+ python E:\Flutter_Projects\freelancing_system\resume_api.py  //Note Copy paste your python file path here named as resume_api.py
+ python -m uvicorn resume_api:app --reload --host 0.0.0.0 --port 8000

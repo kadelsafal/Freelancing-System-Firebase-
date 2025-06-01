@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freelance_system/learning/courseDetail.dart';
+import 'package:esewa_flutter_sdk/esewa_flutter_sdk.dart';
+import 'package:esewa_flutter_sdk/esewa_config.dart';
+import 'package:esewa_flutter_sdk/esewa_payment.dart';
+import 'package:esewa_flutter_sdk/esewa_payment_success_result.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class CourseCard extends StatelessWidget {
   final String CourseId;
@@ -14,39 +19,97 @@ class CourseCard extends StatelessWidget {
     required this.courseType,
   });
 
-  // Function to get the appropriate icon for the course type
-  Widget _getCourseTypeIcon(String courseType) {
-    switch (courseType) {
-      case 'Web Development':
-        return const Icon(Icons.computer, size: 50, color: Colors.blue);
-      case 'Mobile App Development':
-        return const Icon(Icons.phone_android, size: 50, color: Colors.green);
-      case 'Graphic Design & Multimedia':
-        return const Icon(Icons.photo, size: 50, color: Colors.purple);
-      case 'Digital Marketing':
-        return const Icon(Icons.ads_click, size: 50, color: Colors.orange);
-      case 'Data Science & Machine Learning':
-        return const Icon(Icons.data_usage, size: 50, color: Colors.teal);
-      case 'Writing & Content Creation':
-        return const Icon(Icons.edit, size: 50, color: Colors.red);
-      case 'Business & Entrepreneurship':
-        return const Icon(Icons.business, size: 50, color: Colors.blueGrey);
-      case 'Cybersecurity':
-        return const Icon(Icons.security, size: 50, color: Colors.black);
-      case 'Cloud Computing & DevOps':
-        return const Icon(Icons.cloud, size: 50, color: Colors.blueAccent);
-      case 'Translation & Language Services':
-        return const Icon(Icons.language, size: 50, color: Colors.pink);
-      default:
-        return ClipRRect(
-          borderRadius: const BorderRadius.all(Radius.circular(10)),
-          child: Image.asset(
-            'assets/images/3950.jpg', // Default image for "Others"
-            fit: BoxFit.cover,
-            height: 100,
-            width: double.infinity,
-          ),
-        );
+  Future<void> _onBuyNowPressed(BuildContext context, double price) async {
+    if (price <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Invalid course price')),
+      );
+      return;
+    }
+
+    try {
+      EsewaFlutterSdk.initPayment(
+        esewaConfig: EsewaConfig(
+          environment: Environment.test, // Change to .live for production
+          clientId: 'JB0BBQ4aD0UqIThFJwAKBgAXEUkEGQUBBAwdOgABHD4DChwUAB0R',
+          secretId: 'BhwIWQQADhIYSxILExMcAgFXFhcOBwAKBgAXEQ==',
+        ),
+        esewaPayment: EsewaPayment(
+          productId: CourseId,
+          productName: title,
+          productPrice: price.toStringAsFixed(2),
+          callbackUrl: '',
+        ),
+        onPaymentSuccess: (EsewaPaymentSuccessResult result) async {
+          final uid = FirebaseAuth.instance.currentUser?.uid;
+          if (uid == null) return;
+
+          final ref = FirebaseFirestore.instance.collection('user_courses');
+          final existing = await ref
+              .where('courseId', isEqualTo: CourseId)
+              .where('userId', isEqualTo: uid)
+              .get();
+
+          final transactionId = result.refId ?? 'N/A';
+          final paidAmount = price;
+
+          final paymentData = {
+            'productId': result.productId,
+            'productName': result.productName,
+            'totalAmount': result.totalAmount,
+            'referenceId': result.refId,
+            'status': result.status,
+            'merchantName': result.merchantName,
+            'message': result.message,
+            'timestamp': Timestamp.now(),
+          };
+
+          if (existing.docs.isEmpty) {
+            await ref.add({
+              'courseId': CourseId,
+              'userId': uid,
+              'paymentStatus': 'paid',
+              'paymentDate': Timestamp.now(),
+              'transactionId': transactionId,
+              'paidAmount': paidAmount,
+              'paymentResult': paymentData,
+            });
+
+            await FirebaseFirestore.instance
+                .collection('courses')
+                .doc(CourseId)
+                .update({'appliedUsers': FieldValue.increment(1)});
+          } else {
+            await ref.doc(existing.docs.first.id).update({
+              'paymentStatus': 'paid',
+              'paymentDate': Timestamp.now(),
+              'transactionId': transactionId,
+              'paidAmount': paidAmount,
+              'paymentResult': paymentData,
+            });
+          }
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Payment successful via eSewa!')),
+          );
+          // Pop back to the root (AllCourses) to prevent unwanted navigation
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        },
+        onPaymentFailure: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Payment failed!')),
+          );
+        },
+        onPaymentCancellation: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Payment cancelled!')),
+          );
+        },
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('An error occurred: $e')),
+      );
     }
   }
 
@@ -71,6 +134,7 @@ class CourseCard extends StatelessWidget {
         // Extract the course price and applied user count
         double price = courseData['price']?.toDouble() ?? 0.0;
         int appliedUser = courseData['appliedUsers'] ?? 0;
+        String? posterUrl = courseData['posterUrl'] as String?;
 
         return InkWell(
           onTap: () {
@@ -85,85 +149,133 @@ class CourseCard extends StatelessWidget {
               ),
             );
           },
-          child: Card(
-            elevation: 5,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
+          child: SizedBox(
+            child: Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              color: Colors.white,
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Display the appropriate icon based on course type
-                  Container(
-                    height: 100,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(10),
-                        topRight: Radius.circular(10),
+                  // Poster or icon
+                  Flexible(
+                    flex: 0,
+                    child: Container(
+                      height: 110,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(16),
+                          topRight: Radius.circular(16),
+                        ),
+                        color: Colors.blue.shade50,
                       ),
-                      color: Colors.grey[200],
+                      child: posterUrl != null && posterUrl.isNotEmpty
+                          ? ClipRRect(
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(16),
+                                topRight: Radius.circular(16),
+                              ),
+                              child: Image.network(
+                                posterUrl,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: 110,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Icon(Icons.menu_book,
+                                        size: 54, color: Colors.blue.shade300),
+                              ),
+                            )
+                          : Center(
+                              child: Icon(Icons.menu_book,
+                                  size: 54, color: Colors.blue.shade300),
+                            ),
                     ),
-                    child: Center(child: _getCourseTypeIcon(courseType)),
                   ),
-                  SizedBox(height: 5),
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Enrolled: $appliedUser",
-                        style: TextStyle(fontSize: 12),
-                      ),
-                      Icon(
-                        Icons.person_2,
-                        size: 24,
-                        color: Colors.deepPurple,
-                      ),
-                    ],
-                  ),
-                  Expanded(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "₹${price.toStringAsFixed(2)}",
+                          title,
                           style: const TextStyle(
-                            fontSize: 14,
+                            fontSize: 13, // Decreased font size
                             fontWeight: FontWeight.bold,
-                            color: Colors.green,
+                            color: Color(0xFF1976D2),
                           ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.deepPurple,
-                            foregroundColor:
-                                const Color.fromRGBO(255, 255, 255, 1),
-                            padding: EdgeInsets.all(8),
-                          ),
-                          onPressed: () {
-                            // Implement Payment Logic
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content:
-                                      Text("Payment feature coming soon!")),
-                            );
-                          },
-                          child: const Text(
-                            "Buy Now",
-                            style: TextStyle(fontSize: 13),
-                          ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(Icons.people,
+                                size: 18, color: Colors.blue.shade400),
+                            const SizedBox(width: 4),
+                            Text(
+                              "Enrolled: $appliedUser",
+                              style: TextStyle(
+                                  fontSize: 13, color: Colors.blue.shade700),
+                            ),
+                          ],
                         ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.currency_rupee,
+                                    size: 18, color: Colors.grey.shade800),
+                                Text(
+                                  price == 0
+                                      ? "Free"
+                                      : price.toStringAsFixed(2),
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey.shade800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Flexible(
+                              child: Align(
+                                alignment: Alignment.centerRight,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(top: 6.0),
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.teal.shade600,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 6),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      elevation: 0,
+                                    ),
+                                    onPressed: () =>
+                                        _onBuyNowPressed(context, price),
+                                    child: const Text(
+                                      "Buy Now",
+                                      style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
                       ],
                     ),
                   ),

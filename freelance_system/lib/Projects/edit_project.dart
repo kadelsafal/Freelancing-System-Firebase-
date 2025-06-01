@@ -105,11 +105,10 @@ class _EditProjectState extends State<EditProject> {
         'status': _status,
         'preferences': _preferencesControllers
             .map((controller) => controller.text)
-            .toList() // Save the preferences as text
+            .toList()
       });
-      Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => ProjectScreen()));
-      // After updating, go back to the previous screen or show a success message
+      Navigator.pop(context);
+      // After updating, show a success message
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Project Updated')));
     }
@@ -136,248 +135,338 @@ class _EditProjectState extends State<EditProject> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text("Edit Project"),
+            Text(
+              "Edit Project",
+              style: TextStyle(
+                color: Colors.blue.shade700,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             IconButton(
-                onPressed: _submitForm,
-                icon: Container(
-                    padding: EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(50),
-                      color: Colors.deepPurple,
-                    ),
-                    child: Icon(
-                      Icons.check_circle_outline,
-                      color: Colors.white,
-                      size: 40,
-                    )))
+              onPressed: _submitForm,
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(50),
+                  color: Colors.blue.shade700,
+                ),
+                child: const Icon(
+                  Icons.check_circle_outline,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+            ),
           ],
         ),
       ),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Status : ",
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        padding: const EdgeInsets.all(20),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Text(
+                    "Status : ",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue.shade700,
                     ),
-                    Container(
-                      padding: EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                          shape: BoxShape.rectangle,
-                          borderRadius: BorderRadius.circular(10),
-                          color: const Color.fromARGB(255, 213, 192, 246)),
-                      child: DropdownButton<String>(
-                        value: _status,
-                        hint: Text('Select Status'),
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            _status = newValue; // Update the selected status
-                          });
-                        },
-                        items: <String>['New', 'Pending', 'Completed']
-                            .map<DropdownMenuItem<String>>((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                  ],
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Title",
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 6),
-                // Title Field
-                TextFormField(
-                  controller: _titleController,
-                  decoration: InputDecoration(
-                    labelText: 'Project Title',
-                    border: OutlineInputBorder(),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a title';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Description",
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.blue.shade50,
+                      border: Border.all(color: Colors.blue.shade200),
                     ),
-                  ],
-                ),
-                SizedBox(height: 6),
-                // Description Field
-                TextFormField(
-                  controller: _descriptionController,
-                  decoration: InputDecoration(
-                    labelText: 'Description',
-                    border: OutlineInputBorder(),
+                    child: DropdownButton<String>(
+                      value: _status,
+                      hint: Text('Select Status'),
+                      style: TextStyle(color: Colors.blue.shade700),
+                      underline: SizedBox(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _status = newValue;
+                        });
+                      },
+                      items: <String>['New', 'Pending', 'Completed']
+                          .map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                    ),
                   ),
-                  maxLines: 8,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a description';
-                    }
-                    return null;
-                  },
+                ],
+              ),
+              const SizedBox(height: 20),
+              Text(
+                "Title",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Colors.blue.shade700,
                 ),
-                SizedBox(height: 16),
-
-                // Label for Preferences
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Preferences (Skills)",
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                    ),
-                  ],
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _titleController,
+                decoration: InputDecoration(
+                  labelText: 'Project Title',
+                  labelStyle: TextStyle(color: Colors.blue.shade700),
+                  hintText: 'Enter your project title',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.blue.shade200),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.blue.shade700),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.blue.shade200),
+                  ),
+                  filled: true,
+                  fillColor: Colors.blue.shade50,
                 ),
-                SizedBox(height: 8),
-
-                // Preferences (Skills) Fields
-                Column(
-                  children: [
-                    ..._preferencesControllers.asMap().entries.map(
-                          (entry) => Padding(
-                            padding: EdgeInsets.only(bottom: 8),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: TextFormField(
-                                    controller: entry.value,
-                                    decoration: InputDecoration(
-                                      labelText: 'Enter Skill',
-                                      hintText: 'Skill ${entry.key + 1}',
-                                      border: OutlineInputBorder(),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a title';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+              Text(
+                "Description",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Colors.blue.shade700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _descriptionController,
+                maxLines: 8,
+                decoration: InputDecoration(
+                  labelText: 'Description',
+                  labelStyle: TextStyle(color: Colors.blue.shade700),
+                  hintText: 'Enter project description',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.blue.shade200),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.blue.shade700),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.blue.shade200),
+                  ),
+                  filled: true,
+                  fillColor: Colors.blue.shade50,
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a description';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+              Text(
+                "Preferences (Skills)",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Colors.blue.shade700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Column(
+                children: [
+                  ..._preferencesControllers.asMap().entries.map(
+                        (entry) => Padding(
+                          padding: EdgeInsets.only(bottom: 8),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: TextFormField(
+                                  controller: entry.value,
+                                  decoration: InputDecoration(
+                                    labelText: 'Enter Skill',
+                                    labelStyle:
+                                        TextStyle(color: Colors.blue.shade700),
+                                    hintText: 'Skill ${entry.key + 1}',
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                          color: Colors.blue.shade200),
                                     ),
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'Please enter a skill';
-                                      }
-                                      return null;
-                                    },
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                          color: Colors.blue.shade700),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                          color: Colors.blue.shade200),
+                                    ),
+                                    filled: true,
+                                    fillColor: Colors.blue.shade50,
                                   ),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Please enter a skill';
+                                    }
+                                    return null;
+                                  },
                                 ),
-                                IconButton(
-                                  icon: Icon(Icons.delete),
-                                  onPressed: () => _removePreference(entry.key),
-                                  color: Colors.red,
-                                ),
-                              ],
-                            ),
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.delete,
+                                    color: Colors.red.shade400),
+                                onPressed: () => _removePreference(entry.key),
+                              ),
+                            ],
                           ),
                         ),
-                    IconButton(
-                      icon: Icon(Icons.add),
-                      onPressed: _addPreference,
-                      color: Colors.purple,
-                    ),
-                  ],
-                ),
-                SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Budget",
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 6),
-                // Allocated Budget Field
-                TextFormField(
-                  controller: _budgetController,
-                  decoration: InputDecoration(
-                    labelText: 'Allocated Budget',
-                    border: OutlineInputBorder(),
+                      ),
+                  IconButton(
+                    icon: Icon(Icons.add_circle, color: Colors.blue.shade700),
+                    onPressed: _addPreference,
                   ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter the budget';
-                    }
-                    if (double.tryParse(value) == null) {
-                      return 'Please enter a valid number';
-                    }
-                    return null;
-                  },
+                ],
+              ),
+              const SizedBox(height: 20),
+              Text(
+                "Budget",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Colors.blue.shade700,
                 ),
-                SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Deadline",
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 10),
-                TextFormField(
-                  controller: _deadlineController,
-                  readOnly: true, // Prevent manual typing
-                  decoration: InputDecoration(
-                    labelText: 'Deadline',
-                    hintText: 'Select a date',
-                    suffixIcon: Icon(Icons.calendar_today),
-                    border: OutlineInputBorder(),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _budgetController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Allocated Budget',
+                  labelStyle: TextStyle(color: Colors.blue.shade700),
+                  hintText: 'Enter budget amount',
+                  prefixIcon:
+                      Icon(Icons.currency_rupee, color: Colors.blue.shade700),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.blue.shade200),
                   ),
-                  onTap: () => selectDate(context),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter the date';
-                    }
-                    // No need to check for double values, just ensure it's a valid date
-                    return null;
-                  },
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.blue.shade700),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.blue.shade200),
+                  ),
+                  filled: true,
+                  fillColor: Colors.blue.shade50,
                 ),
-
-                SizedBox(height: 16),
-
-                // Submit Button
-                ElevatedButton(
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter the budget';
+                  }
+                  if (double.tryParse(value) == null) {
+                    return 'Please enter a valid number';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+              Text(
+                "Deadline",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Colors.blue.shade700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _deadlineController,
+                readOnly: true,
+                decoration: InputDecoration(
+                  labelText: 'Deadline',
+                  labelStyle: TextStyle(color: Colors.blue.shade700),
+                  hintText: 'Select a date',
+                  suffixIcon:
+                      Icon(Icons.calendar_today, color: Colors.blue.shade700),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.blue.shade200),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.blue.shade700),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.blue.shade200),
+                  ),
+                  filled: true,
+                  fillColor: Colors.blue.shade50,
+                ),
+                onTap: () => selectDate(context),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter the date';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 30),
+              Center(
+                child: ElevatedButton(
                   onPressed: _submitForm,
                   style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                    backgroundColor: Colors.blue.shade700,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 50, vertical: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 2,
                   ),
-                  child: Text('Submit'),
+                  child: Text(
+                    'Submit',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

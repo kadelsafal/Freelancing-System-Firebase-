@@ -141,10 +141,13 @@ class _AllIssuesState extends State<AllIssues> {
                                 children: [
                                   CircleAvatar(
                                     radius: 18,
+                                    backgroundColor: const Color(0xFF1976D2),
                                     child: Text(
                                       issueData['author'][0],
                                       style: const TextStyle(
-                                          fontWeight: FontWeight.bold),
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(width: 8),

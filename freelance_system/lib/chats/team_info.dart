@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:freelance_system/dashboard_controller/profilepage.dart';
+import 'package:freelance_system/screens/profile.dart';
 import 'package:provider/provider.dart';
 import 'package:freelance_system/providers/userProvider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -22,59 +24,64 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
   List<Map<String, dynamic>> members = [];
   bool isLoading = true;
   String? adminId;
+  bool _hasLoaded = false;
+
+  late Userprovider userProvider; // ✅ store provider safely
+  late String currentUserId;
 
   @override
-  void initState() {
-    super.initState();
-    _loadTeamDetails();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_hasLoaded) {
+      userProvider =
+          Provider.of<Userprovider>(context, listen: false); // ✅ safe usage
+      currentUserId = userProvider.userId;
+      _loadTeamDetails();
+      _hasLoaded = true;
+    }
   }
 
   Future<void> _loadTeamDetails() async {
-    final userProvider = Provider.of<Userprovider>(context, listen: false);
     final teamSnapshot = await FirebaseFirestore.instance
         .collection('teams')
         .doc(widget.teamId)
         .get();
 
-    if (teamSnapshot.exists) {
-      final teamData = teamSnapshot.data();
-      final memberIds = List<String>.from(teamData?['members'] ?? []);
-      adminId = teamData?['admin'];
+    if (!teamSnapshot.exists) return;
 
-      List<Map<String, dynamic>> fetchedMembers = [];
+    final teamData = teamSnapshot.data();
+    final memberIds = List<String>.from(teamData?['members'] ?? []);
+    adminId = teamData?['admin'];
 
-      for (var memberId in memberIds) {
-        await userProvider
-            .getUserDetailsById(memberId); // Fetch details for the member
+    List<Future<Map<String, dynamic>>> futureMembers =
+        memberIds.map((memberId) async {
+      await userProvider.getUserDetailsById(memberId);
 
-        // Safely convert yearsOfExperience from String to int
-        int yearsOfExperience =
-            int.tryParse(userProvider.yearsOfExperience) ?? 0;
+      int yearsOfExperience = int.tryParse(userProvider.yearsOfExperience) ?? 0;
+      double experienceRating = getExperienceRating(yearsOfExperience);
+      String workedAs = userProvider.workedAs.isNotEmpty
+          ? userProvider.workedAs[0]
+          : 'Not specified';
 
-        // Get the rating based on years of experience
-        double experienceRating = getExperienceRating(yearsOfExperience);
+      return {
+        'id': memberId,
+        'fullName': userProvider.userName,
+        'isAdmin': memberId == adminId,
+        'experienceRating': experienceRating,
+        'workedAs': workedAs,
+        'profileImage': userProvider.profileimage,
+      };
+    }).toList();
 
-        // Get the first workedAs role if available
-        String workedAs = userProvider.workedAs.isNotEmpty
-            ? userProvider.workedAs[0]
-            : 'Not specified';
+    List<Map<String, dynamic>> fetchedMembers =
+        await Future.wait(futureMembers);
 
-        var member = {
-          'id': memberId,
-          'fullName': userProvider.userName,
-          'isAdmin': memberId == adminId,
-          'experienceRating': experienceRating,
-          'workedAs': workedAs,
-        };
+    if (!mounted) return; // still needed
 
-        fetchedMembers.add(member);
-      }
-
-      setState(() {
-        members = fetchedMembers;
-        isLoading = false;
-      });
-    }
+    setState(() {
+      members = fetchedMembers;
+      isLoading = false;
+    });
   }
 
   double getExperienceRating(int yearsOfExperience) {
@@ -91,139 +98,478 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
     }
   }
 
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Color(0xFF1976D2)),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF1976D2), Color(0xFF2196F3)],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF1976D2).withOpacity(0.2),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  widget.teamName.isNotEmpty
+                      ? widget.teamName[0].toUpperCase()
+                      : "?",
+                  style: const TextStyle(
+                    color: Color(0xFF1976D2),
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Flexible(
+                child: Text(
+                  widget.teamName,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          Container(
+            margin: const EdgeInsets.only(right: 16),
+            child: IconButton(
+              icon: const Icon(Icons.info_outline, color: Color(0xFF1976D2)),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => Dialog(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    elevation: 0,
+                    backgroundColor: Colors.white,
+                    child: Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF1976D2), Color(0xFF2196F3)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.group,
+                                    color: Colors.white, size: 28),
+                                SizedBox(width: 12),
+                                Text(
+                                  'Team Information',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1976D2).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: const Color(0xFF1976D2).withOpacity(0.2),
+                                width: 1,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.label,
+                                      color: Color(0xFF1976D2),
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Text(
+                                      'Team Name:',
+                                      style: TextStyle(
+                                        color: Color(0xFF1976D2),
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        widget.teamName,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.people,
+                                      color: Color(0xFF1976D2),
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Text(
+                                      'Total Members:',
+                                      style: TextStyle(
+                                        color: Color(0xFF1976D2),
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      '${members.length}',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.admin_panel_settings,
+                                      color: Color(0xFF1976D2),
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Text(
+                                      'Team Admin:',
+                                      style: TextStyle(
+                                        color: Color(0xFF1976D2),
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        members.firstWhere(
+                                          (member) => member['isAdmin'] == true,
+                                          orElse: () =>
+                                              {'fullName': 'Not assigned'},
+                                        )['fullName'],
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () => Navigator.pop(context),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF1976D2),
+                                foregroundColor: Colors.white,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: const Text(
+                                'Close',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+      body: isLoading
+          ? const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1976D2)),
+                strokeWidth: 3,
+              ),
+            )
+          : members.isEmpty
+              ? Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1976D2).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.info_outline, color: Color(0xFF1976D2)),
+                        SizedBox(width: 12),
+                        Text(
+                          "No team members found",
+                          style: TextStyle(
+                            color: Color(0xFF1976D2),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        const Color(0xFF1976D2).withOpacity(0.1),
+                        Colors.white,
+                      ],
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: GridView.builder(
+                      itemCount: members.length,
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        childAspectRatio: 0.8,
+                      ),
+                      itemBuilder: (context, index) {
+                        final member = members[index];
+                        final isAdmin = member['isAdmin'] == true;
+                        final experienceRating = member['experienceRating'];
+                        final memberId = member['id'];
+                        return GestureDetector(
+                          onTap: () {
+                            if ((memberId == currentUserId)) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const ProfileScreen(),
+                                ),
+                              );
+                            } else {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => Profilepage(
+                                    userId: memberId,
+                                    userName: member['fullName'],
+                                    userImage: member['profileImage'] ?? '',
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color:
+                                      const Color(0xFF1976D2).withOpacity(0.1),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                              border: Border.all(
+                                color: isAdmin
+                                    ? const Color(0xFF1976D2)
+                                    : const Color(0xFF1976D2).withOpacity(0.1),
+                                width: isAdmin ? 2 : 1,
+                              ),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 32,
+                                        backgroundColor: const Color(0xFF1976D2)
+                                            .withOpacity(0.1),
+                                        backgroundImage:
+                                            member['profileImage'] != null &&
+                                                    member['profileImage']
+                                                        .toString()
+                                                        .isNotEmpty
+                                                ? NetworkImage(
+                                                    member['profileImage'])
+                                                : null,
+                                        child: (member['profileImage'] ==
+                                                    null ||
+                                                member['profileImage']
+                                                    .toString()
+                                                    .isEmpty)
+                                            ? Text(
+                                                member['fullName'].isNotEmpty
+                                                    ? member['fullName'][0]
+                                                        .toUpperCase()
+                                                    : '?',
+                                                style: const TextStyle(
+                                                  color: Color(0xFF1976D2),
+                                                  fontSize: 24,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              )
+                                            : null,
+                                      ),
+                                      if (isAdmin)
+                                        Positioned(
+                                          right: 0,
+                                          bottom: 0,
+                                          child: Container(
+                                            padding: const EdgeInsets.all(4),
+                                            decoration: const BoxDecoration(
+                                              color: Color(0xFF1976D2),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(
+                                              Icons.admin_panel_settings,
+                                              color: Colors.white,
+                                              size: 16,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    member['fullName'],
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF1976D2),
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  _buildRatingStars(experienceRating),
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF1976D2)
+                                          .withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Text(
+                                      member['workedAs'],
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                        color: Color(0xFF1976D2),
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+    );
+  }
+
   Widget _buildRatingStars(double rating) {
     return RatingBar.builder(
       initialRating: rating,
       minRating: 0,
       direction: Axis.horizontal,
       allowHalfRating: true,
-      itemSize: 20,
+      itemSize: 16,
       itemCount: 5,
-      itemPadding: EdgeInsets.symmetric(horizontal: 2.0),
-      itemBuilder: (context, _) =>
-          Icon(Icons.star, size: 20, color: Colors.amber),
-      onRatingUpdate: (rating) {},
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          '${widget.teamName.toUpperCase()} Info',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+      itemPadding: const EdgeInsets.symmetric(horizontal: 2.0),
+      itemBuilder: (context, _) => const Icon(
+        Icons.star,
+        size: 16,
+        color: Color(0xFF1976D2),
       ),
-      body: isLoading
-          ? Center(child: CircularProgressIndicator())
-          : members.isEmpty
-              ? Center(child: Text("No team members found."))
-              : Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: GridView.builder(
-                    itemCount: members.length,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                      childAspectRatio: 0.8,
-                    ),
-                    itemBuilder: (context, index) {
-                      final member = members[index];
-                      final isAdmin = member['isAdmin'] == true;
-                      final experienceRating = member['experienceRating'];
-
-                      return Card(
-                        color: isAdmin ? Colors.deepPurple : Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 3,
-                        child: Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              CircleAvatar(
-                                radius: 24,
-                                backgroundColor:
-                                    isAdmin ? Colors.white : Colors.deepPurple,
-                                child: Text(
-                                  member['fullName'].isNotEmpty
-                                      ? member['fullName'][0].toUpperCase()
-                                      : '?',
-                                  style: TextStyle(
-                                    color: isAdmin
-                                        ? const Color.fromARGB(255, 69, 0, 189)
-                                        : Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                member['fullName'],
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: isAdmin ? Colors.white : Colors.black,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                              SizedBox(height: 8),
-                              // Displaying rating as stars
-                              _buildRatingStars(experienceRating),
-                              SizedBox(height: 6),
-                              Text(
-                                member['workedAs'],
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontStyle: FontStyle.italic,
-                                  color:
-                                      isAdmin ? Colors.white70 : Colors.black54,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                              SizedBox(height: 25),
-                              Container(
-                                width: 100,
-                                padding: EdgeInsets.symmetric(
-                                    vertical: 6, horizontal: 12),
-                                decoration: BoxDecoration(
-                                  color: isAdmin
-                                      ? Colors.white
-                                      : Colors.deepPurple,
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: isAdmin
-                                        ? const Color.fromARGB(
-                                            255, 255, 255, 255)
-                                        : Colors.deepPurple,
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    isAdmin ? 'Admin' : 'Member',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: isAdmin
-                                          ? Colors.deepPurple
-                                          : const Color.fromARGB(
-                                              255, 255, 255, 255),
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
+      onRatingUpdate: (rating) {},
     );
   }
 }

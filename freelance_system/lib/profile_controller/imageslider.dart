@@ -97,8 +97,9 @@ class _ImagesliderState extends State<Imageslider> {
                 height: 8,
                 width: _currentPage == index ? 20 : 8,
                 decoration: BoxDecoration(
-                  color:
-                      _currentPage == index ? Colors.deepPurple : Colors.grey,
+                  color: _currentPage == index
+                      ? const Color.fromARGB(255, 0, 80, 210)
+                      : Colors.grey,
                   borderRadius: BorderRadius.circular(5),
                 ),
               ),

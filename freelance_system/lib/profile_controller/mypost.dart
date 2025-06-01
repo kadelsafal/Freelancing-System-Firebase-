@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 class MyPost extends StatefulWidget {
   final String userId;
   final bool isOwnProfile;
+
   const MyPost({super.key, required this.userId, required this.isOwnProfile});
 
   @override
@@ -20,11 +21,11 @@ class _MyPostState extends State<MyPost> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          const Text(
             " Posts",
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
                 .collection('posts')
@@ -33,20 +34,17 @@ class _MyPostState extends State<MyPost> {
                 .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(child: CircularProgressIndicator());
+                return const Center(child: CircularProgressIndicator());
               } else if (snapshot.hasError) {
-                print('Error fetching posts: ${snapshot.error}');
                 return Center(child: Text('Error: ${snapshot.error}'));
               } else if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                return Center(child: Text('No posts yet.'));
+                return const Center(child: Text('No posts yet.'));
               } else {
                 var posts = snapshot.data!.docs;
-                return ListView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  itemCount: posts.length,
-                  itemBuilder: (context, index) {
-                    var post = posts[index];
+
+                // 🔁 Use Column to build each post instead of ListView
+                return Column(
+                  children: posts.map((post) {
                     List<String> imageUrl = [];
                     var imageUrlsData = post['imageUrls'];
 
@@ -62,11 +60,13 @@ class _MyPostState extends State<MyPost> {
                     String status = post['status'] ?? '';
                     List likes = post['likes'] ?? [];
                     bool isLiked = likes.contains(widget.userId);
+                    String postUserId = post['userId'];
 
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8.0),
                       child: Card(
-                        elevation: 5,
+                        color: Colors.white,
+                        elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -79,30 +79,56 @@ class _MyPostState extends State<MyPost> {
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Row(
-                                    children: [
-                                      CircleAvatar(
-                                        radius: 20,
-                                        child: Text(
-                                          username[0],
-                                          style: TextStyle(fontSize: 20),
-                                        ),
-                                      ),
-                                      SizedBox(width: 10),
-                                      Text(
-                                        username,
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16),
-                                      ),
-                                    ],
+                                  FutureBuilder<DocumentSnapshot>(
+                                    future: FirebaseFirestore.instance
+                                        .collection('users')
+                                        .doc(postUserId)
+                                        .get(),
+                                    builder: (context, snapshot) {
+                                      String initial = username.isNotEmpty
+                                          ? username[0]
+                                          : '?';
+
+                                      final userData = snapshot.data?.data()
+                                          as Map<String, dynamic>?;
+
+                                      final profileImage =
+                                          (userData?['profile_image'] ?? '')
+                                                  .isEmpty
+                                              ? null
+                                              : userData?['profile_image'];
+
+                                      return Row(
+                                        children: [
+                                          CircleAvatar(
+                                            radius: 20,
+                                            backgroundColor:
+                                                Colors.blue.shade900,
+                                            backgroundImage:
+                                                profileImage != null
+                                                    ? NetworkImage(profileImage)
+                                                    : null,
+                                            child: profileImage == null
+                                                ? Text(initial,
+                                                    style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 20))
+                                                : null,
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Text(username,
+                                              style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 16,
+                                                  color: Colors.blue)),
+                                        ],
+                                      );
+                                    },
                                   ),
-                                  if (widget.isOwnProfile) ...[
+                                  if (widget.isOwnProfile)
                                     IconButton(
-                                      icon: Icon(
-                                        Icons.delete,
-                                        color: Colors.red,
-                                      ),
+                                      icon: const Icon(Icons.delete,
+                                          color: Colors.red),
                                       onPressed: () async {
                                         await FirebaseFirestore.instance
                                             .collection('posts')
@@ -110,60 +136,49 @@ class _MyPostState extends State<MyPost> {
                                             .delete();
                                       },
                                     ),
-                                  ]
                                 ],
                               ),
                               Text(
                                 'Posted on: ${DateFormat('yyyy-MM-dd HH:mm:ss').format((post['timestamp'] as Timestamp).toDate())}',
-                                style: TextStyle(
-                                    fontSize: 12,
-                                    color:
-                                        const Color.fromARGB(255, 49, 49, 49)),
-                              ),
-                              SizedBox(height: 10),
-                              // Displaying the status above the image slider
-                              if (status.isNotEmpty)
-                                Text(
-                                  status,
-                                  style: TextStyle(fontSize: 16),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Color.fromARGB(255, 49, 49, 49),
                                 ),
-                              SizedBox(height: 10),
-
+                              ),
+                              const SizedBox(height: 10),
+                              if (status.isNotEmpty)
+                                Text(status,
+                                    style: const TextStyle(fontSize: 16)),
+                              const SizedBox(height: 10),
                               if (imageUrl.isNotEmpty)
                                 Imageslider(imageUrls: imageUrl),
-                              SizedBox(height: 5),
-
+                              const SizedBox(height: 5),
                               Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
-                                    '${likes.length} likes',
-                                    style: TextStyle(fontSize: 16),
-                                  ),
+                                  Text('${likes.length} likes',
+                                      style: const TextStyle(fontSize: 16)),
                                   IconButton(
                                     icon: Icon(
                                       Icons.handshake,
                                       color: isLiked
                                           ? const Color.fromARGB(
-                                              255, 234, 169, 5)
+                                              255, 6, 119, 225)
                                           : Colors.grey,
                                       size: 38,
                                     ),
                                     onPressed: () async {
+                                      final postRef = FirebaseFirestore.instance
+                                          .collection('posts')
+                                          .doc(post.id);
                                       if (isLiked) {
-                                        await FirebaseFirestore.instance
-                                            .collection('posts')
-                                            .doc(post.id)
-                                            .update({
+                                        await postRef.update({
                                           'likes': FieldValue.arrayRemove(
                                               [widget.userId])
                                         });
                                       } else {
-                                        await FirebaseFirestore.instance
-                                            .collection('posts')
-                                            .doc(post.id)
-                                            .update({
+                                        await postRef.update({
                                           'likes': FieldValue.arrayUnion(
                                               [widget.userId])
                                         });
@@ -177,7 +192,7 @@ class _MyPostState extends State<MyPost> {
                         ),
                       ),
                     );
-                  },
+                  }).toList(),
                 );
               }
             },

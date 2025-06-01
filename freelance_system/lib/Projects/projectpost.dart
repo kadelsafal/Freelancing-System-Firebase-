@@ -101,7 +101,8 @@ class _ProjectpostState extends State<Projectpost> {
                       // Check if Freelancer or Team is appointed and update status to "Pending"
 
                       return Padding(
-                        padding: EdgeInsets.all(8.0),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
                         child: GestureDetector(
                           onTap: () {
                             Navigator.push(
@@ -113,15 +114,30 @@ class _ProjectpostState extends State<Projectpost> {
                               ),
                             );
                           },
-                          child: Card(
-                            elevation: 5,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10)),
-                            color: isCompleted || isPending
-                                ? const Color.fromARGB(255, 255, 255, 255)
-                                : Colors.white,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color:
+                                      const Color(0xFF1976D2).withOpacity(0.1),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                              border: Border.all(
+                                color: isPending
+                                    ? Colors.amber.withOpacity(0.3)
+                                    : isCompleted
+                                        ? Colors.green.withOpacity(0.3)
+                                        : const Color(0xFF1976D2)
+                                            .withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
                             child: Padding(
-                              padding: EdgeInsets.all(8),
+                              padding: const EdgeInsets.all(16),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -129,59 +145,49 @@ class _ProjectpostState extends State<Projectpost> {
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
                                     children: [
-                                      SizedBox(
-                                        width: 220,
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            SizedBox(width: 4),
-                                            Expanded(
-                                              child: Text(
-                                                title,
-                                                style: TextStyle(
-                                                  color: isCompleted ||
-                                                          isPending
-                                                      ? Colors.deepPurple
-                                                      : Colors.deepPurple[900],
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                                overflow: isExpanded
-                                                    ? TextOverflow.visible
-                                                    : TextOverflow.ellipsis,
-                                                maxLines: isExpanded ? null : 5,
-                                                softWrap: true,
-                                              ),
-                                            ),
-                                          ],
+                                      Expanded(
+                                        child: Text(
+                                          title,
+                                          style: const TextStyle(
+                                            color: Color(0xFF1976D2),
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          overflow: isExpanded
+                                              ? TextOverflow.visible
+                                              : TextOverflow.ellipsis,
+                                          maxLines: isExpanded ? null : 2,
                                         ),
                                       ),
-                                      SizedBox(
-                                        width: 20,
-                                      ),
                                       Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
+                                        mainAxisSize: MainAxisSize.min,
                                         children: [
                                           IconButton(
-                                              onPressed: () {
-                                                Navigator.push(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                        builder: (context) =>
-                                                            EditProject(
-                                                                projectId:
-                                                                    projectId)));
-                                              },
-                                              icon: Icon(
-                                                Icons.edit_note_outlined,
-                                                color: isCompleted || isPending
-                                                    ? Colors.deepPurple
-                                                    : Colors.deepPurple,
-                                                size: 40,
-                                              )),
-                                          SizedBox(width: 0),
+                                            onPressed: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      EditProject(
+                                                    projectId: projectId,
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                            icon: Container(
+                                              padding: const EdgeInsets.all(8),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFF1976D2)
+                                                    .withOpacity(0.1),
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: const Icon(
+                                                Icons.edit_outlined,
+                                                color: Color(0xFF1976D2),
+                                                size: 20,
+                                              ),
+                                            ),
+                                          ),
                                           IconButton(
                                             onPressed: () async {
                                               bool confirmDelete =
@@ -190,30 +196,54 @@ class _ProjectpostState extends State<Projectpost> {
                                                 builder:
                                                     (BuildContext context) {
                                                   return AlertDialog(
-                                                    title:
-                                                        Text("Confirm Delete"),
-                                                    content: Text(
-                                                        "Are you sure you want to delete this project?"),
+                                                    shape:
+                                                        RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              16),
+                                                    ),
+                                                    title: const Text(
+                                                      "Delete Project",
+                                                      style: TextStyle(
+                                                        color:
+                                                            Color(0xFF1976D2),
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                    content: const Text(
+                                                      "Are you sure you want to delete this project?",
+                                                      style: TextStyle(
+                                                          fontSize: 16),
+                                                    ),
                                                     actions: [
                                                       TextButton(
                                                         onPressed: () {
-                                                          Navigator.of(context).pop(
-                                                              false); // No, don't delete
+                                                          Navigator.of(context)
+                                                              .pop(false);
                                                         },
-                                                        child: Text("No",
-                                                            style: TextStyle(
-                                                                color: Colors
-                                                                    .grey)),
+                                                        child: const Text(
+                                                          "Cancel",
+                                                          style: TextStyle(
+                                                            color: Colors.grey,
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                          ),
+                                                        ),
                                                       ),
                                                       TextButton(
                                                         onPressed: () {
-                                                          Navigator.of(context).pop(
-                                                              true); // Yes, delete
+                                                          Navigator.of(context)
+                                                              .pop(true);
                                                         },
-                                                        child: Text("Yes",
-                                                            style: TextStyle(
-                                                                color: Colors
-                                                                    .red)),
+                                                        child: const Text(
+                                                          "Delete",
+                                                          style: TextStyle(
+                                                            color: Colors.red,
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                          ),
+                                                        ),
                                                       ),
                                                     ],
                                                   );
@@ -227,300 +257,287 @@ class _ProjectpostState extends State<Projectpost> {
                                                     .delete();
                                               }
                                             },
-                                            icon: Icon(
-                                              Icons.delete_forever,
-                                              color: const Color.fromARGB(
-                                                  255, 255, 3, 3),
-                                              size: 40,
+                                            icon: Container(
+                                              padding: const EdgeInsets.all(8),
+                                              decoration: BoxDecoration(
+                                                color:
+                                                    Colors.red.withOpacity(0.1),
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: const Icon(
+                                                Icons.delete_outline,
+                                                color: Colors.red,
+                                                size: 20,
+                                              ),
                                             ),
                                           ),
                                         ],
-                                      )
+                                      ),
                                     ],
                                   ),
-                                  SizedBox(height: 15),
+                                  const SizedBox(height: 16),
                                   if (!isCompleted) ...[
-                                    Column(
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: isPending
+                                            ? Colors.amber.withOpacity(0.1)
+                                            : const Color(0xFF1976D2)
+                                                .withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Text(
+                                        status,
+                                        style: TextStyle(
+                                          color: isPending
+                                              ? Colors.amber[800]
+                                              : const Color(0xFF1976D2),
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                  ],
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[50],
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
                                         Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.end,
                                           children: [
+                                            const Icon(
+                                              Icons.currency_rupee,
+                                              color: Color(0xFF1976D2),
+                                              size: 20,
+                                            ),
+                                            const SizedBox(width: 8),
                                             Text(
-                                              "Deadline : $deadline",
-                                              style: TextStyle(
-                                                  color: isPending
-                                                      ? const Color.fromARGB(
-                                                          255, 255, 19, 19)
-                                                      : Colors.red,
-                                                  fontSize: 14),
+                                              'Budget: Rs ${budget.toStringAsFixed(2)}',
+                                              style: const TextStyle(
+                                                color: Color(0xFF1976D2),
+                                                fontWeight: FontWeight.w600,
+                                              ),
                                             ),
                                           ],
                                         ),
-                                        Text(
-                                          "Description",
-                                          style: TextStyle(
-                                              color: isPending
-                                                  ? Colors.deepPurple
-                                                  : const Color.fromARGB(
-                                                      255, 0, 0, 0),
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                        SizedBox(
-                                          height: 4,
-                                        ),
-                                        DescriptionWidget(
-                                            description: description),
-                                        if (!isPending) ...[
-                                          SizedBox(
-                                            height: 15,
-                                          ),
-                                          Row(
-                                            children: [
-                                              Text(
-                                                "Applied By : ",
-                                                style: TextStyle(
-                                                    color: const Color.fromARGB(
-                                                        255, 144, 143, 143),
-                                                    fontSize: 13,
-                                                    fontWeight:
-                                                        FontWeight.bold),
-                                              ),
-                                              SizedBox(width: 5),
-                                              Text(
-                                                '$appliedCount',
-                                                style: TextStyle(
-                                                    color: const Color.fromARGB(
-                                                        255, 0, 0, 0),
-                                                    fontSize: 16,
-                                                    fontWeight:
-                                                        FontWeight.bold),
-                                              ),
-                                              Icon(
-                                                Icons.person,
-                                                color: Colors.deepPurple,
-                                              )
-                                            ],
-                                          ),
-                                        ],
-                                        Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.end,
+                                        const SizedBox(height: 8),
+                                        Row(
                                           children: [
-                                            Padding(
-                                                padding:
-                                                    EdgeInsets.only(right: 10),
-                                                child: isPending
-                                                    ? Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .end,
-                                                        children: [
-                                                          Text(
-                                                            "Budget : ",
-                                                            style: TextStyle(
-                                                                color: const Color
-                                                                    .fromARGB(
-                                                                    255,
-                                                                    0,
-                                                                    0,
-                                                                    0),
-                                                                fontSize: 14,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold),
-                                                          ),
-                                                          Text(
-                                                            "${NumberFormat("#,##0", "en_US").format(budget)} Rs",
-                                                            style: TextStyle(
-                                                                color: Colors
-                                                                    .deepPurple,
-                                                                fontSize: 16,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold),
-                                                          ),
-                                                        ],
-                                                      )
-                                                    : // If not in Pending Status
-                                                    Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .end,
-                                                        children: [
-                                                          Text(
-                                                            "Budget : ",
-                                                            style: TextStyle(
-                                                                color: const Color
-                                                                    .fromARGB(
-                                                                    255,
-                                                                    0,
-                                                                    0,
-                                                                    0),
-                                                                fontSize: 14,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold),
-                                                          ),
-                                                          Text(
-                                                            "${NumberFormat("#,##0", "en_US").format(budget)} Rs",
-                                                            style: TextStyle(
-                                                                color: const Color
-                                                                    .fromARGB(
-                                                                    255,
-                                                                    106,
-                                                                    0,
-                                                                    148),
-                                                                fontSize: 16,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold),
-                                                          ),
-                                                        ],
-                                                      )),
+                                            const Icon(
+                                              Icons.calendar_today,
+                                              color: Color(0xFF1976D2),
+                                              size: 20,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              'Deadline: $deadline',
+                                              style: const TextStyle(
+                                                color: Color(0xFF1976D2),
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
                                           ],
                                         ),
-                                        SizedBox(height: 10),
-                                        if (!isPending) ...[
-                                          Text("Preferences",
-                                              style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold)),
-                                          SizedBox(height: 5),
-                                          Wrap(
-                                            spacing:
-                                                4.0, // Space between each item
-                                            runSpacing:
-                                                4.0, // Space between lines when wrapping
-                                            children:
-                                                preferences.map((preference) {
-                                              return Chip(
-                                                label: Text(
-                                                  preference,
-                                                  style: TextStyle(
-                                                      fontSize: 13,
-                                                      fontWeight:
-                                                          FontWeight.bold),
-                                                ),
-                                                padding: EdgeInsets.all(2),
-                                                backgroundColor: Colors
-                                                    .deepPurple
-                                                    .shade100, // Optional: Change color
-                                              );
-                                            }).toList(),
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          children: [
+                                            const Icon(
+                                              Icons.people,
+                                              color: Color(0xFF1976D2),
+                                              size: 20,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              'Applications: $appliedCount',
+                                              style: const TextStyle(
+                                                color: Color(0xFF1976D2),
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: preferences.map((preference) {
+                                      return Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF1976D2)
+                                              .withOpacity(0.1),
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                        ),
+                                        child: Text(
+                                          preference,
+                                          style: const TextStyle(
+                                            color: Color(0xFF1976D2),
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w500,
                                           ),
-                                        ],
-                                        SizedBox(height: 20),
-                                        if (appoint.isNotEmpty) ...[
-                                          Text(
-                                              isFreelancerAppointed
-                                                  ? "Appointed Freelancer"
-                                                  : "Appointed Team",
-                                              style: TextStyle(
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.bold)),
-                                          SizedBox(height: 10),
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[50],
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: const Color(0xFF1976D2)
+                                            .withOpacity(0.2),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF1976D2)
+                                                .withOpacity(0.1),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: appoint.isNotEmpty
+                                              ? FutureBuilder<DocumentSnapshot>(
+                                                  future: isFreelancerAppointed
+                                                      ? FirebaseFirestore
+                                                          .instance
+                                                          .collection('users')
+                                                          .doc(
+                                                              appointFreelancer)
+                                                          .get()
+                                                      : null,
+                                                  builder: (context, snapshot) {
+                                                    if (isFreelancerAppointed &&
+                                                        snapshot.hasData) {
+                                                      final userData =
+                                                          snapshot.data!.data()
+                                                              as Map<String,
+                                                                  dynamic>?;
+                                                      final profileImage =
+                                                          userData?[
+                                                              'profileImage'];
+
+                                                      return CircleAvatar(
+                                                        radius: 20,
+                                                        backgroundColor:
+                                                            const Color(
+                                                                    0xFF1976D2)
+                                                                .withOpacity(
+                                                                    0.1),
+                                                        backgroundImage:
+                                                            profileImage !=
+                                                                        null &&
+                                                                    profileImage
+                                                                        .isNotEmpty
+                                                                ? NetworkImage(
+                                                                    profileImage)
+                                                                : null,
+                                                        child: profileImage ==
+                                                                    null ||
+                                                                profileImage
+                                                                    .isEmpty
+                                                            ? Text(
+                                                                appoint[0]
+                                                                    .toUpperCase(),
+                                                                style:
+                                                                    const TextStyle(
+                                                                  color: Color(
+                                                                      0xFF1976D2),
+                                                                  fontSize: 16,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                ),
+                                                              )
+                                                            : null,
+                                                      );
+                                                    } else {
+                                                      return CircleAvatar(
+                                                        radius: 20,
+                                                        backgroundColor:
+                                                            const Color(
+                                                                    0xFF1976D2)
+                                                                .withOpacity(
+                                                                    0.1),
+                                                        child: Text(
+                                                          appoint[0]
+                                                              .toUpperCase(),
+                                                          style:
+                                                              const TextStyle(
+                                                            color: Color(
+                                                                0xFF1976D2),
+                                                            fontSize: 16,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                          ),
+                                                        ),
+                                                      );
+                                                    }
+                                                  },
+                                                )
+                                              : Icon(
+                                                  isFreelancerAppointed
+                                                      ? Icons.person
+                                                      : isTeamAppointed
+                                                          ? Icons.group
+                                                          : Icons.person_off,
+                                                  color:
+                                                      const Color(0xFF1976D2),
+                                                  size: 20,
+                                                ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
-                                              CircleAvatar(
-                                                backgroundColor:
-                                                    Colors.deepPurple,
-                                                child: Text(
-                                                  appoint[
-                                                      0], // Show the first letter of the appointed person/team
-                                                  style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 18),
+                                              Text(
+                                                isFreelancerAppointed
+                                                    ? "Appointed Freelancer"
+                                                    : isTeamAppointed
+                                                        ? "Appointed Team"
+                                                        : "Not Appointed",
+                                                style: const TextStyle(
+                                                  color: Color(0xFF1976D2),
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w600,
                                                 ),
                                               ),
-                                              SizedBox(width: 10),
-                                              Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    appoint, // Display the full name of the appointed freelancer/team
-                                                    style: TextStyle(
-                                                      fontSize: 16,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
+                                              if (appoint.isNotEmpty) ...[
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  appoint,
+                                                  style: const TextStyle(
+                                                    color: Colors.black87,
+                                                    fontSize: 13,
+                                                    fontWeight: FontWeight.w500,
                                                   ),
-                                                ],
-                                              ),
+                                                ),
+                                              ],
                                             ],
                                           ),
-                                          SizedBox(height: 24),
-                                        ],
+                                        ),
                                       ],
-                                    )
-                                  ],
-                                  Text(
-                                    project['createdAt'] != null &&
-                                            project['createdAt'] is Timestamp
-                                        ? 'Posted on: ${DateFormat('yyyy-MM-dd HH:mm:ss').format((project['createdAt'] as Timestamp).toDate())}'
-                                        : 'Posted on: N/A', // Handle null values gracefully
-                                    style: TextStyle(
-                                        fontSize: 13,
-                                        color: isCompleted || isPending
-                                            ? const Color.fromARGB(
-                                                255, 80, 80, 80)
-                                            : const Color.fromARGB(
-                                                255, 139, 139, 139)),
+                                    ),
                                   ),
-                                  if (isCompleted) // Show checkmark when completed
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.end,
-                                        children: [
-                                          Text(
-                                            "Completed  ",
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              fontStyle: FontStyle.italic,
-                                              color: Colors.deepPurple,
-                                            ),
-                                          ),
-                                          Icon(
-                                            Icons.check_circle,
-                                            color: const Color.fromARGB(
-                                                255, 0, 192, 42),
-                                            size: 25,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  if (isPending) // Show checkmark when completed
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.end,
-                                        children: [
-                                          Text(
-                                            "Pending ",
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              fontStyle: FontStyle.italic,
-                                              color: const Color.fromARGB(
-                                                  255, 0, 0, 0),
-                                            ),
-                                          ),
-                                          Icon(
-                                            Icons.pending_actions,
-                                            color: Colors.deepPurple,
-                                            size: 25,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
                                 ],
                               ),
                             ),
@@ -530,7 +547,10 @@ class _ProjectpostState extends State<Projectpost> {
                     },
                   );
                 }
-              })
+              }),
+          SizedBox(
+            height: 60,
+          )
         ],
       ),
     );

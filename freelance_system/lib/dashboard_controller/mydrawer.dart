@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:freelance_system/learning/courses.dart';
+
 import 'package:freelance_system/screens/profile.dart';
 import 'package:freelance_system/screens/splash_screen.dart';
 import 'package:provider/provider.dart';
@@ -49,18 +49,37 @@ class _MyDrawerState extends State<MyDrawer> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundColor: const Color.fromARGB(255, 255, 192, 2),
-                    child: Text(
-                      userProvider.userName.isNotEmpty
-                          ? userProvider.userName[0].toUpperCase()
-                          : "U",
-                      style: TextStyle(
-                          fontSize: 48,
-                          color: const Color.fromARGB(255, 255, 255, 255)),
-                    ),
-                  ),
+                  Container(
+                      width:
+                          100, // Adjust the width to match the CircleAvatar radius
+                      height:
+                          100, // Adjust the height to match the CircleAvatar radius
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color.fromARGB(255, 148, 148,
+                              148), // Border color (adjust to your preference)
+                          width: 3, // Border width (adjust as needed)
+                        ),
+                      ),
+                      child: CircleAvatar(
+                        radius:
+                            60, // This should match the width/height of the container
+                        backgroundImage: (userProvider
+                                    .profileimage?.isNotEmpty ??
+                                false)
+                            ? NetworkImage(userProvider.profileimage!)
+                            : null, // Display the profile image if available and not empty
+                        child: (userProvider.profileimage?.isEmpty ?? true)
+                            ? Text(
+                                userProvider.userName.isNotEmpty
+                                    ? userProvider.userName[
+                                        0] // Display the first letter of the user's name
+                                    : "?", // If user name is empty, display "?"
+                                style: TextStyle(fontSize: 48),
+                              )
+                            : null, // If there's a profile image, no need to display the initial
+                      )),
                   const SizedBox(height: 10),
                   Text(
                     userProvider.userName.toUpperCase(),
@@ -105,17 +124,7 @@ class _MyDrawerState extends State<MyDrawer> {
                   ),
                 ),
                 SizedBox(height: 15), // Uniform gap between tiles
-                _buildListTile(
-                  icon: Icons.book_online_outlined,
-                  iconColor: Colors.deepPurple,
-                  bgColor: Colors.transparent, // No background for this icon
-                  title: "Courses",
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => Courses()),
-                  ),
-                ),
-                SizedBox(height: 15), // Uniform gap
+                // Uniform gap
                 _buildListTile(
                   icon: Icons.logout,
                   iconColor: Colors.red,

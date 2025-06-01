@@ -110,13 +110,14 @@ class _ChatroomScreenState extends State<ChatroomScreen> {
 
             final showSeenAvatar = isMe && index == lastSeenIndex;
 
-            return FutureBuilder<String?>(
-              future: UserService.getUserFullName(widget.userId),
+            return FutureBuilder<Map<String, dynamic>>(
+              future: UserService.getUserProfile(widget.userId),
               builder: (context, userSnapshot) {
+                final userData = userSnapshot.data ?? {};
+                final userName = userData['name'] ?? '';
+                final profileImage = userData['profileImage'];
                 final seenByInitial =
-                    userSnapshot.hasData && userSnapshot.data!.isNotEmpty
-                        ? userSnapshot.data![0].toUpperCase()
-                        : '?';
+                    userName.isNotEmpty ? userName[0].toUpperCase() : '?';
 
                 return ListTile(
                   contentPadding:
@@ -134,11 +135,11 @@ class _ChatroomScreenState extends State<ChatroomScreen> {
                             padding:
                                 const EdgeInsets.only(bottom: 4.0, left: 4.0),
                             child: Text(
-                              userSnapshot.data ?? '',
+                              userName,
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12,
-                                color: Colors.black87,
+                                color: Color.fromARGB(221, 0, 0, 0),
                               ),
                             ),
                           ),
@@ -150,27 +151,44 @@ class _ChatroomScreenState extends State<ChatroomScreen> {
                           children: [
                             if (!isMe)
                               Padding(
-                                padding: EdgeInsets.all(8),
+                                padding: const EdgeInsets.all(8),
                                 child: CircleAvatar(
                                   radius: 20,
-                                  child: Text(seenByInitial,
-                                      style: TextStyle(fontSize: 28)),
+                                  backgroundColor: const Color(0xFF1976D2),
+                                  backgroundImage: (profileImage != null &&
+                                          profileImage.isNotEmpty)
+                                      ? NetworkImage(profileImage)
+                                      : null,
+                                  child: (profileImage == null ||
+                                          profileImage.isEmpty)
+                                      ? Text(
+                                          seenByInitial,
+                                          style: const TextStyle(
+                                              fontSize: 18,
+                                              color: Colors.white),
+                                        )
+                                      : null,
                                 ),
                               ),
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color:
-                                    isMe ? Colors.blue[200] : Colors.grey[300],
+                                color: isMe
+                                    ? const Color(0xFF1976D2)
+                                    : Colors.grey[300],
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: Text(text),
+                              child: Text(
+                                text,
+                                style: TextStyle(
+                                  color: isMe ? Colors.white : Colors.black,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
                             ),
                           ],
                         ),
-                        SizedBox(
-                          height: 10,
-                        ),
+                        const SizedBox(height: 10),
                         if (timestamp != null)
                           Center(
                             child: Padding(
@@ -181,9 +199,7 @@ class _ChatroomScreenState extends State<ChatroomScreen> {
                               ),
                             ),
                           ),
-                        SizedBox(
-                          height: 10,
-                        ),
+                        const SizedBox(height: 10),
                       ],
                     ),
                   ),
@@ -195,10 +211,27 @@ class _ChatroomScreenState extends State<ChatroomScreen> {
                             children: [
                               CircleAvatar(
                                 radius: 14,
-                                child: Text(seenByInitial),
+                                backgroundColor: const Color(0xFF1976D2),
+                                backgroundImage: (profileImage != null &&
+                                        profileImage.isNotEmpty)
+                                    ? NetworkImage(profileImage)
+                                    : null,
+                                child: (profileImage == null ||
+                                        profileImage.isEmpty)
+                                    ? Text(seenByInitial,
+                                        style: const TextStyle(
+                                            color: Colors.white))
+                                    : null,
                               ),
                               const SizedBox(width: 4),
-                              const Text("Seen"),
+                              const Text(
+                                "Seen",
+                                style: TextStyle(
+                                  color: Color(0xFF1976D2),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
                             ],
                           ),
                         )
@@ -222,28 +255,99 @@ class _ChatroomScreenState extends State<ChatroomScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(widget.chatroomName),
+        backgroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.black),
+        title: FutureBuilder<Map<String, dynamic>>(
+          future: UserService.getUserProfile(widget.userId),
+          builder: (context, userSnapshot) {
+            String profileImage = '';
+            String seenByInitial = widget.chatroomName.isNotEmpty
+                ? widget.chatroomName[0].toUpperCase()
+                : '?';
+
+            if (userSnapshot.hasData) {
+              final userData = userSnapshot.data!;
+              profileImage = userData['profileImage'] ?? '';
+            }
+
+            return Row(
+              children: [
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: const Color(0xFF1976D2),
+                  backgroundImage: (profileImage.isNotEmpty)
+                      ? NetworkImage(profileImage)
+                      : null,
+                  child: (profileImage == null || profileImage.isEmpty)
+                      ? Text(seenByInitial,
+                          style: const TextStyle(
+                              fontSize: 18, color: Colors.white))
+                      : null,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  widget.chatroomName,
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
       body: Column(
         children: [
           Expanded(child: _buildMessageList()),
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Expanded(
                   child: TextField(
                     controller: _messageController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: "Type a message...",
-                      border: OutlineInputBorder(),
+                      hintStyle: const TextStyle(color: Colors.grey),
+                      filled: true,
+                      fillColor: Colors.grey[200],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        borderSide: const BorderSide(
+                            color: Color(0xFF1976D2), width: 1),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        borderSide: const BorderSide(
+                            color: Color(0xFF1976D2), width: 2),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                     ),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.send),
-                  onPressed: _sendMessage,
+                const SizedBox(width: 8),
+                Material(
+                  color: const Color(0xFF1976D2),
+                  borderRadius: BorderRadius.circular(30),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(30),
+                    onTap: _sendMessage,
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1976D2),
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      child: Icon(Icons.send, color: Colors.white, size: 24),
+                    ),
+                  ),
                 ),
               ],
             ),

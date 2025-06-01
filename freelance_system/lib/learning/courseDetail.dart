@@ -12,8 +12,13 @@ import 'package:esewa_flutter_sdk/esewa_flutter_sdk.dart';
 class CourseDetail extends StatefulWidget {
   final String courseId;
   final String title;
+  final bool isAddedByUser;
 
-  const CourseDetail({super.key, required this.courseId, required this.title});
+  const CourseDetail(
+      {super.key,
+      required this.courseId,
+      required this.title,
+      this.isAddedByUser = false});
 
   @override
   State<CourseDetail> createState() => _CourseDetailState();
@@ -29,7 +34,11 @@ class _CourseDetailState extends State<CourseDetail> {
   void initState() {
     super.initState();
     fetchChapters();
-    checkPaymentStatus();
+    if (widget.isAddedByUser) {
+      isPaid = true;
+    } else {
+      checkPaymentStatus();
+    }
   }
 
   Future<void> fetchChapters() async {
@@ -90,82 +99,6 @@ class _CourseDetailState extends State<CourseDetail> {
       print("Error checking payment status: $e");
     }
   }
-
-  // Future<void> onPayNowPressed() async {
-  //   final price = double.tryParse('${courseData?['price'] ?? 0}') ?? 0.0;
-
-  //   if (price <= 0) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text('Invalid course price')),
-  //     );
-  //     return;
-  //   }
-
-  //   KhaltiScope.of(context).pay(
-  //     config: PaymentConfig(
-  //       amount: (price * 100).toInt(), // Khalti uses paisa
-  //       productIdentity: widget.courseId,
-  //       productName: widget.title,
-  //     ),
-  //     preferences: [PaymentPreference.khalti],
-  //     onSuccess: (success) async {
-  //       try {
-  //         final user = FirebaseAuth.instance.currentUser;
-  //         if (user == null) return;
-
-  //         final uid = user.uid;
-  //         final ref = FirebaseFirestore.instance.collection('user_courses');
-
-  //         final existing = await ref
-  //             .where('courseId', isEqualTo: widget.courseId)
-  //             .where('userId', isEqualTo: uid)
-  //             .get();
-
-  //         if (existing.docs.isEmpty) {
-  //           await ref.add({
-  //             'courseId': widget.courseId,
-  //             'userId': uid,
-  //             'paymentStatus': 'paid',
-  //             'paymentDate': Timestamp.now(),
-  //           });
-
-  //           await FirebaseFirestore.instance
-  //               .collection('courses')
-  //               .doc(widget.courseId)
-  //               .update({'appliedUsers': FieldValue.increment(1)});
-  //         } else {
-  //           await ref.doc(existing.docs.first.id).update({
-  //             'paymentStatus': 'paid',
-  //             'paymentDate': Timestamp.now(),
-  //           });
-  //         }
-
-  //         setState(() {
-  //           isPaid = true;
-  //         });
-
-  //         ScaffoldMessenger.of(context).showSnackBar(
-  //           const SnackBar(content: Text('Payment successful!')),
-  //         );
-  //       } catch (e, stackTrace) {
-  //         print("Firestore error after payment: $e\n$stackTrace");
-  //         ScaffoldMessenger.of(context).showSnackBar(
-  //           const SnackBar(
-  //               content: Text('Payment succeeded but something went wrong.')),
-  //         );
-  //       }
-  //     },
-  //     onFailure: (failure) {
-  //       print("Khalti Payment Failed: ${failure.message}");
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         SnackBar(content: Text('Payment failed: ${failure.message}')),
-  //       );
-  //     },
-  //     onCancel: () {
-  //       print("Khalti payment cancelled by user.");
-  //     },
-  //   );
-  // }
 
   Future<void> onPayNowPressed() async {
     final price = double.tryParse('${courseData?['price'] ?? 0}') ?? 0.0;
@@ -274,7 +207,22 @@ class _CourseDetailState extends State<CourseDetail> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: const Color(0xFF1976D2),
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text(
+          widget.title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
+            letterSpacing: 0.5,
+          ),
+        ),
+        centerTitle: true,
+        toolbarHeight: 100,
+      ),
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
             .collection('courses')
@@ -295,162 +243,241 @@ class _CourseDetailState extends State<CourseDetail> {
           courseData = snapshot.data!.data() as Map<String, dynamic>;
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.zero,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Title
-                Text(
-                  courseData?['title'] ?? "No title available",
-                  style: const TextStyle(
-                      fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 25),
-
-                // Description
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.deepPurple, width: 2),
-                    borderRadius: BorderRadius.circular(20),
+                // Poster (if available)
+                if (courseData?['posterUrl'] != null &&
+                    (courseData?['posterUrl'] as String).isNotEmpty)
+                  Image.network(
+                    courseData!['posterUrl'],
+                    width: double.infinity,
+                    height: 220,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      height: 220,
+                      width: double.infinity,
+                      color: Colors.blue[50],
+                      child: const Icon(Icons.broken_image,
+                          size: 60, color: Color(0xFF1976D2)),
+                    ),
                   ),
-                  child: Text(
-                    courseData?['description'] ?? "No description available",
-                    style: const TextStyle(fontSize: 16, height: 1.5),
-                    textAlign: TextAlign.justify,
-                  ),
-                ),
-                const SizedBox(height: 30),
-
-                // Benefits
-                if (courseData?['benefits'] is List)
-                  Column(
+                const SizedBox(height: 24),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text("Benefits of this Course:",
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 5),
-                      ...List<Widget>.from(
-                        (courseData!['benefits'] as List).map((benefit) =>
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 4),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text("• ",
-                                      style: TextStyle(fontSize: 16)),
-                                  const SizedBox(width: 5),
-                                  Expanded(
-                                      child: Text(benefit,
-                                          style:
-                                              const TextStyle(fontSize: 16))),
-                                ],
-                              ),
-                            )),
-                      ),
-                      const SizedBox(height: 30),
-                    ],
-                  ),
-
-                // Skills
-                if (courseData?['skills'] is List)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text("Skills Covered:",
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: List<Widget>.from(
-                          (courseData!['skills'] as List)
-                              .map((skill) => Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: Colors.purple,
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    child: Text(skill,
-                                        style: const TextStyle(
-                                            color: Colors.white, fontSize: 14)),
-                                  )),
+                      // Title
+                      Text(
+                        courseData?['title'] ?? "No title available",
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1976D2),
                         ),
                       ),
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 18),
+
+                      // Description
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.blue[50],
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Text(
+                          courseData?['description'] ??
+                              "No description available",
+                          style: const TextStyle(
+                              fontSize: 16,
+                              height: 1.5,
+                              color: Color(0xFF1976D2)),
+                          textAlign: TextAlign.justify,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Benefits
+                      if (courseData?['benefits'] is List)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text("Benefits of this Course:",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF1976D2),
+                                )),
+                            const SizedBox(height: 5),
+                            ...List<Widget>.from((courseData!['benefits']
+                                    as List)
+                                .map((benefit) => Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 4),
+                                      child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const Text("• ",
+                                              style: TextStyle(
+                                                  fontSize: 16,
+                                                  color: Color(0xFF1976D2))),
+                                          const SizedBox(width: 5),
+                                          Expanded(
+                                              child: Text(benefit,
+                                                  style: const TextStyle(
+                                                      fontSize: 16,
+                                                      color:
+                                                          Color(0xFF1976D2)))),
+                                        ],
+                                      ),
+                                    ))),
+                          ],
+                        ),
+
+                      // Skills
+                      if (courseData?['skills'] is List)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text("Skills Covered:",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF1976D2),
+                                )),
+                            const SizedBox(height: 10),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: List<Widget>.from(
+                                (courseData!['skills'] as List)
+                                    .map((skill) => Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 12, vertical: 6),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF1976D2),
+                                            borderRadius:
+                                                BorderRadius.circular(20),
+                                          ),
+                                          child: Text(skill,
+                                              style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 14)),
+                                        )),
+                              ),
+                            ),
+                          ],
+                        ),
+                      const SizedBox(height: 10),
+
+                      // Price and Payment
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 18, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.blue[100],
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              "Rs. ${courseData?['price'] ?? "N/A"}",
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF1976D2),
+                              ),
+                            ),
+                          ),
+                          ElevatedButton(
+                            onPressed: isPaid ? null : onPayNowPressed,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF1976D2),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                              elevation: 2,
+                            ),
+                            child: Text(
+                              isPaid ? "Paid" : "Pay Now",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Instructor
+                      Row(
+                        children: [
+                          const Icon(Icons.person,
+                              color: Color(0xFF1976D2), size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            "Instructor: ${courseData?['username'] ?? "Unknown"}",
+                            style: const TextStyle(
+                                fontSize: 16, color: Color(0xFF1976D2)),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      // Enrolled users
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          const Icon(Icons.group,
+                              color: Color(0xFF1976D2), size: 20),
+                          const SizedBox(width: 6),
+                          Text(
+                            "Enrolled: ${courseData?['appliedUsers'] ?? 0}",
+                            style: const TextStyle(
+                                fontSize: 16, color: Color(0xFF1976D2)),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      // Created At
+                      Row(
+                        children: [
+                          const Icon(Icons.calendar_today,
+                              color: Color(0xFF1976D2), size: 18),
+                          const SizedBox(width: 8),
+                          Text(
+                            "Posted: ${_formatDate(courseData?['createdAt'])}",
+                            style: const TextStyle(
+                                fontSize: 16, color: Color(0xFF1976D2)),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Chapters widget
+                      ChaptersWidget(
+                        courseId: widget.courseId,
+                        chapters: chapters,
+                        isPaid: isPaid,
+                      ),
+
+                      const SizedBox(height: 10),
                     ],
                   ),
-
-                // Price and Payment
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "Rs. ${courseData?['price'] ?? "N/A"}",
-                      style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.red),
-                    ),
-                    ElevatedButton(
-                      onPressed: isPaid ? null : onPayNowPressed,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.deepPurple,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10)),
-                      ),
-                      child: Text(
-                        isPaid ? "Paid" : "Pay Now",
-                        style: const TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ],
                 ),
-                const SizedBox(height: 10),
-
-                // Instructor
-                Text(
-                  "Instructor: ${courseData?['username'] ?? "Unknown"}",
-                  style: const TextStyle(fontSize: 16, color: Colors.blueGrey),
-                ),
-
-                const SizedBox(height: 10),
-
-                // Enrolled users
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Text(
-                      "Enrolled Users: ${courseData?['appliedUsers'] ?? 0}",
-                      style: const TextStyle(fontSize: 16, color: Colors.grey),
-                    ),
-                    const Icon(Icons.person_2, color: Colors.deepPurple),
-                  ],
-                ),
-
-                const SizedBox(height: 10),
-
-                // Created At
-                Text(
-                  "Posted At: ${_formatDate(courseData?['createdAt'])}",
-                  style: const TextStyle(fontSize: 16, color: Colors.grey),
-                ),
-
-                const SizedBox(height: 30),
-
-                // Chapters widget
-                ChaptersWidget(
-                  courseId: widget.courseId,
-                  chapters: chapters,
-                  isPaid: isPaid,
-                ),
-
-                const SizedBox(height: 10),
               ],
             ),
           );

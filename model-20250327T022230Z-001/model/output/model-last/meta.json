@@ -1,0 +1,144 @@
+{
+  "lang":"en",
+  "name":"pipeline",
+  "version":"0.0.0",
+  "spacy_version":">=3.8.4,<3.9.0",
+  "description":"",
+  "author":"",
+  "email":"",
+  "url":"",
+  "license":"",
+  "spacy_git_version":"85cc763",
+  "vectors":{
+    "width":0,
+    "vectors":0,
+    "keys":0,
+    "name":null,
+    "mode":"default"
+  },
+  "labels":{
+    "transformer":[
+
+    ],
+    "ner":[
+      "AWARDS",
+      "CERTIFICATION",
+      "COLLEGE NAME",
+      "COMPANIES WORKED AT",
+      "CONTACT",
+      "DEGREE",
+      "DESIGNATION",
+      "EMAIL ADDRESS",
+      "LANGUAGE",
+      "LINKEDIN LINK",
+      "LOCATION",
+      "NAME",
+      "SKILLS",
+      "UNIVERSITY",
+      "Unlabelled",
+      "WORKED AS",
+      "YEAR OF GRADUATION",
+      "YEARS OF EXPERIENCE"
+    ]
+  },
+  "pipeline":[
+    "transformer",
+    "ner"
+  ],
+  "components":[
+    "transformer",
+    "ner"
+  ],
+  "disabled":[
+
+  ],
+  "performance":{
+    "ents_f":0.851926695,
+    "ents_p":0.8420110193,
+    "ents_r":0.8620786913,
+    "ents_per_type":{
+      "LINKEDIN LINK":{
+        "p":0.9867986799,
+        "r":0.9803278689,
+        "f":0.9835526316
+      },
+      "SKILLS":{
+        "p":0.8260869565,
+        "r":0.7505486467,
+        "f":0.7865082407
+      },
+      "LANGUAGE":{
+        "p":0.7224489796,
+        "r":0.743697479,
+        "f":0.7329192547
+      },
+      "CERTIFICATION":{
+        "p":0.7885375494,
+        "r":0.8159509202,
+        "f":0.8020100503
+      },
+      "AWARDS":{
+        "p":0.7682926829,
+        "r":0.75,
+        "f":0.7590361446
+      },
+      "NAME":{
+        "p":0.9440789474,
+        "r":0.9566666667,
+        "f":0.9503311258
+      },
+      "LOCATION":{
+        "p":0.7936507937,
+        "r":0.8992805755,
+        "f":0.8431703204
+      },
+      "COMPANIES WORKED AT":{
+        "p":0.8911764706,
+        "r":0.9294478528,
+        "f":0.9099099099
+      },
+      "WORKED AS":{
+        "p":0.8841567291,
+        "r":0.8994800693,
+        "f":0.8917525773
+      },
+      "YEARS OF EXPERIENCE":{
+        "p":0.8839590444,
+        "r":0.9691300281,
+        "f":0.9245872378
+      },
+      "UNIVERSITY":{
+        "p":0.7245762712,
+        "r":0.7434782609,
+        "f":0.7339055794
+      },
+      "DEGREE":{
+        "p":0.7920792079,
+        "r":0.8791208791,
+        "f":0.8333333333
+      },
+      "YEAR OF GRADUATION":{
+        "p":0.3913043478,
+        "r":0.2368421053,
+        "f":0.2950819672
+      },
+      "COLLEGE NAME":{
+        "p":0.5707070707,
+        "r":0.7583892617,
+        "f":0.65129683
+      },
+      "Unlabelled":{
+        "p":0.0,
+        "r":0.0,
+        "f":0.0
+      },
+      "EMAIL ADDRESS":{
+        "p":0.5384615385,
+        "r":0.7777777778,
+        "f":0.6363636364
+      }
+    },
+    "transformer_loss":39794.049536914,
+    "ner_loss":2626.4560546875
+  }
+}

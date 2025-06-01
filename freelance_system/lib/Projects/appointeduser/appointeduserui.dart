@@ -5,7 +5,6 @@ import 'package:freelance_system/Projects/tabs/milestone/milestone_tab.dart';
 
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:freelance_system/Projects/tabs/issues_tab.dart';
 
 import 'package:freelance_system/Projects/tabs/status/status_tab.dart';
 import 'package:freelance_system/providers/userProvider.dart';
@@ -76,7 +75,7 @@ class _AppointedUserState extends State<AppointedUser>
         Row(
           children: [
             CircleAvatar(
-              backgroundColor: Colors.purple,
+              backgroundColor: Colors.blue,
               child: Text(
                 widget.appointedName.isNotEmpty ? widget.appointedName[0] : '?',
                 style: const TextStyle(color: Colors.white, fontSize: 18),
@@ -125,8 +124,10 @@ class _AppointedUserState extends State<AppointedUser>
                   height: 50,
                   child: TabBar(
                     controller: _tabController,
-                    labelColor: Colors.deepPurple,
+                    labelColor: const Color(0xFF1976D2),
                     unselectedLabelColor: Colors.grey,
+                    indicatorColor: const Color(0xFF1976D2),
+                    indicatorWeight: 3,
                     tabs: [
                       const Tab(text: "Milestone"),
                       const Tab(text: "Issues"),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:freelance_system/Projects/applicants.dart';
+
 import 'package:freelance_system/Projects/applicants/applicants_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 

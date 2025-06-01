@@ -49,7 +49,7 @@ class MilestoneUI {
     return ElevatedButton.icon(
       style: ElevatedButton.styleFrom(
         foregroundColor: Colors.white,
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: const Color(0xFF1976D2),
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
         textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
       ),

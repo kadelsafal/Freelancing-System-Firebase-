@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:freelance_system/Projects/teamdetails.dart';
+
 import 'package:freelance_system/Projects/teams/teamDetails.dart';
 
 class TeamApplicantCard extends StatelessWidget {

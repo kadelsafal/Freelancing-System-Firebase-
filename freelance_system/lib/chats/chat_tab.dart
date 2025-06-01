@@ -31,6 +31,9 @@ class ChatTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Store a reference to the ScaffoldMessengerState
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
     return StreamBuilder<QuerySnapshot>(
       stream: db
           .collection("chatrooms")
@@ -101,66 +104,152 @@ class ChatTab extends StatelessWidget {
 
                       await db.collection("chatrooms").doc(chatroomId).delete();
 
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      scaffoldMessenger.showSnackBar(
                         const SnackBar(
                             content: Text('Chatroom deleted successfully')),
                       );
                     } catch (e) {
                       print("Error deleting chatroom: $e");
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      scaffoldMessenger.showSnackBar(
                         const SnackBar(
                             content: Text('Failed to delete chatroom')),
                       );
                     }
                   },
-                  child: ListTile(
-                    onTap: () {
-                      final otherUserId =
-                          participants.firstWhere((id) => id != user!.uid);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ChatroomScreen(
-                            chatroomName: chatroomTitle,
-                            chatroomId: chatroomId,
-                            userId: otherUserId,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isUnseen ? const Color(0xFFE3F0FB) : Colors.white,
+                      border: isUnseen
+                          ? Border(
+                              left: BorderSide(
+                                  color: Color(0xFF1976D2), width: 5))
+                          : null,
+                    ),
+                    child: ListTile(
+                      onTap: () {
+                        final otherUserId =
+                            participants.firstWhere((id) => id != user!.uid);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ChatroomScreen(
+                              chatroomName: chatroomTitle,
+                              chatroomId: chatroomId,
+                              userId: otherUserId,
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                    leading: CircleAvatar(
-                      child: Text(
-                        chatroomTitle.isNotEmpty ? chatroomTitle[0] : "",
+                        );
+                      },
+                      leading: Stack(
+                        children: [
+                          FutureBuilder<DocumentSnapshot>(
+                            future: db
+                                .collection('users')
+                                .doc(participants
+                                    .firstWhere((id) => id != user!.uid))
+                                .get(),
+                            builder: (context, userSnapshot) {
+                              if (userSnapshot.hasError ||
+                                  !userSnapshot.hasData ||
+                                  !userSnapshot.data!.exists) {
+                                return CircleAvatar(
+                                  backgroundColor: const Color(0xFF1976D2),
+                                  child: Text(
+                                    chatroomTitle.isNotEmpty
+                                        ? chatroomTitle[0]
+                                        : '',
+                                    style: TextStyle(
+                                      fontWeight: isUnseen
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                );
+                              }
+
+                              final userData = userSnapshot.data!.data()
+                                  as Map<String, dynamic>;
+                              final profileImage =
+                                  userData['profile_image'] as String?;
+
+                              if (profileImage != null &&
+                                  profileImage.isNotEmpty) {
+                                return CircleAvatar(
+                                  backgroundImage: NetworkImage(profileImage),
+                                );
+                              } else {
+                                return CircleAvatar(
+                                  backgroundColor: const Color(0xFF1976D2),
+                                  child: Text(
+                                    chatroomTitle.isNotEmpty
+                                        ? chatroomTitle[0]
+                                        : '',
+                                    style: TextStyle(
+                                      fontWeight: isUnseen
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                          if (isUnseen)
+                            Positioned(
+                              right: 0,
+                              top: 0,
+                              child: Container(
+                                width: 12,
+                                height: 12,
+                                decoration: BoxDecoration(
+                                  color: Color(0xFF1976D2),
+                                  shape: BoxShape.circle,
+                                  border:
+                                      Border.all(color: Colors.white, width: 2),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      title: Text(
+                        chatroomTitle,
                         style: TextStyle(
                           fontWeight:
                               isUnseen ? FontWeight.bold : FontWeight.normal,
+                          color: isUnseen ? Color(0xFF1976D2) : Colors.black,
                         ),
                       ),
-                    ),
-                    title: Text(chatroomTitle),
-                    subtitle: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            lastMessage,
-                            overflow: TextOverflow.ellipsis,
+                      subtitle: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              lastMessage,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontWeight: isUnseen
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                                color: isUnseen
+                                    ? Color(0xFF1976D2)
+                                    : Colors.black54,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            formattedTimestamp,
                             style: TextStyle(
                               fontWeight: isUnseen
                                   ? FontWeight.bold
                                   : FontWeight.normal,
+                              color: isUnseen ? Color(0xFF1976D2) : Colors.grey,
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          formattedTimestamp,
-                          style: TextStyle(
-                            fontWeight:
-                                isUnseen ? FontWeight.bold : FontWeight.normal,
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 );

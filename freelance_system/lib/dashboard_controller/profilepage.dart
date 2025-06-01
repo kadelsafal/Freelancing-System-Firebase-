@@ -7,12 +7,18 @@ import 'package:freelance_system/profile_controller/mypost.dart';
 import 'package:freelance_system/providers/userProvider.dart';
 import 'package:provider/provider.dart';
 import '../chats/chatroom_screen.dart';
+import 'package:freelance_system/chats/chat_page.dart';
 
 class Profilepage extends StatefulWidget {
   final String userId;
   final String userName;
+  final String userImage;
 
-  const Profilepage({super.key, required this.userId, required this.userName});
+  const Profilepage(
+      {super.key,
+      required this.userId,
+      required this.userName,
+      required this.userImage});
 
   @override
   State<Profilepage> createState() => _ProfilepageState();
@@ -275,225 +281,297 @@ class _ProfilepageState extends State<Profilepage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.userName),
+        elevation: 0,
+        backgroundColor: const Color(0xFF1976D2),
+        title: Text(
+          widget.userName,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
+            color: Colors.white,
+            letterSpacing: 1.2,
+          ),
+        ),
+        foregroundColor: Colors.white,
+        centerTitle: false,
+        toolbarHeight: 70,
       ),
-      body: FutureBuilder<Map<String, dynamic>>(
-        future: userData,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError ||
-              !snapshot.hasData ||
-              snapshot.data!.isEmpty) {
-            return Center(child: Text("Error loading profile data."));
-          } else {
-            final data = snapshot.data!;
-            final rating = data['rating'] ?? 0.0;
-
-            return SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // User Avatar and Name
-                  SizedBox(height: 20),
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundColor: Colors.grey[300],
-                    child: Text(
-                      widget.userName[0].toUpperCase(),
-                      style:
-                          TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    widget.userName,
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 20),
-
-                  // Followers, Followed, and Rating
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      Column(
-                        children: [
-                          Text(
-                            followers.toString(),
-                            style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                          Text(
-                            "Followers",
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          Text(
-                            followed.toString(),
-                            style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                          Text(
-                            "Followed",
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        ],
+      body: Container(
+        color: const Color(0xFFF4F8FB),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // User Avatar and Name
+              const SizedBox(height: 20),
+              Center(
+                child: Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1976D2),
+                    borderRadius: BorderRadius.circular(60),
+                    border: Border.all(color: Colors.white, width: 3),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.blue.withOpacity(0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
                     ],
+                    image: widget.userImage.isNotEmpty
+                        ? DecorationImage(
+                            image: NetworkImage(widget.userImage),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
                   ),
-                  SizedBox(height: 20),
+                  child: widget.userImage.isEmpty
+                      ? Center(
+                          child: Text(
+                            widget.userName.isNotEmpty
+                                ? widget.userName[0].toUpperCase()
+                                : '?',
+                            style: const TextStyle(
+                              fontSize: 40,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        )
+                      : null,
+                ),
+              ),
+
+              const SizedBox(height: 16),
+              Text(
+                widget.userName,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1976D2),
+                ),
+              ),
+              const SizedBox(height: 8),
+              // Followers, Followed, and Rating
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
                   Column(
                     children: [
-                      RatingBar.builder(
-                        initialRating: experienceRating ??
-                            0, // Use the dynamically calculated rating
-                        minRating: 1,
-                        direction: Axis.horizontal,
-                        allowHalfRating: true,
-                        itemCount: 5,
-                        itemSize: 30.0,
-                        itemPadding: EdgeInsets.symmetric(horizontal: 1.0),
-                        itemBuilder: (context, _) => Icon(
-                          Icons.star,
-                          color: Colors.amber,
+                      Text(
+                        followers.toString(),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1976D2),
                         ),
-                        onRatingUpdate: (rating) {
-                          // Optional: Update rating if needed
-                          experienceRating = rating;
-                        },
                       ),
                       Text(
-                        "Rating",
-                        style: TextStyle(color: Colors.grey),
+                        "Followers",
+                        style: const TextStyle(
+                          color: Color(0xFF1976D2),
+                        ),
                       ),
-                      Text("Rated: ${experienceRating}",
-                          style: TextStyle(fontSize: 16)),
                     ],
                   ),
-                  SizedBox(height: 20),
-                  // Follow and Message Buttons
-                  // Follow & Message Buttons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  Column(
                     children: [
-                      if (!isFollowing && isFollowedByThem)
-                        ElevatedButton(
-                          onPressed: handleFollow,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.orange,
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 40, vertical: 12),
-                          ),
-                          child: Text("Follow Back"),
+                      Text(
+                        followed.toString(),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1976D2),
                         ),
-                      if (!isFollowing && !isFollowedByThem)
-                        ElevatedButton(
-                          onPressed: handleFollow,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 40, vertical: 12),
-                          ),
-                          child: Text("Follow"),
+                      ),
+                      Text(
+                        "Followed",
+                        style: const TextStyle(
+                          color: Color(0xFF1976D2),
                         ),
-                      if (isFollowing)
-                        ElevatedButton(
-                          onPressed: handleFollow,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.grey,
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 40, vertical: 12),
-                          ),
-                          child: Text("Following"),
-                        ),
-                      if (isFollowing || isFollowedByThem)
-                        ElevatedButton(
-                          onPressed: () async {
-                            try {
-                              final currentUserId =
-                                  FirebaseAuth.instance.currentUser!.uid;
-                              final currentUserName = Provider.of<Userprovider>(
-                                      context,
-                                      listen: false)
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Column(
+                children: [
+                  RatingBar.builder(
+                    initialRating: experienceRating ??
+                        0, // Use the dynamically calculated rating
+                    minRating: 1,
+                    direction: Axis.horizontal,
+                    allowHalfRating: true,
+                    itemCount: 5,
+                    itemSize: 30.0,
+                    itemPadding: const EdgeInsets.symmetric(horizontal: 1.0),
+                    itemBuilder: (context, _) => Icon(
+                      Icons.star,
+                      color: Colors.amber,
+                    ),
+                    onRatingUpdate: (rating) {
+                      // Optional: Update rating if needed
+                      experienceRating = rating;
+                    },
+                  ),
+                  Text(
+                    "Rating",
+                    style: const TextStyle(
+                      color: Color(0xFF1976D2),
+                    ),
+                  ),
+                  Text("Rated: ${experienceRating}",
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFF1976D2),
+                      )),
+                ],
+              ),
+              const SizedBox(height: 20),
+              // Follow and Message Buttons
+              // Follow & Message Buttons
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  if (!isFollowing && isFollowedByThem)
+                    ElevatedButton(
+                      onPressed: handleFollow,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1976D2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 40, vertical: 12),
+                      ),
+                      child: const Text(
+                        "Follow Back",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  if (!isFollowing && !isFollowedByThem)
+                    ElevatedButton(
+                      onPressed: handleFollow,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1976D2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 40, vertical: 12),
+                      ),
+                      child: const Text(
+                        "Follow",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  if (isFollowing && isFollowedByThem)
+                    ElevatedButton(
+                      onPressed: handleFollow,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1976D2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 40, vertical: 12),
+                      ),
+                      child: const Text(
+                        "Unfollow",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  if (isFollowing && !isFollowedByThem)
+                    ElevatedButton(
+                      onPressed: handleFollow,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1976D2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 40, vertical: 12),
+                      ),
+                      child: const Text(
+                        "Following",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  if (isFollowing && isFollowedByThem)
+                    ElevatedButton(
+                      onPressed: () async {
+                        try {
+                          final currentUserId =
+                              FirebaseAuth.instance.currentUser!.uid;
+                          final currentUserName =
+                              Provider.of<Userprovider>(context, listen: false)
                                   .userName;
 
-                              final chatroomId =
-                                  await ChatService.createOrUpdateChatroom(
-                                currentUserId: currentUserId,
-                                currentUserName: currentUserName,
-                                otherUserId: widget.userId,
-                                otherUserName: widget.userName,
-                                lastMessage: lastMessage,
-                              );
+                          final chatroomId =
+                              await ChatService.createOrUpdateChatroom(
+                            currentUserId: currentUserId,
+                            currentUserName: currentUserName,
+                            otherUserId: widget.userId,
+                            otherUserName: widget.userName,
+                            lastMessage: lastMessage,
+                          );
 
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ChatroomScreen(
-                                    chatroomId: chatroomId,
-                                    chatroomName: widget.userName,
-                                    userId: widget.userId,
-                                  ),
-                                ),
-                              );
-                            } catch (e) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text(
-                                        "Failed to open chatroom. Please try again.")),
-                              );
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 40, vertical: 12),
-                          ),
-                          child: Text("Message"),
-                        ),
-                    ],
-                  ),
-                  SizedBox(height: 20),
-
-// Show Posts if both follow each other
-                  if (isFollowing && isFollowedByThem)
-                    MyPost(
-                      userId: widget.userId,
-                      isOwnProfile: FirebaseAuth.instance.currentUser!.uid ==
-                          widget.userId,
-                    )
-                  else
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Container(
-                        padding: EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.lock_outline, color: Colors.blue),
-                            SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                "Follow each other to view posts. Start connecting now!",
-                                style: TextStyle(
-                                    fontSize: 16, color: Colors.black87),
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ChatroomScreen(
+                                chatroomId: chatroomId,
+                                chatroomName: widget.userName,
+                                userId: widget.userId,
                               ),
                             ),
-                          ],
-                        ),
+                          );
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text(
+                                    "Failed to open chatroom. Please try again.")),
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1976D2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 40, vertical: 12),
+                      ),
+                      child: const Text(
+                        "Message",
+                        style: TextStyle(color: Colors.white),
                       ),
                     ),
                 ],
               ),
-            );
-          }
-        },
+              const SizedBox(height: 20),
+
+// Show Posts if both follow each other
+              if (isFollowing && isFollowedByThem)
+                MyPost(
+                  userId: widget.userId,
+                  isOwnProfile:
+                      FirebaseAuth.instance.currentUser!.uid == widget.userId,
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.lock_outline, color: Colors.blue),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            "Follow each other to view posts. Start connecting now!",
+                            style:
+                                TextStyle(fontSize: 16, color: Colors.black87),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }

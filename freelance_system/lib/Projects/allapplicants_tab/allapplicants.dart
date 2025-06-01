@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:freelance_system/Projects/allapplicants_tab/individualapplicant.dart';
 import 'package:freelance_system/Projects/allapplicants_tab/teamapplicant.dart';
-import 'package:freelance_system/Projects/applicants.dart';
-import 'package:freelance_system/Projects/teamdetails.dart';
+
 import 'package:url_launcher/url_launcher.dart';
 
 class AllApplicants extends StatelessWidget {

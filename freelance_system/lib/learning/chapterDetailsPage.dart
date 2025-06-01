@@ -18,7 +18,7 @@ class ChapterDetailsPage extends StatefulWidget {
 class _ChapterDetailsPageState extends State<ChapterDetailsPage> {
   Map<String, dynamic>? chapterData;
   late VideoPlayerController _videoPlayerController;
-  late CustomVideoPlayerController _customVideoPlayerController;
+  CustomVideoPlayerController? _customVideoPlayerController;
   bool _isLoading = true;
   String? _videoUrl;
   double? _videoDuration;
@@ -88,7 +88,7 @@ class _ChapterDetailsPageState extends State<ChapterDetailsPage> {
 
   @override
   void dispose() {
-    _customVideoPlayerController.dispose();
+    _customVideoPlayerController?.dispose();
     super.dispose();
   }
 
@@ -98,10 +98,13 @@ class _ChapterDetailsPageState extends State<ChapterDetailsPage> {
       appBar: AppBar(
         title: Text(
           'Chapter ${widget.chapterId} Details',
-          style: TextStyle(color: Colors.white), // Ensures title text is white
+          style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 22,
+              letterSpacing: 0.5),
         ),
-        backgroundColor:
-            Colors.deepPurple, // Sets background color to deep purple
+        backgroundColor: const Color(0xFF1976D2),
         iconTheme: IconThemeData(color: Colors.white),
         toolbarHeight: 100, // Ensures back icon is white
       ),
@@ -114,11 +117,18 @@ class _ChapterDetailsPageState extends State<ChapterDetailsPage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        CircularProgressIndicator(),
+                        CircularProgressIndicator(
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Color(0xFF1976D2)),
+                        ),
                         const SizedBox(height: 20),
-                        Text(
+                        const Text(
                           'Loading video...',
-                          style: TextStyle(color: Colors.white),
+                          style: TextStyle(
+                            color: Color(0xFF1976D2),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
                         ),
                       ],
                     ),
@@ -127,59 +137,84 @@ class _ChapterDetailsPageState extends State<ChapterDetailsPage> {
               : chapterData == null
                   ? const Center(child: Text("Chapter not found"))
                   : SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 24),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          SizedBox(
-                            height: 30,
-                          ),
+                          const SizedBox(height: 10),
                           Text(
-                            "${chapterData!["chapter_title"] ?? 'No Title'}",
+                            chapterData!["chapter_title"] ?? 'No Title',
                             style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.deepPurple),
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1976D2),
+                            ),
                             softWrap: true,
                           ),
-                          const SizedBox(height: 30),
-                          SizedBox(
-                            height: 250, // Adjust height as needed
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(
-                                  16), // Adjust radius as needed
-                              child: CustomVideoPlayer(
-                                customVideoPlayerController:
-                                    _customVideoPlayerController,
+                          const SizedBox(height: 24),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.blue.withOpacity(0.08),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                              border: Border.all(
+                                  color: Color(0xFF1976D2), width: 1.2),
+                            ),
+                            padding: const EdgeInsets.all(16),
+                            child: SizedBox(
+                              height: 250,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: _customVideoPlayerController != null
+                                    ? CustomVideoPlayer(
+                                        customVideoPlayerController:
+                                            _customVideoPlayerController!,
+                                      )
+                                    : const SizedBox.shrink(),
                               ),
                             ),
                           ),
-
-                          const SizedBox(height: 40),
+                          const SizedBox(height: 32),
                           // Directly displaying the description below the video
                           if (chapterData!["chapter_description"] != null)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            Container(
+                              width: double.infinity,
+                              margin: const EdgeInsets.only(bottom: 24),
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.blue[50],
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                               child: Text(
                                 chapterData!["chapter_description"] ??
                                     "No description available",
                                 textAlign: TextAlign.justify,
-                                style: const TextStyle(fontSize: 16),
+                                style: const TextStyle(
+                                    fontSize: 16, color: Color(0xFF1976D2)),
                                 softWrap: true,
                               ),
                             ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 10),
                           // Display learning points
                           if (chapterData!["chapter_learningPoints"] != null)
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text(
-                                  "What You Will Learn ?",
+                                  "What You Will Learn?",
                                   style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.deepPurple),
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1976D2),
+                                    letterSpacing: 0.5,
+                                  ),
                                 ),
                                 const SizedBox(height: 10),
                                 ...List.generate(
@@ -217,9 +252,11 @@ class _ChapterDetailsPageState extends State<ChapterDetailsPage> {
                                 const Text(
                                   "Uploaded Files",
                                   style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.deepPurple),
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1976D2),
+                                    letterSpacing: 0.5,
+                                  ),
                                 ),
                                 const SizedBox(height: 10),
                                 ...List.generate(
@@ -259,10 +296,19 @@ class _ChapterDetailsPageState extends State<ChapterDetailsPage> {
                                 Navigator.pop(context);
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.deepPurple,
+                                backgroundColor: const Color(0xFF1976D2),
                                 foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 32, vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 2,
                               ),
-                              child: const Text('Back'),
+                              child: const Text('Back',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16)),
                             ),
                           ),
                           const SizedBox(height: 40),

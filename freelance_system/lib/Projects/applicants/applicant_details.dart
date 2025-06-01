@@ -58,7 +58,7 @@ class ApplicantDetails extends StatelessWidget {
               style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Colors.deepPurple)),
+                  color: Colors.blue)),
           const SizedBox(height: 10),
           const Text("Description",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -73,7 +73,7 @@ class ApplicantDetails extends StatelessWidget {
             children: skills
                 .map((skill) => Chip(
                       label: Text(skill),
-                      backgroundColor: Colors.deepPurple.shade100,
+                      backgroundColor: const Color.fromARGB(255, 189, 219, 250),
                     ))
                 .toList(),
           ),

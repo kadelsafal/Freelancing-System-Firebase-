@@ -94,10 +94,13 @@ class _SolvedIssuesState extends State<SolvedIssues> {
                               children: [
                                 CircleAvatar(
                                   radius: 18,
+                                  backgroundColor: const Color(0xFF1976D2),
                                   child: Text(
                                     issueData['author'][0],
                                     style: const TextStyle(
-                                        fontWeight: FontWeight.bold),
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
@@ -122,49 +125,13 @@ class _SolvedIssuesState extends State<SolvedIssues> {
                             ),
                             const SizedBox(height: 5),
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                if (issueData['role'] == widget.role)
-                                  Container(
-                                    padding: const EdgeInsets.only(
-                                        left: 2, right: 2),
-                                    decoration: BoxDecoration(
-                                      color:
-                                          _getStatusColor(issueData['status']),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: DropdownButton<String>(
-                                      value: issueData['status'],
-                                      dropdownColor:
-                                          _getStatusColor(issueData['status']),
-                                      iconEnabledColor: _getStatusTextColor(
-                                          issueData['status']),
-                                      underline:
-                                          const SizedBox(), // Remove underline
-                                      style: TextStyle(
-                                        color: _getStatusTextColor(
-                                            issueData['status']),
-                                      ),
-                                      onChanged: (newStatus) {
-                                        if (newStatus != null)
-                                          _changeStatus(newStatus);
-                                      },
-                                      items: const [
-                                        DropdownMenuItem<String>(
-                                          value: 'Solving',
-                                          child: Text('Solving'),
-                                        ),
-                                        DropdownMenuItem<String>(
-                                          value: 'Solved',
-                                          child: Text('Solved'),
-                                        ),
-                                        DropdownMenuItem<String>(
-                                          value: 'Not Solved',
-                                          child: Text('Not Solved'),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                                Text(
+                                  "Posted on: $formattedTime",
+                                  style: const TextStyle(
+                                      fontSize: 11, color: Colors.grey),
+                                ),
                                 if (issueData['role'] != widget.role)
                                   Container(
                                     padding: const EdgeInsets.all(8),
@@ -184,11 +151,8 @@ class _SolvedIssuesState extends State<SolvedIssues> {
                                   ),
                               ],
                             ),
-                            const SizedBox(
-                              height: 10,
-                            ),
-                            // Images
-                            if (imageUrls.isNotEmpty)
+                            if (imageUrls.isNotEmpty) ...[
+                              const SizedBox(height: 10),
                               SizedBox(
                                 width: MediaQuery.of(context).size.width * 0.8,
                                 child: Imageslider(
@@ -197,14 +161,7 @@ class _SolvedIssuesState extends State<SolvedIssues> {
                                   imageUrls: imageUrls,
                                 ),
                               ),
-                            const SizedBox(
-                              height: 10,
-                            ),
-                            Text(
-                              "Posted on: $formattedTime",
-                              style: const TextStyle(
-                                  fontSize: 11, color: Colors.grey),
-                            ),
+                            ],
                           ],
                         ),
                       ),

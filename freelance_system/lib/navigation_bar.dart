@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:freelance_system/chats/chat_page.dart';
 import 'package:freelance_system/screens/dashboard.dart';
+import 'package:freelance_system/screens/profile.dart';
 import 'package:freelance_system/screens/project.dart';
 import 'package:freelance_system/screens/resume.dart';
 import 'package:freelance_system/screens/elearning.dart';
-import 'package:freelance_system/screens/payment.dart';
 
 class NavigationMenu extends StatefulWidget {
-  const NavigationMenu({super.key});
+  final int initialIndex;
+  const NavigationMenu({super.key, required this.initialIndex});
 
   @override
   State<NavigationMenu> createState() => _NavigationMenuState();
@@ -16,31 +16,20 @@ class NavigationMenu extends StatefulWidget {
 class _NavigationMenuState extends State<NavigationMenu> {
   int _selectedIndex = 0;
   late PageController _pageController;
-
   late final List<Widget> screens;
-  int unseenMessagesCount = 0;
 
   @override
   void initState() {
     super.initState();
+    _selectedIndex = widget.initialIndex;
     _pageController = PageController(initialPage: _selectedIndex);
-
-    // Safely initialize screens with fallback widgets in case any screen fails
     screens = [
       const Dashboard(),
-      _safeScreen(const ProjectScreen()),
-      _safeScreen(const ResumeScreen()),
-      _safeScreen(const LearningHub()),
-      _safeScreen(const ChatPage()),
+      const ProjectScreen(),
+      const ResumeScreen(),
+      const LearningHub(),
+      const ProfileScreen(),
     ];
-  }
-
-  Widget _safeScreen(Widget screen) {
-    try {
-      return screen;
-    } catch (e) {
-      return Center(child: Text("Failed to load screen: $e"));
-    }
   }
 
   @override
@@ -54,55 +43,85 @@ class _NavigationMenuState extends State<NavigationMenu> {
         },
         children: screens,
       ),
-      bottomNavigationBar: NavigationBarTheme(
-        data: NavigationBarThemeData(
-          indicatorColor: Colors.blue.shade100,
-          labelTextStyle: WidgetStateProperty.all(
-            const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-          ),
-          iconTheme: WidgetStateProperty.all(
-            const IconThemeData(size: 24),
-          ),
+      bottomNavigationBar: Container(
+        margin: const EdgeInsets.only(left: 12, right: 12, bottom: 14),
+        decoration: BoxDecoration(
+          color: const Color.fromARGB(238, 0, 128, 255),
+          borderRadius: BorderRadius.circular(30),
         ),
-        child: NavigationBar(
-          height: 70,
-          backgroundColor: Colors.white,
-          selectedIndex: _selectedIndex,
-          onDestinationSelected: (index) {
-            if (_selectedIndex != index) {
+        child: Padding(
+          padding: const EdgeInsets.only(top: 6.0, bottom: 6.0),
+          child: BottomNavigationBar(
+            currentIndex: _selectedIndex,
+            onTap: (index) {
               setState(() {
                 _selectedIndex = index;
                 _pageController.jumpToPage(index);
               });
-            }
-          },
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.home_max_rounded),
-              selectedIcon: Icon(Icons.home_max_rounded, color: Colors.blue),
-              label: "Home",
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.work_outline_rounded),
-              selectedIcon:
-                  Icon(Icons.work_outline_rounded, color: Colors.blue),
-              label: "Projects",
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.description_rounded),
-              selectedIcon: Icon(Icons.description_rounded, color: Colors.blue),
-              label: "Resume",
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.book_online_rounded),
-              selectedIcon: Icon(Icons.book_online_rounded, color: Colors.blue),
-              label: "E-learning",
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.telegram),
-              selectedIcon: Icon(Icons.telegram_outlined, color: Colors.blue),
-              label: "Chats",
+            },
+            backgroundColor: Colors.transparent,
+            type: BottomNavigationBarType.fixed,
+            elevation: 0,
+            selectedFontSize: 0,
+            unselectedFontSize: 0,
+            showUnselectedLabels: false,
+            selectedItemColor: Colors.black,
+            unselectedItemColor: Colors.white,
+            items: List.generate(5, (index) {
+              return BottomNavigationBarItem(
+                  icon: _buildNavItem(index), label: '');
+            }),
+          ),
+        ),
+      ),
+    );
+  }
+
+  final List<IconData> _icons = [
+    Icons.home_max_rounded,
+    Icons.work_outline_rounded,
+    Icons.description_rounded,
+    Icons.book,
+    Icons.person,
+  ];
+
+  final List<String> _labels = [
+    "Home",
+    "Projects",
+    "Resume",
+    "E-learning",
+    "Profile",
+  ];
+
+  Widget _buildNavItem(int index) {
+    final bool isSelected = index == _selectedIndex;
+    return Container(
+      padding: const EdgeInsets.symmetric(
+          horizontal: 4, vertical: 4), // Padding remains same
+      decoration: isSelected
+          ? BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
             )
+          : null,
+      child: SizedBox(
+        width: 70, // Fixed width for equal sizing of nav items
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              _icons[index],
+              color: isSelected ? Colors.black : Colors.white,
+              size: isSelected ? 24 : 24, // Icon size remains the same
+            ),
+            Text(
+              _labels[index],
+              style: TextStyle(
+                color: isSelected ? Colors.black : Colors.white,
+                fontSize: isSelected ? 12 : 12, // Text size remains the same
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+              ),
+            ),
           ],
         ),
       ),

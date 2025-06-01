@@ -106,86 +106,128 @@ class _ExperiencesDetailsState extends State<ExperiencesDetails> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Add Experience Details")),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(
+          "Add Experience Details",
+          style: TextStyle(
+            color: Colors.blue.shade700,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        iconTheme: IconThemeData(color: Colors.blue.shade700),
+      ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: EdgeInsets.all(12.0),
+          padding: EdgeInsets.all(20.0),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Text(
+                  "Work Experience",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 24,
+                    color: Colors.blue.shade700,
+                  ),
+                ),
+                SizedBox(height: 20),
+
                 // Dynamically display experience fields
                 ..._experienceFields.map((experienceField) {
                   int index = _experienceFields.indexOf(experienceField);
-                  return Column(
-                    children: [
-                      _buildInputField(
-                        label: "Company",
-                        controller: experienceField['company']!,
-                        icon: Icons.business,
-                        validatorMessage: "Please enter the company name",
-                      ),
-                      _buildInputField(
-                        label: "Position",
-                        controller: experienceField['position']!,
-                        icon: Icons.work,
-                        validatorMessage: "Please enter the position",
-                      ),
-                      _buildDateField(
-                        label: "Start Date",
-                        controller: experienceField['startDate']!,
-                        icon: Icons.calendar_today,
-                        validatorMessage: "Please enter the start date",
-                      ),
-                      _buildDateField(
-                        label: "End Date",
-                        controller: experienceField['endDate']!,
-                        icon: Icons.calendar_today,
-                        validatorMessage: "Please enter the end date",
-                      ),
-                      _buildInputField(
-                        label: "Description",
-                        controller: experienceField['description']!,
-                        maxLines: 3,
-                        icon: Icons.description,
-                        validatorMessage: "Please enter a description",
-                      ),
-                      if (_experienceFields.length > 1)
-                        IconButton(
-                          icon: Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => _removeExperienceField(index),
+                  return Container(
+                    margin: EdgeInsets.only(bottom: 20),
+                    padding: EdgeInsets.all(15),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(15),
+                      border: Border.all(color: Colors.blue.shade200),
+                    ),
+                    child: Column(
+                      children: [
+                        _buildInputField(
+                          label: "Company",
+                          controller: experienceField['company']!,
+                          icon: Icons.business,
+                          validatorMessage: "Please enter the company name",
                         ),
-                      SizedBox(height: 15),
-                    ],
+                        _buildInputField(
+                          label: "Position",
+                          controller: experienceField['position']!,
+                          icon: Icons.work,
+                          validatorMessage: "Please enter the position",
+                        ),
+                        _buildDateField(
+                          label: "Start Date",
+                          controller: experienceField['startDate']!,
+                          icon: Icons.calendar_today,
+                          validatorMessage: "Please enter the start date",
+                        ),
+                        _buildDateField(
+                          label: "End Date",
+                          controller: experienceField['endDate']!,
+                          icon: Icons.calendar_today,
+                          validatorMessage: "Please enter the end date",
+                        ),
+                        _buildInputField(
+                          label: "Description",
+                          controller: experienceField['description']!,
+                          maxLines: 3,
+                          icon: Icons.description,
+                          validatorMessage: "Please enter a description",
+                        ),
+                        if (_experienceFields.length > 1)
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: IconButton(
+                              icon: Icon(Icons.delete,
+                                  color: Colors.red.shade400),
+                              onPressed: () => _removeExperienceField(index),
+                            ),
+                          ),
+                      ],
+                    ),
                   );
                 }),
-                // Plus Icon to add new experience fields
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.add),
-                      onPressed: _addExperienceField,
-                      color: Colors.deepPurple,
-                      iconSize: 40,
-                    ),
-                  ],
+
+                // Add Experience Button
+                Align(
+                  alignment: Alignment.center,
+                  child: IconButton(
+                    icon: Icon(Icons.add_circle_outline),
+                    onPressed: _addExperienceField,
+                    color: Colors.blue.shade700,
+                    iconSize: 32,
+                  ),
                 ),
-                SizedBox(height: 20),
+
+                SizedBox(height: 30),
+
+                // Submit Button
                 Center(
                   child: ElevatedButton(
                     onPressed: _submitExperienceDetails,
                     style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color.fromARGB(255, 66, 1, 107),
-                        foregroundColor:
-                            Colors.white // Set the background color to purple
-                        ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(10.0),
-                      child: Text(
-                        "Next",
-                        style: TextStyle(fontSize: 20),
+                      backgroundColor: Colors.blue.shade700,
+                      foregroundColor: Colors.white,
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 2,
+                    ),
+                    child: Text(
+                      "Next",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
@@ -206,20 +248,40 @@ class _ExperiencesDetailsState extends State<ExperiencesDetails> {
     required String validatorMessage,
   }) {
     return Padding(
-      padding: EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(bottom: 15),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-          SizedBox(height: 10),
+          Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: Colors.blue.shade700,
+            ),
+          ),
+          SizedBox(height: 8),
           TextFormField(
             controller: controller,
             maxLines: maxLines,
             decoration: InputDecoration(
               labelText: 'Enter $label',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(icon),
+              labelStyle: TextStyle(color: Colors.blue.shade700),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.blue.shade200),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.blue.shade700),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.blue.shade200),
+              ),
+              prefixIcon: Icon(icon, color: Colors.blue.shade700),
+              filled: true,
+              fillColor: Colors.white,
             ),
             validator: (value) {
               if (value == null || value.isEmpty) {
@@ -241,23 +303,51 @@ class _ExperiencesDetailsState extends State<ExperiencesDetails> {
     required String validatorMessage,
   }) {
     return Padding(
-      padding: EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(bottom: 15),
       child: GestureDetector(
         onTap: () => _selectDate(context, controller),
         child: AbsorbPointer(
-          child: TextFormField(
-            controller: controller,
-            decoration: InputDecoration(
-              labelText: label,
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(icon),
-            ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return validatorMessage;
-              }
-              return null;
-            },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.blue.shade700,
+                ),
+              ),
+              SizedBox(height: 8),
+              TextFormField(
+                controller: controller,
+                decoration: InputDecoration(
+                  labelText: 'Select $label',
+                  labelStyle: TextStyle(color: Colors.blue.shade700),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.blue.shade200),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.blue.shade700),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.blue.shade200),
+                  ),
+                  prefixIcon: Icon(icon, color: Colors.blue.shade700),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return validatorMessage;
+                  }
+                  return null;
+                },
+              ),
+            ],
           ),
         ),
       ),

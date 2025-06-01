@@ -9,6 +9,9 @@ import 'package:freelance_system/providers/userProvider.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../dashboard_controller/profilepage.dart';
+import 'package:rxdart/rxdart.dart';
+import 'package:freelance_system/chats/chat_service.dart';
+import 'package:freelance_system/chats/team_service.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
@@ -69,14 +72,24 @@ class _DashboardState extends State<Dashboard> {
     return GestureDetector(
       onTap: () => _unfocusKeyboard(context),
       child: Scaffold(
+        backgroundColor: Colors.white,
         appBar: AppBar(
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const Text("Swatantra Pesa"),
-              const Spacer(),
-              Stack(
+          elevation: 2,
+          backgroundColor: Colors.white,
+          title: const Text(
+            "QuickLance",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 28,
+              color: Color(0xFF1976D2),
+              letterSpacing: 1.2,
+              fontFamily: 'Montserrat',
+            ),
+          ),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 16.0),
+              child: Row(
                 children: [
                   IconButton(
                     onPressed: () {
@@ -86,190 +99,283 @@ class _DashboardState extends State<Dashboard> {
                             builder: (context) => Notifications()),
                       );
                     },
-                    icon: const Icon(Icons.notifications_active_outlined,
-                        size: 30, color: Color.fromARGB(255, 0, 0, 0)),
-                  ),
-                  // Real-time Unread Notifications Count
-                  StreamBuilder<QuerySnapshot>(
-                    stream: FirebaseFirestore.instance
-                        .collection('users')
-                        .doc(currentUserId)
-                        .collection('notifications')
-                        .where('read',
-                            isEqualTo: false) // Only unread notifications
-                        .snapshots(),
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                        // If no notifications are found in the subcollection
-                        print("No unread notifications found.");
-                        return SizedBox.shrink();
-                      }
-
-                      int unreadCount = snapshot.data!.docs.length;
-
-                      return Positioned(
-                        right: 8,
-                        top: 8,
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: const BoxDecoration(
-                              color: Colors.red, shape: BoxShape.circle),
-                          child: Text(
-                            '$unreadCount',
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold),
-                          ),
+                    icon: Stack(
+                      children: [
+                        const Icon(
+                          Icons.notifications_outlined,
+                          size: 28,
+                          color: Color(0xFF1976D2),
                         ),
+                        StreamBuilder<QuerySnapshot>(
+                          stream: FirebaseFirestore.instance
+                              .collection('users')
+                              .doc(FirebaseAuth.instance.currentUser!.uid)
+                              .collection('notifications')
+                              .where('seen', isEqualTo: false)
+                              .snapshots(),
+                          builder: (context, snapshot) {
+                            if (snapshot.hasData &&
+                                snapshot.data!.docs.isNotEmpty) {
+                              return Positioned(
+                                right: 0,
+                                top: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.all(2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  constraints: const BoxConstraints(
+                                    minWidth: 16,
+                                    minHeight: 16,
+                                  ),
+                                  child: Text(
+                                    snapshot.data!.docs.length.toString(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          },
+                        ),
+                      ],
+                    ),
+                    tooltip: 'Notifications',
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const ChatPage()),
                       );
                     },
+                    icon: Stack(
+                      children: [
+                        const Icon(
+                          Icons.chat_outlined,
+                          size: 28,
+                          color: Color(0xFF1976D2),
+                        ),
+                        StreamBuilder<int>(
+                          stream: Rx.combineLatest2(
+                            ChatService.getUnseenChatsCountStream(
+                                currentUserId),
+                            TeamService.getUnseenMessagesCountStream(
+                                currentUserId),
+                            (int chatCount, int teamCount) =>
+                                chatCount + teamCount,
+                          ),
+                          builder: (context, snapshot) {
+                            if (snapshot.hasData && snapshot.data! > 0) {
+                              return Positioned(
+                                right: 0,
+                                top: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.all(2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  constraints: const BoxConstraints(
+                                    minWidth: 16,
+                                    minHeight: 16,
+                                  ),
+                                  child: Text(
+                                    snapshot.data!.toString(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          },
+                        ),
+                      ],
+                    ),
+                    tooltip: 'Chat',
                   ),
                 ],
               ),
-            ],
-          ),
-          backgroundColor: const Color.fromARGB(0, 255, 255, 255),
-          foregroundColor: const Color.fromARGB(255, 0, 0, 0),
-          toolbarHeight: 90,
+            ),
+          ],
+          foregroundColor: Color(0xFF1976D2),
+          toolbarHeight: 80,
         ),
-        drawer: Drawer(
-          child: SizedBox(
-            width: MediaQuery.of(context).size.width * 0.5, // Adjust the width
-            child: MyDrawer(), // Use your custom drawer
-          ),
-        ),
-        body: SingleChildScrollView(
-          child: Column(
-            children: [
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0),
-                child: TextField(
-                  controller: searchController,
-                  decoration: InputDecoration(
-                    labelStyle: TextStyle(
-                      color: const Color.fromARGB(
-                          255, 103, 103, 103), // Set label text color to purple
-                    ),
-                    labelText: "Search here",
-                    contentPadding: EdgeInsets.symmetric(
-                        vertical: 10, horizontal: 20), // Adjust padding
-                    border: OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(50.0), // Fully rounded border
-                      borderSide: BorderSide(
-                          color: Colors.grey), // Optional border color
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(50.0),
-                      borderSide: BorderSide(
-                          color: const Color.fromARGB(255, 102, 99, 99),
-                          width: 2.5),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(50.0),
-                      borderSide: BorderSide(
-                          color: Colors.deepPurple,
-                          width: 2.0), // Highlight color on focus
-                    ),
-                    suffixIcon: IconButton(
-                      onPressed: () {
-                        setState(() {
-                          searchQuery =
-                              searchController.text.trim().toLowerCase();
-                        });
-                      },
-                      icon: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.deepPurple,
-                          borderRadius: BorderRadius.circular(
-                              50.0), // Fully rounded icon button
-                        ),
-                        child: const Padding(
-                          padding: EdgeInsets.all(6.0),
-                          child: Icon(
-                            Icons.search,
-                            size: 30,
-                            color: Colors.white,
+        body: Container(
+          color: const Color(0xFFF4F8FB),
+          child: RefreshIndicator(
+            onRefresh: () async {
+              setState(() {});
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 18.0, vertical: 16.0),
+                    child: Material(
+                      elevation: 2,
+                      borderRadius: BorderRadius.circular(30.0),
+                      child: TextField(
+                        controller: searchController,
+                        textInputAction: TextInputAction.search,
+                        onSubmitted: (value) {
+                          setState(() {
+                            searchQuery = value.trim().toLowerCase();
+                          });
+                        },
+                        style: const TextStyle(
+                            fontSize: 16, color: Colors.black87),
+                        decoration: InputDecoration(
+                          hintText: "Search projects or clients",
+                          hintStyle: TextStyle(
+                              color: Colors.grey.shade600, fontSize: 16),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(
+                              vertical: 14, horizontal: 22),
+                          isDense: true,
+                          prefixIcon: const Icon(Icons.search,
+                              color: Color(0xFF1976D2), size: 22),
+                          suffixIcon: searchController.text.isNotEmpty
+                              ? IconButton(
+                                  onPressed: () {
+                                    searchController.clear();
+                                    setState(() {
+                                      searchQuery = '';
+                                    });
+                                  },
+                                  icon: Icon(Icons.clear,
+                                      color: Colors.grey.shade600, size: 20),
+                                )
+                              : null,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30.0),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30.0),
+                            borderSide: BorderSide(
+                                color: Colors.grey.shade300, width: 1.0),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30.0),
+                            borderSide: const BorderSide(
+                                color: Color(0xFF1976D2), width: 1.5),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              if (searchQuery.isNotEmpty)
-                StreamBuilder<QuerySnapshot>(
-                  stream: FirebaseFirestore.instance
-                      .collection('users')
-                      .snapshots(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    } else if (snapshot.hasError) {
-                      return Center(child: Text("Error: ${snapshot.error}"));
-                    } else if (!snapshot.hasData ||
-                        snapshot.data!.docs.isEmpty) {
-                      return const Center(child: Text("No users found."));
-                    }
+                  const SizedBox(height: 10),
+                  if (searchQuery.isNotEmpty)
+                    StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('users')
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                              child: CircularProgressIndicator());
+                        } else if (snapshot.hasError) {
+                          return Center(
+                              child: Text("Error: ${snapshot.error}"));
+                        } else if (!snapshot.hasData ||
+                            snapshot.data!.docs.isEmpty) {
+                          return const Center(child: Text("No users found."));
+                        }
 
-                    // Filter results dynamically for case-insensitive match and excluding current user
-                    var users = snapshot.data!.docs.where((userDoc) {
-                      String fullName =
-                          userDoc['Full Name'].toString().toLowerCase();
-                      String uid =
-                          userDoc['id'] ?? userDoc.id; // fallback to doc.id
-                      return fullName.contains(searchQuery.toLowerCase()) &&
-                          uid != currentUserId;
-                    }).toList();
+                        // Filter results dynamically for case-insensitive match and excluding current user
+                        var users = snapshot.data!.docs.where((userDoc) {
+                          String fullName = (userDoc.data()
+                                      as Map<String, dynamic>)['Full Name']
+                                  ?.toString()
+                                  .toLowerCase() ??
+                              '';
 
-                    if (users.isEmpty) {
-                      return const Center(child: Text("No users found."));
-                    }
+                          String uid =
+                              userDoc['id'] ?? userDoc.id; // fallback to doc.id
+                          return fullName.contains(searchQuery.toLowerCase()) &&
+                              uid != currentUserId;
+                        }).toList();
 
-                    return ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: users.length,
-                      itemBuilder: (context, index) {
-                        var userDoc = users[index];
-                        String userId = userDoc.id;
-                        String userName = userDoc['Full Name'];
-                        String userIcon = userName.isNotEmpty
-                            ? userName[0].toUpperCase()
-                            : '?';
+                        if (users.isEmpty) {
+                          return const Center(child: Text("No users found."));
+                        }
 
-                        return ListTile(
-                          leading: CircleAvatar(
-                            child: Text(userIcon),
-                          ),
-                          title: Text(userName),
-                          onTap: () {
-                            // Clear the search query and text field first
-                            setState(() {
-                              searchQuery =
-                                  ''; // Explicitly reset searchQuery to trigger a rebuild
-                            });
-                            searchController.clear();
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => Profilepage(
-                                  userId: userId,
-                                  userName: userName,
-                                ),
-                              ),
+                        return ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: users.length,
+                          itemBuilder: (context, index) {
+                            var userDoc = users[index];
+                            String userId = userDoc.id;
+                            String userName = userDoc['Full Name'] ?? '';
+                            String userImage =
+                                userDoc['profile_image']?.isEmpty ?? true
+                                    ? ''
+                                    : userDoc['profile_image'];
+                            String userIcon = userName.isNotEmpty
+                                ? userName[0].toUpperCase()
+                                : '?';
+
+                            return ListTile(
+                              leading: userImage.isNotEmpty
+                                  ? CircleAvatar(
+                                      backgroundImage: NetworkImage(userImage),
+                                    )
+                                  : CircleAvatar(
+                                      backgroundColor: Color(0xFF1976D2),
+                                      child: Text(
+                                        userIcon,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 18,
+                                        ),
+                                      ),
+                                    ),
+                              title: Text(userName),
+                              onTap: () {
+                                // Clear the search query and text field first
+                                setState(() {
+                                  searchQuery =
+                                      ''; // Explicitly reset searchQuery to trigger a rebuild
+                                });
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => Profilepage(
+                                      userId: userId,
+                                      userName: userName,
+                                      userImage: userImage,
+                                    ),
+                                  ),
+                                );
+
+                                searchController.clear();
+                              },
                             );
                           },
                         );
                       },
-                    );
-                  },
-                ),
-              if (searchQuery.isEmpty) Post(userId: userProvider.userId),
-            ],
+                    ),
+                  if (searchQuery.isEmpty) Post(userId: userProvider.userId),
+                ],
+              ),
+            ),
           ),
         ),
       ),

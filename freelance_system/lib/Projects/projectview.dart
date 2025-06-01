@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freelance_system/Projects/allapplicants_tab/allapplicants.dart';
-import 'package:freelance_system/Projects/appointed_freelancer.dart';
+
 import 'package:freelance_system/Projects/appointeduser/appointeduserui.dart';
 
 import 'package:freelance_system/Projects/recommendtab.dart';
@@ -78,7 +78,11 @@ class _ProjectviewState extends State<Projectview>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Project Details")),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text("Project Details"),
+        backgroundColor: Colors.white,
+      ),
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
             .collection('projects')
@@ -141,113 +145,214 @@ class _ProjectviewState extends State<Projectview>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.all(12),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF1976D2).withOpacity(0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          title,
+                          project['title'] ?? 'No Title',
                           style: const TextStyle(
-                            color: Colors.deepPurple,
-                            fontSize: 18,
+                            fontSize: 24,
                             fontWeight: FontWeight.bold,
+                            color: Color(0xFF1976D2),
                           ),
                         ),
-                        const SizedBox(height: 5),
-                        Text(
-                          project['createdAt'] != null &&
-                                  project['createdAt'] is Timestamp
-                              ? 'Posted on: ${DateFormat('yyyy-MM-dd HH:mm:ss').format((project['createdAt'] as Timestamp).toDate())}'
-                              : 'Posted on: N/A',
-                          style: const TextStyle(
-                              fontSize: 12,
-                              color: Color.fromARGB(255, 78, 78, 78)),
-                        ),
-                        const SizedBox(height: 25),
-                        const Text(
-                          "Description",
-                          style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 16),
                         Container(
+                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: const Color.fromARGB(255, 250, 231, 254),
+                            color: Colors.grey[50],
                             borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: const Color(0xFF1976D2).withOpacity(0.2),
+                              width: 1,
+                            ),
                           ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(10),
-                            child: Text(description),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "Budget: ${NumberFormat("#,##0", "en_US").format(budget)} Rs",
-                              style: const TextStyle(
-                                  color: Color.fromARGB(255, 106, 0, 148),
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            Text(
-                              "Deadline: $deadline",
-                              style: const TextStyle(
-                                  color: Color.fromARGB(255, 201, 0, 0),
-                                  fontSize: 14),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text(
-                              "Applied By: ",
-                              style: TextStyle(
-                                  color: Color.fromARGB(255, 130, 130, 130),
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(width: 5),
-                            Text(
-                              '$appliedCount',
-                              style: const TextStyle(
-                                  color: Color.fromARGB(255, 0, 0, 0),
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            const Icon(
-                              Icons.person,
-                              color: Colors.deepPurple,
-                            )
-                          ],
-                        ),
-                        const SizedBox(height: 14),
-                        const Text("Preferences",
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 5),
-                        Wrap(
-                          spacing: 4.0,
-                          runSpacing: 4.0,
-                          children: preferences.map((preference) {
-                            return Chip(
-                              label: Text(
-                                preference,
-                                style: const TextStyle(
-                                    fontSize: 14, fontWeight: FontWeight.bold),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF1976D2)
+                                          .withOpacity(0.1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.attach_money,
+                                      color: Color(0xFF1976D2),
+                                      size: 20,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    'Budget: \$${project['budget']?.toStringAsFixed(2) ?? '0.00'}',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF1976D2),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              padding: const EdgeInsets.all(4),
-                              backgroundColor: Colors.deepPurple.shade100,
-                            );
-                          }).toList(),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF1976D2)
+                                          .withOpacity(0.1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.calendar_today,
+                                      color: Color(0xFF1976D2),
+                                      size: 20,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    'Deadline: ${project['deadline'] ?? 'No deadline'}',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF1976D2),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF1976D2)
+                                          .withOpacity(0.1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.people,
+                                      color: Color(0xFF1976D2),
+                                      size: 20,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    'Applications: ${(project['appliedIndividuals']?.length ?? 0) + (project['appliedTeams']?.length ?? 0)}',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF1976D2),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: const Color(0xFF1976D2).withOpacity(0.2),
+                              width: 1,
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Description',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF1976D2),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                project['description'] ?? 'No description',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: const Color(0xFF1976D2).withOpacity(0.2),
+                              width: 1,
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Skills/Preferences',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF1976D2),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: (project['preferences']
+                                            as List<dynamic>? ??
+                                        [])
+                                    .map((preference) => Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 6,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF1976D2)
+                                                .withOpacity(0.1),
+                                            borderRadius:
+                                                BorderRadius.circular(20),
+                                          ),
+                                          child: Text(
+                                            preference.toString(),
+                                            style: const TextStyle(
+                                              color: Color(0xFF1976D2),
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ))
+                                    .toList(),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -256,8 +361,10 @@ class _ProjectviewState extends State<Projectview>
                       height: 50,
                       child: TabBar(
                         controller: _tabController,
-                        labelColor: Colors.deepPurple,
+                        labelColor: const Color(0xFF1976D2),
                         unselectedLabelColor: Colors.grey,
+                        indicatorColor: const Color(0xFF1976D2),
+                        indicatorWeight: 3,
                         labelPadding: const EdgeInsets.symmetric(horizontal: 4),
                         isScrollable: false,
                         tabs: const [
@@ -340,7 +447,7 @@ class _ProjectviewState extends State<Projectview>
                             onPressed: markProjectAsCompleted,
                             child: const Text('Complete Project '),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.deepPurple,
+                              backgroundColor: const Color(0xFF1976D2),
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               textStyle: const TextStyle(

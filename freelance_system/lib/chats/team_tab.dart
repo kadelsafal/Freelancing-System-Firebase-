@@ -68,7 +68,22 @@ class _TeamTabState extends State<TeamTab> {
                       child: ElevatedButton(
                         onPressed: () => showTeamCreationDialog(
                             context, currentUserId, _refreshTeams),
-                        child: const Text("Add a Team"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1976D2),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text(
+                          "Add a Team",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
                       ),
                     ),
                   ],

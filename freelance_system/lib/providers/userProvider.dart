@@ -9,6 +9,7 @@ class Userprovider extends ChangeNotifier {
   String userphn = "";
   String followers = "";
   String followed = "";
+  String profileimage = "";
 
   // Adding the new fields for resume_entities
   Map<String, dynamic> resumeEntities = {};
@@ -47,7 +48,7 @@ class Userprovider extends ChangeNotifier {
       userphn = data?["phone"] ?? "";
       followed = (data?["followed"] ?? 0).toString();
       followers = (data?["followers"] ?? 0).toString();
-
+      profileimage = (data?["profile_image"] ?? "");
       resumeEntities = data?["resume_entities"] ?? {};
       collegeName = List<String>.from(resumeEntities["COLLEGE NAME"] ?? []);
       companiesWorkedAt =
@@ -78,7 +79,7 @@ class Userprovider extends ChangeNotifier {
       userphn = dataSnapshot.data()?["phone"] ?? "";
       followed = (dataSnapshot.data()?["followed"] ?? 0).toString();
       followers = (dataSnapshot.data()?["followers"] ?? 0).toString();
-
+      profileimage = (dataSnapshot.data()?["profile_image"] ?? "");
       // Resume entities
       resumeEntities = dataSnapshot.data()?["resume_entities"] ?? {};
 

@@ -4,10 +4,8 @@ import 'package:freelance_system/Projects/tabs/issues/issues_tabs.dart';
 import 'package:freelance_system/Projects/tabs/milestone/milestone_tab.dart';
 
 import 'package:provider/provider.dart';
-import '../../Projects/tabs/issues_tab.dart';
-import '../../Projects/tabs/milestone_tab.dart';
 import '../../Projects/tabs/status/status_tab.dart';
-import '../../Projects/tabs/status_tab.dart';
+
 import '../../providers/userProvider.dart';
 
 class AppointedFreelancerMessage extends StatefulWidget {
@@ -40,6 +38,7 @@ class _AppointedFreelancerMessageState extends State<AppointedFreelancerMessage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Column(
         children: [
           // TabBar
@@ -87,7 +86,7 @@ class _AppointedFreelancerMessageState extends State<AppointedFreelancerMessage>
                     height: 50,
                     child: TabBar(
                       controller: _tabController,
-                      labelColor: Colors.deepPurple,
+                      labelColor: Colors.blue,
                       unselectedLabelColor: Colors.grey,
                       tabs: [
                         const Tab(text: "Milestone"),

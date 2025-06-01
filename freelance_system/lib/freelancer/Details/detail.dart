@@ -65,6 +65,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
     String currentuserId = userProvider.userId;
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(title: Text("Project Details")),
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
@@ -96,46 +97,56 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
             String appointedFreelancer = project['appointedFreelancer'] ?? '';
             applicationStatus = "none"; // Reset
 
-            // Check if applied as a team
-            List<dynamic> appliedTeams = project['appliedTeams'] ?? [];
-            for (var team in appliedTeams) {
-              if (team != null && team is Map<String, dynamic>) {
-                List<dynamic> members = team['members'] ?? [];
-                bool isInTeam = members.any((member) =>
-                    member is Map<String, dynamic> &&
-                    member['userId'] == currentuserId);
-                if (isInTeam) {
-                  applicationStatus = "applied_team";
-                  // Now check if this team is appointed
-                  if (project['appointedTeamId'] == team['teamId']) {
-                    // Team is appointed, so display AppointedFreelancerMessage
-                    applicationStatus = "team_appointed";
-                  }
-                  break;
-                }
-              }
-            }
-
-            // Check if applied solo (after checking team and appointed)
-            for (var applicant in appliedIndividuals) {
-              if (applicant != null && applicant is Map<String, dynamic>) {
-                if (applicant.containsKey('name') &&
-                    applicant['name'] == currentName &&
-                    !applicant.containsKey('teamMembers')) {
-                  applicationStatus = "applied_solo";
-                  break;
-                }
-              }
-            }
-            // Check if appointed as freelancer first
+            // First check if appointed as freelancer
             if (appointedFreelancer == currentName) {
-              applicationStatus =
-                  "appointed"; // User is appointed as freelancer
-            } else if (project['appointedTeamId'] != null) {
-              // Check if the user is in the appointed team
-              isUserInAppointedTeamFuture = isUserInAppointedTeam(
-                  project['appointedTeamId'],
-                  currentuserId); // Save future for FutureBuilder
+              applicationStatus = "appointed";
+            }
+            // Then check if part of appointed team
+            else if (project['appointedTeamId'] != null) {
+              bool isInAppointedTeam = false;
+              for (var team in project['appliedTeams'] ?? []) {
+                if (team != null && team is Map<String, dynamic>) {
+                  if (team['teamId'] == project['appointedTeamId']) {
+                    List<dynamic> members = team['members'] ?? [];
+                    bool isInTeam = members.any((member) =>
+                        member is Map<String, dynamic> &&
+                        member['userId'] == currentuserId);
+                    if (isInTeam) {
+                      isInAppointedTeam = true;
+                      applicationStatus = "team_appointed";
+                      break;
+                    }
+                  }
+                }
+              }
+              if (!isInAppointedTeam) {
+                // Check if applied as team but not appointed
+                for (var team in project['appliedTeams'] ?? []) {
+                  if (team != null && team is Map<String, dynamic>) {
+                    List<dynamic> members = team['members'] ?? [];
+                    bool isInTeam = members.any((member) =>
+                        member is Map<String, dynamic> &&
+                        member['userId'] == currentuserId);
+                    if (isInTeam) {
+                      applicationStatus = "applied_team";
+                      break;
+                    }
+                  }
+                }
+              }
+            }
+            // Finally check if applied solo (only if not appointed or part of appointed team)
+            if (applicationStatus == "none") {
+              for (var applicant in appliedIndividuals) {
+                if (applicant != null && applicant is Map<String, dynamic>) {
+                  if (applicant.containsKey('name') &&
+                      applicant['name'] == currentName &&
+                      !applicant.containsKey('teamMembers')) {
+                    applicationStatus = "applied_solo";
+                    break;
+                  }
+                }
+              }
             }
 
             print("Application Status: $applicationStatus");
@@ -181,7 +192,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                     Text(
                       title,
                       style: TextStyle(
-                        color: Colors.deepPurple,
+                        color: Colors.blue,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -211,7 +222,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                     SizedBox(height: 10),
                     Container(
                       decoration: BoxDecoration(
-                        color: Color.fromARGB(255, 250, 231, 254),
+                        color: Color.fromARGB(255, 177, 224, 255),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Padding(
@@ -232,7 +243,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                         Text(
                           "${NumberFormat("#,##0", "en_US").format(budget)} Rs",
                           style: TextStyle(
-                              color: Color.fromARGB(255, 106, 0, 148),
+                              color: Colors.blue,
                               fontSize: 17,
                               fontWeight: FontWeight.bold),
                         ),
@@ -263,7 +274,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                               fontSize: 16,
                               fontWeight: FontWeight.bold),
                         ),
-                        Icon(Icons.person, color: Colors.deepPurple)
+                        Icon(Icons.person, color: Colors.blue)
                       ],
                     ),
                     SizedBox(height: 14),
@@ -282,7 +293,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                                 fontSize: 14, fontWeight: FontWeight.bold),
                           ),
                           padding: EdgeInsets.all(4),
-                          backgroundColor: Colors.deepPurple.shade100,
+                          backgroundColor: Colors.blue.shade100,
                         );
                       }).toList(),
                     ),
@@ -326,11 +337,11 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                                                 },
                                               );
                                             },
-                                            icon: Icon(Icons.person),
+                                            icon: Icon(Icons.person,
+                                                color: Colors.white),
                                             label: Text("Apply Solo"),
                                             style: ElevatedButton.styleFrom(
-                                              backgroundColor:
-                                                  Colors.deepPurple,
+                                              backgroundColor: Colors.blue,
                                               foregroundColor: Colors.white,
                                               minimumSize:
                                                   Size(double.infinity, 45),
@@ -351,13 +362,12 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                                                 },
                                               );
                                             },
-                                            icon: Icon(Icons.group),
+                                            icon: Icon(Icons.group,
+                                                color: Colors.white),
                                             label: Text("Apply with Team"),
                                             style: ElevatedButton.styleFrom(
-                                              backgroundColor:
-                                                  Colors.deepPurple.shade100,
-                                              foregroundColor:
-                                                  Colors.deepPurple,
+                                              backgroundColor: Colors.blue,
+                                              foregroundColor: Colors.white,
                                               minimumSize:
                                                   Size(double.infinity, 45),
                                             ),
@@ -368,6 +378,11 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                                   },
                                 );
                               },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                          minimumSize: Size(200, 45),
+                        ),
                         child: Text(buttonText),
                       ),
                     ),

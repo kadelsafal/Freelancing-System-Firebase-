@@ -107,10 +107,23 @@ class _BuildResumeState extends State<BuildResume> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Add Personal Details")),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(
+          "Add Personal Details",
+          style: TextStyle(
+            color: Colors.blue.shade700,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        iconTheme: IconThemeData(color: Colors.blue.shade700),
+      ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: EdgeInsets.all(12.0),
+          padding: EdgeInsets.all(20.0),
           child: Form(
             key: _formKey,
             child: Column(
@@ -120,28 +133,39 @@ class _BuildResumeState extends State<BuildResume> {
                 Center(
                   child: GestureDetector(
                     onTap: _pickImage,
-                    child: CircleAvatar(
-                      radius: 50,
-                      backgroundColor: Colors.grey[200],
-                      backgroundImage: _imagePath != null && !isLoading
-                          ? FileImage(File(_imagePath!))
-                          : null,
-                      child: isLoading
-                          ? CircularProgressIndicator(
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.blue),
-                            )
-                          : _imagePath == null
-                              ? Icon(
-                                  Icons.add_a_photo,
-                                  color: Colors.grey[700],
-                                  size: 30,
-                                )
-                              : null,
+                    child: Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.blue.shade700,
+                          width: 3,
+                        ),
+                      ),
+                      child: CircleAvatar(
+                        radius: 60,
+                        backgroundColor: Colors.blue.shade50,
+                        backgroundImage: _imagePath != null && !isLoading
+                            ? FileImage(File(_imagePath!))
+                            : null,
+                        child: isLoading
+                            ? CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.blue.shade700),
+                              )
+                            : _imagePath == null
+                                ? Icon(
+                                    Icons.add_a_photo,
+                                    color: Colors.blue.shade700,
+                                    size: 30,
+                                  )
+                                : null,
+                      ),
                     ),
                   ),
                 ),
-                SizedBox(height: 20),
+                SizedBox(height: 30),
 
                 _buildInputField(
                   label: "Full Name",
@@ -182,9 +206,14 @@ class _BuildResumeState extends State<BuildResume> {
                     return null;
                   },
                 ),
-                Text("Address",
-                    style:
-                        TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                Text(
+                  "Address",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Colors.blue.shade700,
+                  ),
+                ),
                 SizedBox(height: 10),
 
                 // Address Fields
@@ -200,8 +229,27 @@ class _BuildResumeState extends State<BuildResume> {
                             decoration: InputDecoration(
                               labelText: 'Enter Address',
                               hintText: 'Address ${index + 1}',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.location_on),
+                              labelStyle:
+                                  TextStyle(color: Colors.blue.shade700),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide:
+                                    BorderSide(color: Colors.blue.shade200),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide:
+                                    BorderSide(color: Colors.blue.shade700),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide:
+                                    BorderSide(color: Colors.blue.shade200),
+                              ),
+                              prefixIcon: Icon(Icons.location_on,
+                                  color: Colors.blue.shade700),
+                              filled: true,
+                              fillColor: Colors.blue.shade50,
                             ),
                             validator: (value) {
                               if (index == 0 &&
@@ -214,9 +262,9 @@ class _BuildResumeState extends State<BuildResume> {
                         ),
                         if (_addressControllers.length > 1)
                           IconButton(
-                            icon: Icon(Icons.delete),
+                            icon:
+                                Icon(Icons.delete, color: Colors.red.shade400),
                             onPressed: () => _removeAddressField(index),
-                            color: Colors.red,
                           ),
                       ],
                     ),
@@ -227,19 +275,36 @@ class _BuildResumeState extends State<BuildResume> {
                 Align(
                   alignment: Alignment.center,
                   child: IconButton(
-                    icon: Icon(Icons.add),
+                    icon: Icon(Icons.add_circle_outline),
                     onPressed: _addAddressField,
-                    color: Colors.purple,
+                    color: Colors.blue.shade700,
+                    iconSize: 32,
                   ),
                 ),
 
-                SizedBox(height: 20),
+                SizedBox(height: 30),
 
                 // Submit Button
                 Center(
                   child: ElevatedButton(
                     onPressed: _submitForm,
-                    child: Text("Next"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue.shade700,
+                      foregroundColor: Colors.white,
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 2,
+                    ),
+                    child: Text(
+                      "Next",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -259,20 +324,40 @@ class _BuildResumeState extends State<BuildResume> {
     String? Function(String?)? validator,
   }) {
     return Padding(
-      padding: EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(bottom: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+              color: Colors.blue.shade700,
+            ),
+          ),
           SizedBox(height: 10),
           TextFormField(
             controller: controller,
             keyboardType: keyboardType,
             decoration: InputDecoration(
               labelText: 'Enter $label',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(icon),
+              labelStyle: TextStyle(color: Colors.blue.shade700),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.blue.shade200),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.blue.shade700),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.blue.shade200),
+              ),
+              prefixIcon: Icon(icon, color: Colors.blue.shade700),
+              filled: true,
+              fillColor: Colors.blue.shade50,
             ),
             validator: validator ??
                 (value) {

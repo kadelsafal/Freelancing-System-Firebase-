@@ -172,11 +172,11 @@ class _ApplyModalSheetState extends State<ApplyModalSheet> {
                               style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.deepPurple)),
+                                  color: Colors.blue)),
                           IconButton(
                               icon: Icon(Icons.close),
                               onPressed: () => Navigator.of(context).pop(),
-                              color: Colors.deepPurple),
+                              color: Colors.blue),
                         ],
                       ),
                     ),
@@ -214,7 +214,7 @@ class _ApplyModalSheetState extends State<ApplyModalSheet> {
                                     style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.deepPurple)),
+                                        color: Colors.blue)),
                                 SizedBox(height: 10),
                                 TextFormField(
                                   controller: _skillsController,
@@ -222,8 +222,7 @@ class _ApplyModalSheetState extends State<ApplyModalSheet> {
                                       labelText: 'Add Skill',
                                       suffixIcon: IconButton(
                                           icon: Icon(Icons.add_circle,
-                                              size: 30,
-                                              color: Colors.deepPurple),
+                                              size: 30, color: Colors.blue),
                                           onPressed: _addSkill)),
                                 ),
                                 SizedBox(height: 10),
@@ -263,7 +262,7 @@ class _ApplyModalSheetState extends State<ApplyModalSheet> {
                                             ? null // Disable button after upload
                                             : _pickFile,
                                         style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.deepPurple,
+                                            backgroundColor: Colors.blue,
                                             foregroundColor: Colors.white),
                                         child: Text('Choose File'),
                                       ),
@@ -279,7 +278,7 @@ class _ApplyModalSheetState extends State<ApplyModalSheet> {
                                   child: ElevatedButton(
                                     onPressed: _submitApplication,
                                     style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.deepPurple,
+                                        backgroundColor: Colors.blue,
                                         foregroundColor: Colors.white),
                                     child: Text('Submit'),
                                   ),

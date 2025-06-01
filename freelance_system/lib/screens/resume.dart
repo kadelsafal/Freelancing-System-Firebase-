@@ -155,7 +155,8 @@ class _ResumeScreenState extends State<ResumeScreen> {
   }
 
   Future<void> uploadResumeForReview(File file) async {
-    var uri = Uri.parse("http://192.168.1.177:8000/process_resume/");
+    setState(() => _isUploading = true);
+    var uri = Uri.parse("http://192.168.1.97:8000/process_resume/");
     var request = http.MultipartRequest('POST', uri)
       ..files.add(await http.MultipartFile.fromPath('file', file.path));
     try {
@@ -189,6 +190,14 @@ class _ResumeScreenState extends State<ResumeScreen> {
       }
     } catch (e) {
       print("Error connecting to FastAPI: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Error processing resume: $e"),
+          backgroundColor: Colors.red.shade400,
+        ),
+      );
+    } finally {
+      setState(() => _isUploading = false);
     }
   }
 
@@ -221,8 +230,18 @@ class _ResumeScreenState extends State<ResumeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(_isCurrentUser ? "My Resume" : "User Resume"),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(
+          _isCurrentUser ? "My Resume" : "User Resume",
+          style: TextStyle(
+            color: Colors.blue.shade700,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(20.0),
@@ -245,15 +264,24 @@ class _ResumeScreenState extends State<ResumeScreen> {
                                 setState(() {});
                               }
                             },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue.shade700,
+                        foregroundColor: Colors.white,
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
                       child: _isUploading
-                          ? CircularProgressIndicator(color: Colors.deepPurple)
+                          ? CircularProgressIndicator(color: Colors.white)
                           : Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text("Upload Resume"),
-                                SizedBox(width: 5),
+                                SizedBox(width: 8),
                                 Icon(Icons.upload,
-                                    color: Colors.deepPurple, size: 20),
+                                    color: Colors.white, size: 20),
                               ],
                             ),
                     ),
@@ -271,12 +299,21 @@ class _ResumeScreenState extends State<ResumeScreen> {
                           _fetchUserResumeData();
                         });
                       },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue.shade700,
+                        foregroundColor: Colors.white,
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text("Build Resume"),
-                          SizedBox(width: 3),
-                          Icon(Icons.build, color: Colors.deepPurple, size: 20),
+                          SizedBox(width: 8),
+                          Icon(Icons.build, color: Colors.white, size: 20),
                         ],
                       ),
                     ),
@@ -291,7 +328,9 @@ class _ResumeScreenState extends State<ResumeScreen> {
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
+                  return Center(
+                      child: CircularProgressIndicator(
+                          color: Colors.blue.shade700));
                 }
                 if (!snapshot.hasData || !snapshot.data!.exists) {
                   return Text("No data found");
@@ -322,88 +361,187 @@ class _ResumeScreenState extends State<ResumeScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            "Resume Score: $_score/10",
-                            style: TextStyle(
-                                fontSize: 20, fontWeight: FontWeight.bold),
-                          ),
-                          SizedBox(height: 10),
-                          Text(
-                            "Review:",
-                            style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                          SizedBox(height: 5),
-                          ..._resumeReview!
-                              .trim()
-                              .split("\n")
-                              .map((line) => Padding(
-                                    padding: EdgeInsets.only(bottom: 5),
-                                    child: Text(
-                                      line.trim(),
-                                      style: TextStyle(fontSize: 16),
+                          Container(
+                            padding: EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.blue.shade200),
+                            ),
+                            child: _isUploading
+                                ? Center(
+                                    child: Column(
+                                      children: [
+                                        CircularProgressIndicator(
+                                          color: Colors.blue.shade700,
+                                        ),
+                                        SizedBox(height: 16),
+                                        Text(
+                                          "Processing Resume...",
+                                          style: TextStyle(
+                                            color: Colors.blue.shade700,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  )),
+                                  )
+                                : Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "Resume Score: $_score/10",
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.blue.shade700,
+                                        ),
+                                      ),
+                                      SizedBox(height: 16),
+                                      Text(
+                                        "Review:",
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.blue.shade700,
+                                        ),
+                                      ),
+                                      SizedBox(height: 8),
+                                      ..._resumeReview!
+                                          .trim()
+                                          .split("\n")
+                                          .map((line) => Padding(
+                                                padding:
+                                                    EdgeInsets.only(bottom: 8),
+                                                child: Text(
+                                                  line.trim(),
+                                                  style: TextStyle(
+                                                    fontSize: 16,
+                                                    color: Colors.blue.shade900,
+                                                  ),
+                                                ),
+                                              )),
+                                    ],
+                                  ),
+                          ),
                           SizedBox(height: 20),
                           if (_entities != null) ...[
                             Text(
                               "Extracted Entities:",
                               style: TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.bold),
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue.shade700,
+                              ),
                             ),
-                            SizedBox(height: 10),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: _entities!.entries.map((entry) {
-                                return Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      "${entry.key}:",
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.blue,
-                                      ),
-                                    ),
-                                    ...List.generate(entry.value.length,
-                                        (index) {
-                                      return Padding(
-                                        padding:
-                                            EdgeInsets.only(left: 15, top: 3),
-                                        child: Text(
-                                          "- ${entry.value[index]}",
-                                          style: TextStyle(fontSize: 16),
+                            SizedBox(height: 12),
+                            Container(
+                              padding: EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.shade50,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.blue.shade200),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: _entities!.entries.map((entry) {
+                                  return Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "${entry.key}:",
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.blue.shade700,
                                         ),
-                                      );
-                                    }),
-                                    SizedBox(height: 10),
-                                  ],
-                                );
-                              }).toList(),
+                                      ),
+                                      ...List.generate(entry.value.length,
+                                          (index) {
+                                        return Padding(
+                                          padding:
+                                              EdgeInsets.only(left: 15, top: 4),
+                                          child: Text(
+                                            "• ${entry.value[index]}",
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              color: Colors.blue.shade900,
+                                            ),
+                                          ),
+                                        );
+                                      }),
+                                      SizedBox(height: 12),
+                                    ],
+                                  );
+                                }).toList(),
+                              ),
                             ),
                           ],
                         ],
                       ),
                     SizedBox(height: 20),
                     if (_resumeUrl != null)
-                      ListTile(
-                        leading: Icon(Icons.picture_as_pdf,
-                            color: Colors.red, size: 40),
-                        title: Text("View Uploaded Resume"),
-                        subtitle: Text("Tap to open"),
-                        onTap: () => _openPdf(_resumeUrl!),
+                      Container(
+                        padding: EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.blue.shade200),
+                        ),
+                        child: ListTile(
+                          leading: Icon(Icons.picture_as_pdf,
+                              color: Colors.blue.shade700, size: 40),
+                          title: Text(
+                            "View Uploaded Resume",
+                            style: TextStyle(
+                              color: Colors.blue.shade700,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          subtitle: Text(
+                            "Tap to open",
+                            style: TextStyle(color: Colors.blue.shade600),
+                          ),
+                          onTap: () => _openPdf(_resumeUrl!),
+                        ),
                       )
                     else
-                      Text("No resume uploaded yet."),
+                      Text(
+                        "No resume uploaded yet.",
+                        style: TextStyle(
+                          color: Colors.blue.shade700,
+                          fontSize: 16,
+                        ),
+                      ),
                     if (_entities != null && _isCurrentUser)
                       Center(
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            await _openEditEntitiesDialog();
-                            setState(() {}); // Refresh UI after saving details
-                          },
-                          child: Text("Edit Resume Details"),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              await _openEditEntitiesDialog();
+                              setState(() {});
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue.shade700,
+                              foregroundColor: Colors.white,
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 32, vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Text(
+                              "Edit Resume Details",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                   ],

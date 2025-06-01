@@ -81,7 +81,17 @@ class StatusCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    CircleAvatar(radius: 16, child: Text(data['author'][0])),
+                    CircleAvatar(
+                      radius: 16,
+                      backgroundColor: const Color(0xFF1976D2),
+                      child: Text(
+                        data['author'][0],
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
                     const SizedBox(width: 8),
                     Text(data['author'],
                         style: const TextStyle(fontWeight: FontWeight.bold)),

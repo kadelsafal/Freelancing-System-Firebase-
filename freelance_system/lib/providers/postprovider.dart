@@ -7,7 +7,7 @@ class Postprovider extends ChangeNotifier {
   String userEmail = "";
   String userId = "";
   String userphn = "";
-
+  String userImage = "";
   var db = FirebaseFirestore.instance;
 
   Future<void> getUserDetails() async {
@@ -17,6 +17,7 @@ class Postprovider extends ChangeNotifier {
       userEmail = dataSnapshot.data()?["email"] ?? "";
       userId = dataSnapshot.data()?["id"] ?? "";
       userphn = dataSnapshot.data()?["phone"] ?? "";
+      userImage = dataSnapshot.data()?["profile_image"] ?? "";
 
       notifyListeners();
     });

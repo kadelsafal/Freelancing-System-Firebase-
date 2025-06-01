@@ -16,7 +16,7 @@ class _DescriptionWidgetState extends State<DescriptionWidget> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 250, 231, 254),
+        color: const Color.fromARGB(255, 194, 228, 255),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(

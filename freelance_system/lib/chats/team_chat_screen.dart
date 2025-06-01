@@ -57,7 +57,10 @@ class _TeamChatScreenState extends State<TeamChatScreen> {
     final String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? "";
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.black),
         title: InkWell(
           onTap: () {
             Navigator.push(
@@ -73,16 +76,27 @@ class _TeamChatScreenState extends State<TeamChatScreen> {
           child: Row(
             children: [
               CircleAvatar(
-                backgroundColor: Theme.of(context).primaryColorDark,
+                radius: 20,
+                backgroundColor: const Color(0xFF1976D2),
                 child: Text(
                   widget.teamName.isNotEmpty
                       ? widget.teamName[0].toUpperCase()
                       : "?",
-                  style: TextStyle(color: Colors.white),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    color: Colors.white,
+                  ),
                 ),
               ),
-              SizedBox(width: 8),
-              Text(widget.teamName),
+              const SizedBox(width: 8),
+              Text(
+                widget.teamName,
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
             ],
           ),
         ),
@@ -100,7 +114,12 @@ class _TeamChatScreenState extends State<TeamChatScreen> {
 
                 if (snapshot.connectionState == ConnectionState.waiting &&
                     !snapshot.hasData) {
-                  return Center(child: CircularProgressIndicator());
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(Color(0xFF1976D2)),
+                    ),
+                  );
                 }
 
                 final messages = snapshot.data?.docs ?? [];
@@ -196,23 +215,56 @@ class _TeamChatScreenState extends State<TeamChatScreen> {
                             children: [
                               if (!isCurrentUser)
                                 Padding(
-                                  padding: EdgeInsets.all(8),
-                                  child: CircleAvatar(
-                                    radius: 20,
-                                    child: Text(senderName[0],
-                                        style: TextStyle(fontSize: 28)),
-                                  ),
-                                ),
+                                    padding: const EdgeInsets.all(8),
+                                    child: FutureBuilder<Map<String, dynamic>>(
+                                      future:
+                                          UserService.getUserProfile(senderId),
+                                      builder: (context, userSnapshot) {
+                                        final userData =
+                                            userSnapshot.data ?? {};
+                                        final profileImage =
+                                            userData['profileImage'];
+                                        final seenByInitial =
+                                            senderName.isNotEmpty
+                                                ? senderName[0].toUpperCase()
+                                                : '?';
+
+                                        return CircleAvatar(
+                                          radius: 20,
+                                          backgroundColor:
+                                              const Color(0xFF1976D2),
+                                          backgroundImage:
+                                              (profileImage != null &&
+                                                      profileImage.isNotEmpty)
+                                                  ? NetworkImage(profileImage)
+                                                  : null,
+                                          child: (profileImage == null ||
+                                                  profileImage.isEmpty)
+                                              ? Text(seenByInitial,
+                                                  style: const TextStyle(
+                                                      fontSize: 18,
+                                                      color: Colors.white))
+                                              : null,
+                                        );
+                                      },
+                                    )),
                               Container(
-                                padding: EdgeInsets.all(12),
-                                margin: EdgeInsets.symmetric(vertical: 4),
+                                padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
                                   color: isCurrentUser
-                                      ? Colors.blue[200]
+                                      ? const Color(0xFF1976D2)
                                       : Colors.grey[300],
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: Text(message['text'] ?? ''),
+                                child: Text(
+                                  message['text'] ?? '',
+                                  style: TextStyle(
+                                    color: isCurrentUser
+                                        ? Colors.white
+                                        : Colors.black,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
@@ -235,34 +287,61 @@ class _TeamChatScreenState extends State<TeamChatScreen> {
                           if (seenAvatarsToShow.isNotEmpty)
                             Padding(
                               padding: const EdgeInsets.only(top: 4.0),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: seenAvatarsToShow.map((userId) {
-                                  return FutureBuilder<String>(
-                                    future: TeamService.getUserNameById(userId),
-                                    builder: (context, snapshot) {
-                                      final name = snapshot.data ?? 'U';
-                                      final initial = name.isNotEmpty
-                                          ? name[0].toUpperCase()
-                                          : '?';
+                              child: Align(
+                                alignment: Alignment.centerRight,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text(
+                                      "Seen",
+                                      style: TextStyle(
+                                        color: Color(0xFF1976D2),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    ...seenAvatarsToShow.map((userId) {
+                                      return FutureBuilder<Map<String, String>>(
+                                        future:
+                                            TeamService.getUserInfoById(userId),
+                                        builder: (context, snapshot) {
+                                          final data = snapshot.data;
+                                          final name = data?['name'] ?? 'U';
+                                          final profileImage =
+                                              data?['profileImage'] ?? '';
+                                          final initial = name.isNotEmpty
+                                              ? name[0].toUpperCase()
+                                              : '?';
 
-                                      return Padding(
-                                        padding:
-                                            const EdgeInsets.only(right: 4.0),
-                                        child: CircleAvatar(
-                                          radius: 10,
-                                          backgroundColor: Colors.grey[400],
-                                          child: Text(
-                                            initial,
-                                            style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.white),
-                                          ),
-                                        ),
+                                          return Padding(
+                                            padding: const EdgeInsets.only(
+                                                right: 4.0),
+                                            child: CircleAvatar(
+                                              radius: 12,
+                                              backgroundImage: (profileImage
+                                                      .isNotEmpty)
+                                                  ? NetworkImage(profileImage)
+                                                  : null,
+                                              backgroundColor:
+                                                  profileImage.isEmpty
+                                                      ? const Color(0xFF1976D2)
+                                                      : Colors.transparent,
+                                              child: profileImage.isEmpty
+                                                  ? Text(
+                                                      initial,
+                                                      style: const TextStyle(
+                                                          fontSize: 12,
+                                                          color: Colors.white),
+                                                    )
+                                                  : null,
+                                            ),
+                                          );
+                                        },
                                       );
-                                    },
-                                  );
-                                }).toList(),
+                                    }).toList(),
+                                  ],
+                                ),
                               ),
                             ),
                         ],
@@ -309,7 +388,7 @@ class _TeamChatScreenState extends State<TeamChatScreen> {
                 ),
                 SizedBox(width: 8),
                 Material(
-                  color: Theme.of(context).primaryColor,
+                  color: const Color(0xFF1976D2),
                   borderRadius: BorderRadius.circular(30),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(30),
@@ -317,21 +396,33 @@ class _TeamChatScreenState extends State<TeamChatScreen> {
                       final message = _messageController.text.trim();
                       if (message.isNotEmpty) {
                         final senderId = currentUser?.uid;
-                        // Fetch full name from Firestore instead of FirebaseAuth displayName
-                        final senderName =
-                            await UserService.getUserFullName(senderId ?? '') ??
-                                "User";
+
+                        String senderName = "User";
+                        if (senderId != null && senderId.isNotEmpty) {
+                          final profile =
+                              await UserService.getUserProfile(senderId);
+                          senderName = profile?['Full Name'] ??
+                              profile?['fullName'] ??
+                              profile?['name'] ??
+                              "User";
+                        }
+
                         await TeamService.sendMessage(
                           widget.teamId,
                           message,
                           senderId: senderId,
                           senderName: senderName,
                         );
+
                         _messageController.clear();
                       }
                     },
                     child: Container(
-                      padding: EdgeInsets.all(10),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1976D2),
+                        borderRadius: BorderRadius.circular(30),
+                      ),
                       child: Icon(Icons.send, color: Colors.white, size: 24),
                     ),
                   ),
@@ -343,112 +434,4 @@ class _TeamChatScreenState extends State<TeamChatScreen> {
       ),
     );
   }
-
-  // void _showTeamInfo(BuildContext context) async {
-  //   if (teamDetails == null) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text("Team details are still loading...")),
-  //     );
-  //     return;
-  //   }
-
-  //   List<String> teamMemberIds =
-  //       List<String>.from(teamDetails?['members'] ?? []);
-  //   String adminId = teamDetails?['admin'] ?? '';
-
-  //   // 🔹 Fetch member details from Firestore concurrently
-  //   List<Future<Map<String, dynamic>>> memberFutures =
-  //       teamMemberIds.map((memberId) {
-  //     return FirebaseFirestore.instance
-  //         .collection('users')
-  //         .doc(memberId)
-  //         .get()
-  //         .then((userDoc) {
-  //       if (userDoc.exists) {
-  //         Map<String, dynamic> userData =
-  //             userDoc.data() as Map<String, dynamic>;
-  //         return {
-  //           'id': memberId,
-  //           'fullName': userData['Full Name'] ?? "Unknown User"
-  //         };
-  //       } else {
-  //         return {'id': memberId, 'fullName': "Unknown User"};
-  //       }
-  //     });
-  //   }).toList();
-
-  //   // Wait for all member fetches to complete
-  //   List<Map<String, dynamic>> members = await Future.wait(memberFutures);
-
-  //   // 🔹 Show Bottom Sheet after fetching names
-  //   showModalBottomSheet(
-  //     context: context,
-  //     isScrollControlled: true,
-  //     shape: RoundedRectangleBorder(
-  //       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-  //     ),
-  //     builder: (context) {
-  //       return Container(
-  //         padding: EdgeInsets.all(16),
-  //         height:
-  //             MediaQuery.of(context).size.height * 0.6, // Make it scrollable
-  //         child: Column(
-  //           mainAxisSize: MainAxisSize.min,
-  //           crossAxisAlignment: CrossAxisAlignment.start,
-  //           children: [
-  //             Center(
-  //               child: Container(
-  //                 width: 50,
-  //                 height: 5,
-  //                 margin: EdgeInsets.only(bottom: 16),
-  //                 decoration: BoxDecoration(
-  //                   color: Colors.grey[300],
-  //                   borderRadius: BorderRadius.circular(10),
-  //                 ),
-  //               ),
-  //             ),
-  //             Text(
-  //               "Team Members",
-  //               style: TextStyle(
-  //                 fontSize: 18,
-  //                 fontWeight: FontWeight.bold,
-  //               ),
-  //             ),
-  //             SizedBox(height: 16),
-  //             Expanded(
-  //               child: ListView.builder(
-  //                 itemCount: members.length,
-  //                 itemBuilder: (context, index) {
-  //                   final member = members[index];
-  //                   final isAdmin = member['id'] == adminId;
-  //                   final fullName = member['fullName'];
-
-  //                   return ListTile(
-  //                     leading: CircleAvatar(
-  //                       backgroundColor: isAdmin
-  //                           ? Theme.of(context).primaryColor
-  //                           : Colors.grey[400],
-  //                       child: Text(
-  //                         fullName.isNotEmpty ? fullName[0].toUpperCase() : "?",
-  //                         style: TextStyle(color: Colors.white),
-  //                       ),
-  //                     ),
-  //                     title: Text(fullName),
-  //                     subtitle: isAdmin
-  //                         ? Text(
-  //                             "Admin",
-  //                             style: TextStyle(
-  //                                 color: Theme.of(context).primaryColor),
-  //                           )
-  //                         : null,
-  //                   );
-  //                 },
-  //               ),
-  //             ),
-  //           ],
-  //         ),
-  //       );
-  //     },
-  //   );
-  // }
 }

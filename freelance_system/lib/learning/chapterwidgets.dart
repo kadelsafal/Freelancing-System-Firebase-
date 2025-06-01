@@ -37,7 +37,12 @@ class _ChaptersWidgetState extends State<ChaptersWidget> {
           children: [
             const Text(
               "Chapters",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1976D2),
+                letterSpacing: 0.5,
+              ),
             ),
             const SizedBox(height: 8),
             widget.isPaid
@@ -46,15 +51,17 @@ class _ChaptersWidgetState extends State<ChaptersWidget> {
                     children: [
                       const Icon(
                         Icons.assignment_turned_in_sharp,
-                        color: Color.fromARGB(255, 255, 113, 25),
-                        size: 30,
+                        color: Color(0xFF1976D2),
+                        size: 26,
                       ),
                       const SizedBox(width: 5),
                       const Text(
                         "Enrolled",
                         style: TextStyle(
-                            fontSize: 14,
-                            color: Color.fromARGB(255, 255, 113, 25)),
+                          fontSize: 14,
+                          color: Color(0xFF1976D2),
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   )
@@ -63,13 +70,14 @@ class _ChaptersWidgetState extends State<ChaptersWidget> {
                     children: [
                       const Icon(
                         Icons.lock,
-                        color: Colors.red,
+                        color: Color(0xFF1976D2),
                         size: 20,
                       ),
                       const SizedBox(width: 5),
                       const Text(
                         "Locked",
-                        style: TextStyle(fontSize: 14, color: Colors.red),
+                        style:
+                            TextStyle(fontSize: 14, color: Color(0xFF1976D2)),
                       ),
                     ],
                   ),
@@ -80,7 +88,7 @@ class _ChaptersWidgetState extends State<ChaptersWidget> {
             ? Center(
                 child: const Text(
                   "No chapters available",
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                  style: TextStyle(fontSize: 16, color: Color(0xFF1976D2)),
                 ),
               )
             : ListView.builder(
@@ -107,90 +115,141 @@ class _ChaptersWidgetState extends State<ChaptersWidget> {
                       }
                     },
                     child: Container(
-                      margin: const EdgeInsets.symmetric(vertical: 6),
-                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.symmetric(vertical: 10),
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        color: Colors.deepPurple.withOpacity(0.1),
+                        color: Colors.white,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(16),
+                          topRight: Radius.circular(16),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.blue.withOpacity(0.08),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                        border:
+                            Border.all(color: Color(0xFF1976D2), width: 1.2),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Display Chapter Index and Title
-                          Text(
-                            "Chapter ${chapter['chapterNumber']}: ${chapter['chapter_title']}",
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.deepPurple,
+                          Container(
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF1976D2),
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(16),
+                                topRight: Radius.circular(16),
+                              ),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 18, vertical: 14),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    "Chapter ${chapter['chapterNumber']}: ${chapter['chapter_title']}",
+                                    style: const TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                                Icon(
+                                  _expandedChapters[index]
+                                      ? Icons.keyboard_arrow_up
+                                      : Icons.keyboard_arrow_down,
+                                  color: Colors.white,
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 15),
-
-                          // Display description and details if the chapter is expanded
-                          if (_expandedChapters[index]) ...[
-                            const Text(
-                              "Description",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Color.fromARGB(255, 0, 0, 0),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              chapter['chapter_description'] ??
-                                  "No description available",
-                              textAlign: TextAlign.justify,
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                            const SizedBox(height: 25),
-
-                            // Benefits as Bullet Points
-                            if (chapter['chapter_learningPoints'] != null &&
-                                (chapter['chapter_learningPoints'] as List)
-                                    .isNotEmpty) ...[
-                              const Text(
-                                "What you will Learn?",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Column(
+                          AnimatedCrossFade(
+                            firstChild: const SizedBox.shrink(),
+                            secondChild: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                children: (chapter['chapter_learningPoints']
-                                        as List)
-                                    .map<Widget>((learningPoint) => Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 4),
-                                          child: Row(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.center,
-                                            children: [
-                                              const Text(
-                                                "• ",
-                                                style: TextStyle(fontSize: 18),
-                                              ),
-                                              SizedBox(width: 5),
-                                              Expanded(
-                                                child: Text(
-                                                  learningPoint,
-                                                  style: const TextStyle(
-                                                      fontSize: 14),
-                                                  softWrap: true,
+                                children: [
+                                  const Text(
+                                    "Description",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF1976D2),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.blue[50],
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Text(
+                                      chapter['chapter_description'] ??
+                                          "No description available",
+                                      textAlign: TextAlign.justify,
+                                      style: const TextStyle(
+                                          fontSize: 14,
+                                          color: Color(0xFF1976D2)),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 18),
+                                  if (chapter['chapter_learningPoints'] !=
+                                          null &&
+                                      (chapter['chapter_learningPoints']
+                                              as List)
+                                          .isNotEmpty) ...[
+                                    const Text(
+                                      "What you will Learn?",
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF1976D2),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: (chapter[
+                                              'chapter_learningPoints'] as List)
+                                          .map<Widget>((point) => Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        vertical: 2),
+                                                child: Row(
+                                                  children: [
+                                                    const Text("• ",
+                                                        style: TextStyle(
+                                                            fontSize: 14,
+                                                            color: Color(
+                                                                0xFF1976D2))),
+                                                    Expanded(
+                                                      child: Text(point,
+                                                          style: const TextStyle(
+                                                              fontSize: 14,
+                                                              color: Color(
+                                                                  0xFF1976D2))),
+                                                    ),
+                                                  ],
                                                 ),
-                                              ),
-                                            ],
-                                          ),
-                                        ))
-                                    .toList(),
+                                              ))
+                                          .toList(),
+                                    ),
+                                  ],
+                                ],
                               ),
-                            ],
-                          ],
-
-                          // Lock/Unlock icon and status text
+                            ),
+                            crossFadeState: _expandedChapters[index]
+                                ? CrossFadeState.showSecond
+                                : CrossFadeState.showFirst,
+                            duration: const Duration(milliseconds: 250),
+                          ),
                         ],
                       ),
                     ),

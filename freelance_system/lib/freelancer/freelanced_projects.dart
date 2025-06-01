@@ -3,7 +3,7 @@ import 'package:freelance_system/Projects/recommendtab.dart';
 import 'package:freelance_system/freelancer/appliedproject.dart';
 import 'package:freelance_system/freelancer/projectscreen.dart';
 import 'package:freelance_system/freelancer/recommended.dart';
-import 'package:freelance_system/freelancer/teambuilding.dart';
+
 import 'package:googleapis/content/v2_1.dart';
 
 class FreelancedProjects extends StatefulWidget {
@@ -32,13 +32,19 @@ class _FreelancedProjectsState extends State<FreelancedProjects>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(0), // Ensures proper spacing
           child: TabBar(
             controller: _tabController,
             isScrollable: true,
-            indicatorColor: Colors.deepPurple,
+            labelColor: const Color(0xFF1976D2),
+            unselectedLabelColor: Colors.grey,
+            indicatorColor: const Color(0xFF1976D2),
+            indicatorWeight: 3,
             tabs: const [
               Tab(text: "Projects"),
               Tab(text: "Recommendation"),

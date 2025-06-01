@@ -1,168 +1,101 @@
+
 import spacy
 import fitz
 from fastapi import FastAPI, UploadFile, File
 from pydantic import BaseModel
 from io import BytesIO
 import os
+import pickle
+import re
+import nltk
+from nltk.corpus import stopwords
 
-# Load your trained model
-model_path = r"E:\Flutter_Projects\model-20250327T022230Z-001\model\output\model-best"
-nlp = spacy.load(model_path)
+# Ensure NLTK stopwords are available
+nltk.download('stopwords')
+stop_words = set(stopwords.words('english'))
 
-# FastAPI app instance
+# === Load Models ===
+
+# Load SpaCy NER model
+ner_model_path = r"E:\Flutter_Projects\freelancing_system\model-20250327T022230Z-001\model\output\model-best"
+nlp = spacy.load(ner_model_path)
+
+# Load TF-IDF Vectorizer
+with open(r"E:\Flutter_Projects\freelancing_system\model-20250327T022230Z-001\tfidf_vectorizer (2).pkl", "rb") as f:
+    tfidf_vectorizer = pickle.load(f)
+
+# Load Random Forest model
+with open(r"E:\Flutter_Projects\freelancing_system\model-20250327T022230Z-001\rf_score_model (2).pkl", "rb") as f:
+    rf_model = pickle.load(f)
+
+# === FastAPI app ===
 app = FastAPI()
 
-# Function to extract text from PDF
+# === Helper Functions ===
 def extract_text_from_pdf(pdf_path):
+    """Extract raw text from PDF using PyMuPDF (fitz)"""
     text = ""
     doc = fitz.open(pdf_path)
     for page in doc:
         text += page.get_text()
-    return text
+    return text.strip()
 
-# Function to calculate resume score
-def calculate_resume_score(entities):
-    score = 0
+def preprocess_text(text):
+    """Clean text and remove stopwords for TF-IDF vectorization"""
+    text = re.sub(r'[^\w\s]', '', text)  # remove punctuation
+    text = re.sub(r'\d+', '', text)      # remove digits
+    text = text.lower()
+    tokens = text.split()
+    tokens = [word for word in tokens if word not in stop_words]
+    return " ".join(tokens)
 
-    # Core Information (30%)
-    score += 0.02 if 'NAME' in entities else 0
-    score += 0.03 if 'CONTACT' in entities else 0
-    score += 0.03 if 'EMAIL ADDRESS' in entities else 0
-    score += 0.02 if 'LOCATION' in entities else 0
-    score += 0.02 if 'LINKEDIN LINK' in entities else 0
-    score += 0.05 if 'YEARS OF EXPERIENCE' in entities else 0
-    score += 0.03 if 'YEAR OF GRADUATION' in entities else 0
-    score += 0.05 if 'DEGREE' in entities else 0
-    score += 0.05 if ('COLLEGE NAME' in entities or 'UNIVERSITY' in entities) else 0
-
-    # Professional Experience (30%)
-    companies_score = min(0.10, 0.02 * len(entities.get('COMPANIES WORKED AT', [])))
-    score += companies_score
-    score += 0.10 if 'DESIGNATION' in entities else 0
-    score += 0.10 if 'WORKED AS' in entities else 0
-
-    # Skills & Qualifications (25%)
-    skills_score = min(0.15, 0.015 * len(entities.get('SKILLS', [])))
-    score += skills_score
-    score += min(0.05, 0.01 * len(entities.get('CERTIFICATION', [])))
-    score += min(0.03, 0.01 * len(entities.get('AWARDS', [])))
-    score += min(0.02, 0.005 * len(entities.get('LANGUAGE', [])))
-
-    # Completeness & Structure (15%)
-    core_present = ('NAME' in entities and 'CONTACT' in entities and
-                   'EMAIL ADDRESS' in entities and
-                   ('DEGREE' in entities or 'SKILLS' in entities))
-    score += 0.10 if core_present else 0
-    score += 0.05 if core_present else 0
-
-    return round(score * 10, 1)  # Convert to 10-point scale
-
-# Function to generate resume review
-def generate_resume_review(entities, score):
-    review = []
-    strengths = []
-    improvements = []
-
-    # Core information analysis
-    if 'NAME' in entities:
-        strengths.append(f"Name provided: {entities['NAME'][0]}")
-    else:
-        improvements.append("Missing name - this is essential")
-
-    if 'CONTACT' in entities:
-        strengths.append("Contact information provided")
-    else:
-        improvements.append("Missing contact information - recruiters can't reach you")
-
-    if 'EMAIL ADDRESS' in entities:
-        strengths.append(f"Email provided: {entities['EMAIL ADDRESS'][0]}")
-    else:
-        improvements.append("Missing email address - crucial for communication")
-
-    if 'DEGREE' in entities:
-        strengths.append(f"Educational qualification: {', '.join(entities['DEGREE'])}")
-    else:
-        improvements.append("Missing degree information - important for most roles")
-
-    # Professional experience
-    if 'COMPANIES WORKED AT' in entities:
-        strength_msg = f"Work experience at {len(entities['COMPANIES WORKED AT'])} company(s)"
-        if len(entities['COMPANIES WORKED AT']) > 0:
-            strength_msg += f": {', '.join(entities['COMPANIES WORKED AT'][:3])}..."
-        strengths.append(strength_msg)
-    else:
-        improvements.append("Missing work experience details - highlight your professional journey")
-
-    # Skills section
-    if 'SKILLS' in entities:
-        skills_msg = f"Skills listed ({len(entities['SKILLS'])} total)"
-        if len(entities['SKILLS']) > 0:
-            skills_msg += f": {', '.join(entities['SKILLS'][:5])}..."
-        strengths.append(skills_msg)
-    else:
-        improvements.append("Missing skills section - crucial for applicant tracking systems")
-
-    # Additional qualifications
-    if 'CERTIFICATION' in entities:
-        strengths.append(f"{len(entities['CERTIFICATION'])} certification(s) listed")
-    if 'AWARDS' in entities:
-        strengths.append(f"{len(entities['AWARDS'])} award(s) listed")
-
-    # Generate final review
-    review.append(f"\n=== Resume Score: {score}/10 ===")
-
-    if score >= 8:
-        review.append("\nExcellent resume! Strong in most areas.")
-    elif score >= 6:
-        review.append("\nGood resume. Some areas could be strengthened.")
-    else:
-        review.append("\nResume needs significant improvement to be competitive.")
-
-    review.append("\n=== STRENGTHS ===")
-    review.extend(strengths if strengths else ["- No major strengths identified"])
-
-    review.append("\n=== AREAS FOR IMPROVEMENT ===")
-    review.extend(improvements if improvements else ["- No major improvements needed!"])
-
-    return "\n".join(review)
-
-# Main processing function
+# === Resume Processing Function ===
 def process_resume(file: UploadFile):
     upload_folder = "E:\\Flutter_Projects\\freelancing_system\\uploads"
+    os.makedirs(upload_folder, exist_ok=True)
     
-    # Ensure the directory exists
-    if not os.path.exists(upload_folder):
-        os.makedirs(upload_folder, exist_ok=True)  # Create directory if it doesn't exist
-
     file_path = os.path.join(upload_folder, file.filename)
-
-    # Open and save the file
+    
+    # Save uploaded file
     with open(file_path, "wb") as f:
         f.write(file.file.read())
 
-  
-    # Extract text from PDF
+    # Extract and preprocess text
     text = extract_text_from_pdf(file_path)
+    cleaned_text = preprocess_text(text)
 
-    # Process with spaCy model
+    # Predict score using TF-IDF + RF model
+    tfidf_vector = tfidf_vectorizer.transform([cleaned_text])
+    predicted_score = rf_model.predict(tfidf_vector)[0]
+
+    # Extract entities with SpaCy NER model
     doc = nlp(text)
-
-    # Extract entities and organize them
     entities = {}
     for ent in doc.ents:
-        if ent.label_ not in entities:
-            entities[ent.label_] = []
-        entities[ent.label_].append(ent.text)
+        label = ent.label_
+        if label not in entities:
+            entities[label] = []
+        entities[label].append(ent.text.strip())
 
-    # Calculate score
-    score = calculate_resume_score(entities)
+    # Build simple feedback based on score
+    review = []
+    review.append(f"📊 Resume Score: {predicted_score}/10")
+    if predicted_score >= 8:
+        review.append("✅ Excellent resume! Well optimized.")
+    elif predicted_score >= 6:
+        review.append("🟡 Good resume. Consider improving a few areas.")
+    else:
+        review.append("🔴 Resume needs improvement for better visibility.")
 
-    # Generate review
-    review = generate_resume_review(entities, score)
+    return {
+        "message": "Resume processed successfully.",
+        "file_path": file_path,
+        "score": float(predicted_score),
+        "entities": entities,
+        "review": "\n".join(review)
+    }
 
-    return {"message": "File uploaded successfully", "file_path": file_path,"entities": entities ,"score": score, "review": review}
-
-# FastAPI endpoint for resume processing
+# === FastAPI Endpoint ===
 @app.post("/process_resume/")
 async def process_resume_endpoint(file: UploadFile = File(...)):
     result = process_resume(file)

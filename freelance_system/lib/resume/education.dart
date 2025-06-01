@@ -127,66 +127,93 @@ class _EducationDetailsState extends State<EducationDetails> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Education Details")),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(
+          "Education Details",
+          style: TextStyle(
+            color: Colors.blue.shade700,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        iconTheme: IconThemeData(color: Colors.blue.shade700),
+      ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: EdgeInsets.all(12.0),
+          padding: EdgeInsets.all(20.0),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Education",
-                    style:
-                        TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                SizedBox(height: 10),
+                Text(
+                  "Education",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 24,
+                    color: Colors.blue.shade700,
+                  ),
+                ),
+                SizedBox(height: 20),
 
                 // Dynamic Education Fields
                 ..._institutionControllers.asMap().entries.map((entry) {
                   int index = entry.key;
-                  return Column(
-                    children: [
-                      _buildInputField(
-                        label: "Institution Name",
-                        controller: _institutionControllers[index],
-                        icon: Icons.school,
-                        validatorMessage: "Please enter an institution name",
-                      ),
-                      _buildInputField(
-                        label: "Degree",
-                        controller: _degreeControllers[index],
-                        icon: Icons.book,
-                        validatorMessage: "Please enter a degree",
-                      ),
-                      _buildDateField(
-                        label: "Start Date",
-                        controller: _startDateControllers[index],
-                        icon: Icons.date_range,
-                        validatorMessage: "Please select a start date",
-                      ),
-                      _buildDateField(
-                        label: "End Date",
-                        controller: _endDateControllers[index],
-                        icon: Icons.date_range,
-                        validatorMessage: "Please select an end date",
-                      ),
-                      _buildInputField(
-                        label: "Course",
-                        controller: _descriptionControllers[index],
-                        icon: Icons.description,
-                        maxLines: 2,
-                        validatorMessage: "enter a course",
-                      ),
-                      if (_institutionControllers.length > 1)
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: IconButton(
-                            icon: Icon(Icons.delete, color: Colors.red),
-                            onPressed: () => _removeEducationField(index),
-                          ),
+                  return Container(
+                    margin: EdgeInsets.only(bottom: 20),
+                    padding: EdgeInsets.all(15),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(15),
+                      border: Border.all(color: Colors.blue.shade200),
+                    ),
+                    child: Column(
+                      children: [
+                        _buildInputField(
+                          label: "Institution Name",
+                          controller: _institutionControllers[index],
+                          icon: Icons.school,
+                          validatorMessage: "Please enter an institution name",
                         ),
-                      Divider(),
-                    ],
+                        _buildInputField(
+                          label: "Degree",
+                          controller: _degreeControllers[index],
+                          icon: Icons.book,
+                          validatorMessage: "Please enter a degree",
+                        ),
+                        _buildDateField(
+                          label: "Start Date",
+                          controller: _startDateControllers[index],
+                          icon: Icons.date_range,
+                          validatorMessage: "Please select a start date",
+                        ),
+                        _buildDateField(
+                          label: "End Date",
+                          controller: _endDateControllers[index],
+                          icon: Icons.date_range,
+                          validatorMessage: "Please select an end date",
+                        ),
+                        _buildInputField(
+                          label: "Course",
+                          controller: _descriptionControllers[index],
+                          icon: Icons.description,
+                          maxLines: 2,
+                          validatorMessage: "enter a course",
+                        ),
+                        if (_institutionControllers.length > 1)
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: IconButton(
+                              icon: Icon(Icons.delete,
+                                  color: Colors.red.shade400),
+                              onPressed: () => _removeEducationField(index),
+                            ),
+                          ),
+                      ],
+                    ),
                   );
                 }),
 
@@ -194,18 +221,36 @@ class _EducationDetailsState extends State<EducationDetails> {
                 Align(
                   alignment: Alignment.center,
                   child: IconButton(
-                    icon: Icon(Icons.add, color: Colors.purple),
+                    icon: Icon(Icons.add_circle_outline),
                     onPressed: _addEducationField,
+                    color: Colors.blue.shade700,
+                    iconSize: 32,
                   ),
                 ),
 
-                SizedBox(height: 20),
+                SizedBox(height: 30),
 
                 // Submit Button
                 Center(
                   child: ElevatedButton(
                     onPressed: _submitForm,
-                    child: Text("Submit"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue.shade700,
+                      foregroundColor: Colors.white,
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 2,
+                    ),
+                    child: Text(
+                      "Next",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -224,20 +269,40 @@ class _EducationDetailsState extends State<EducationDetails> {
     required String validatorMessage,
   }) {
     return Padding(
-      padding: EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(bottom: 15),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-          SizedBox(height: 10),
+          Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: Colors.blue.shade700,
+            ),
+          ),
+          SizedBox(height: 8),
           TextFormField(
             controller: controller,
             maxLines: maxLines,
             decoration: InputDecoration(
               labelText: 'Enter $label',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(icon),
+              labelStyle: TextStyle(color: Colors.blue.shade700),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.blue.shade200),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.blue.shade700),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.blue.shade200),
+              ),
+              prefixIcon: Icon(icon, color: Colors.blue.shade700),
+              filled: true,
+              fillColor: Colors.white,
             ),
             validator: (value) {
               if (value == null || value.isEmpty) {
@@ -259,23 +324,51 @@ class _EducationDetailsState extends State<EducationDetails> {
     required String validatorMessage,
   }) {
     return Padding(
-      padding: EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(bottom: 15),
       child: GestureDetector(
         onTap: () => _selectDate(context, controller),
         child: AbsorbPointer(
-          child: TextFormField(
-            controller: controller,
-            decoration: InputDecoration(
-              labelText: label,
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(icon),
-            ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return validatorMessage;
-              }
-              return null;
-            },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.blue.shade700,
+                ),
+              ),
+              SizedBox(height: 8),
+              TextFormField(
+                controller: controller,
+                decoration: InputDecoration(
+                  labelText: 'Select $label',
+                  labelStyle: TextStyle(color: Colors.blue.shade700),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.blue.shade200),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.blue.shade700),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.blue.shade200),
+                  ),
+                  prefixIcon: Icon(icon, color: Colors.blue.shade700),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return validatorMessage;
+                  }
+                  return null;
+                },
+              ),
+            ],
           ),
         ),
       ),

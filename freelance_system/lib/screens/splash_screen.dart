@@ -16,13 +16,11 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> {
   bool isFreelancing = false;
 
-  var user = FirebaseAuth.instance.currentUser;
-
   @override
   void initState() {
     super.initState();
     _loadToggleState();
-    Future.delayed(Duration(seconds: 2), () async {
+    Future.delayed(const Duration(seconds: 2), () async {
       User? user = FirebaseAuth.instance.currentUser;
       if (user == null) {
         openLogin();
@@ -41,19 +39,13 @@ class _SplashScreenState extends State<SplashScreen> {
     });
   }
 
-  void _toggleMode() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      isFreelancing = !isFreelancing;
-      prefs.setBool('isFreelancing', isFreelancing);
-    });
-  }
-
   void openDashboard() {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => NavigationMenu(),
+        builder: (context) => NavigationMenu(
+          initialIndex: 0,
+        ),
       ),
     );
   }
@@ -66,11 +58,14 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Center(
-        child: Text("Swatantra Pesa",
-            style: TextStyle(
-              fontSize: 25.0,
-            )),
+        child: Image.asset(
+          'assets/images/Quicklance Logo.png', // <-- path to your logo asset
+          width: 350, // adjust width as needed
+          height: 400, // adjust height as needed
+          fit: BoxFit.fitWidth,
+        ),
       ),
     );
   }

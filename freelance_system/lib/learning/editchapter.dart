@@ -12,7 +12,8 @@ import 'dart:convert';
 
 class EditChapter extends StatefulWidget {
   final String courseId;
-  const EditChapter({super.key, required this.courseId});
+  final String? posterUrl;
+  const EditChapter({super.key, required this.courseId, this.posterUrl});
 
   @override
   State<EditChapter> createState() => _EditChapterState();
@@ -55,18 +56,27 @@ class _EditChapterState extends State<EditChapter> {
 
       setState(() {
         _chapters = chapterSnapshot.docs.map((doc) {
+          final data = doc.data();
           return {
             'id': doc.id,
-            'title': doc['chapter_title'] ?? '',
-            'description': doc['chapter_description'] ?? '',
+            'title': data['chapter_title'] ?? '',
+            'description': data['chapter_description'] ?? '',
             'learningPoints':
-                List<String>.from(doc['chapter_learningPoints'] ?? []),
+                List<String>.from(data['chapter_learningPoints'] ?? []),
             'uploadedFiles':
-                List<String>.from(doc['chapter_uploadedFiles'] ?? []),
-            'uploadedVideo': doc['chapter_uploadedVideo'],
-            'videoDuration': doc['chapter_videoDuration'],
+                List<String>.from(data['chapter_uploadedFiles'] ?? []),
+            'uploadedVideo': data['chapter_uploadedVideo'],
+            'videoDuration': data['chapter_videoDuration'],
+            'videoFileName': data['videoFileName'],
           };
         }).toList();
+
+        // Sort chapters by numeric id if possible
+        _chapters.sort((a, b) {
+          int aId = int.tryParse(a['id'] ?? '') ?? 9999;
+          int bId = int.tryParse(b['id'] ?? '') ?? 9999;
+          return aId.compareTo(bId);
+        });
 
         _titleControllers = _chapters
             .map((chapter) => TextEditingController(text: chapter['title']))
@@ -99,6 +109,7 @@ class _EditChapterState extends State<EditChapter> {
         'uploadedFiles': <String>[],
         'uploadedVideo': null,
         'videoDuration': null,
+        'videoFileName': null,
       });
 
       _titleControllers.add(TextEditingController());
@@ -189,6 +200,7 @@ class _EditChapterState extends State<EditChapter> {
           'chapter_uploadedFiles': _chapters[i]['uploadedFiles'],
           'chapter_uploadedVideo': _chapters[i]['uploadedVideo'],
           'chapter_videoDuration': _chapters[i]['videoDuration'],
+          'videoFileName': _chapters[i]['videoFileName'],
         };
 
         if (_chapters[i]['id'] == null) {
@@ -217,7 +229,10 @@ class _EditChapterState extends State<EditChapter> {
       );
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const NavigationMenu()),
+        MaterialPageRoute(
+            builder: (context) => const NavigationMenu(
+                  initialIndex: 3,
+                )),
       );
       // This will remove all previous routes
     } catch (e) {
@@ -283,6 +298,7 @@ class _EditChapterState extends State<EditChapter> {
       setState(() {
         _chapters[index]['uploadedVideo'] = uploadResult?['url'];
         _chapters[index]['videoDuration'] = uploadResult?['duration'] ?? 0;
+        _chapters[index]['videoFileName'] = result.files.first.name;
         _isUploadingVideo = false;
       });
     }
@@ -348,325 +364,456 @@ class _EditChapterState extends State<EditChapter> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(children: [
-      Scaffold(
-        appBar: AppBar(
-          title: const Text("Edit Chapters"),
-          actions: [
-            IconButton(
-              icon: const Icon(
-                Icons.check_circle,
-                size: 45,
-                color: Colors.deepPurple,
+    return Scaffold(
+      backgroundColor: Colors.grey[50],
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.white,
+        toolbarHeight: 80,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Edit Chapters',
+              style: TextStyle(
+                color: Color(0xFF1976D2),
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
               ),
-              onPressed: _saveChapters,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Course ID: ${widget.courseId}',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),
-        body: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(10.0),
+        iconTheme: const IconThemeData(color: Color(0xFF1976D2)),
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    for (int i = 0; i < _chapters.length; i++) ...[
-                      Card(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        child: Padding(
-                          padding: const EdgeInsets.all(10.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text('Chapter ${i + 1}',
-                                      style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.deepPurple)),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete,
-                                        color: Colors.red),
-                                    onPressed: () => _deleteChapter(i),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(
-                                height: 20,
-                              ),
-                              Text('Title',
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.deepPurple)),
-                              SizedBox(
-                                height: 10,
-                              ),
-                              TextField(
-                                decoration: const InputDecoration(
-                                  labelText: 'Chapter Title',
-                                  border: OutlineInputBorder(),
-                                ),
-                                controller: _titleControllers[i],
-                                maxLines: null,
-                              ),
-                              SizedBox(
-                                height: 20,
-                              ),
-                              Text('Description',
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.deepPurple)),
-                              SizedBox(
-                                height: 10,
-                              ),
-                              TextField(
-                                decoration: const InputDecoration(
-                                  labelText: 'Description',
-                                  border: OutlineInputBorder(),
-                                ),
-                                controller: _descriptionControllers[i],
-                                maxLines: null,
-                              ),
-                              const SizedBox(height: 30),
-
-                              Text('What will You Learn ?',
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.deepPurple)),
-
-                              SizedBox(
-                                height: 10,
-                              ),
-                              TextField(
-                                controller: _learningPointControllers[i],
-                                decoration: InputDecoration(
-                                  labelText: 'Enter Learning Point',
-                                  border: OutlineInputBorder(),
-                                  suffixIcon: IconButton(
-                                    icon: const Icon(
-                                      Icons.add_circle,
-                                      color: Colors.deepPurple,
-                                      size: 40,
-                                    ),
-                                    onPressed: () => _addLearningPoint(i),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                              Wrap(
-                                spacing: 8.0,
-                                children: _chapters[i]['learningPoints']
-                                    .map<Widget>((point) => Chip(
-                                          label: Text(point),
-                                          deleteIcon: const Icon(
-                                              Icons.remove_circle,
-                                              color: Colors.red),
-                                          onDeleted: () => _deleteLearningPoint(
-                                              i,
-                                              _chapters[i]['learningPoints']
-                                                  .indexOf(point)),
-                                        ))
-                                    .toList(),
-                              ),
-                              const SizedBox(height: 30),
-                              Text('Upload Files ',
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.deepPurple)),
-
-                              SizedBox(
-                                height: 10,
-                              ),
-                              Center(
-                                child: ElevatedButton(
-                                  onPressed: () => _uploadFile(i),
-                                  style: ButtonStyle(
-                                    backgroundColor: WidgetStateProperty.all(
-                                        Colors.deepPurple),
-                                    foregroundColor:
-                                        WidgetStateProperty.all(Colors.white),
-                                  ),
-                                  child: _isUploadingFiles
-                                      ? CircularProgressIndicator()
-                                      : const Text("Upload File"),
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-
-                              // Display uploaded files
-                              _chapters[i]['uploadedFiles'].isNotEmpty
-                                  ? Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        const Text('Uploaded Files:'),
-                                        const SizedBox(height: 5),
-                                        for (int j = 0;
-                                            j <
-                                                _chapters[i]['uploadedFiles']
-                                                    .length;
-                                            j++) ...[
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.file_open,
-                                                    size: 30,
-                                                    color:
-                                                        Colors.deepPurpleAccent,
-                                                  ),
-                                                  SizedBox(width: 4),
-                                                  Text(
-                                                    "${_chapters[i]['uploadedFiles'][j].split('/').last}",
-                                                    softWrap: true,
-                                                  ),
-                                                ],
-                                              ),
-                                              IconButton(
-                                                icon: const Icon(Icons.delete,
-                                                    color: Colors.red),
-                                                onPressed: () =>
-                                                    _deleteFile(i, j),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 5),
-                                        ],
-                                      ],
-                                    )
-                                  : const SizedBox(),
-
-                              const SizedBox(height: 30),
-
-                              Text('Upload Video ',
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.deepPurple)),
-
-                              SizedBox(
-                                height: 10,
-                              ),
-                              Center(
-                                child: ElevatedButton(
-                                  onPressed: _chapters[i]['uploadedVideo'] !=
-                                              null ||
-                                          _isUploadingVideo
-                                      ? () {
-                                          // Show a snack bar when trying to upload a second video
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                  'You can upload only one video per chapter.'),
-                                            ),
-                                          );
-                                        } // Disable the button if video is uploaded or uploading
-                                      : () => _uploadVideo(i),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: _chapters[i]
-                                                ['uploadedVideo'] !=
-                                            null
-                                        ? Colors
-                                            .grey // Change color to grey if video is uploaded
-                                        : Colors
-                                            .deepPurple, // Default color when it's not uploaded
-                                  ),
-                                  // Enable if no video is uploaded
-
-                                  child: _isUploadingVideo
-                                      ? const CircularProgressIndicator()
-                                      : const Text(
-                                          "Upload Video",
-                                          style: TextStyle(color: Colors.white),
-                                        ),
-                                ),
-                              ),
-
-                              const SizedBox(height: 10),
-
-                              // Display uploaded video
-                              _chapters[i]['uploadedVideo'] != null
-                                  ? Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        const Text('Uploaded Video:'),
-                                        const SizedBox(height: 5),
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Icon(
-                                                  Icons
-                                                      .video_collection_outlined,
-                                                  size: 30,
-                                                  color:
-                                                      Colors.deepPurpleAccent,
-                                                ),
-                                                SizedBox(width: 4),
-                                                Text(
-                                                  " ${_chapters[i]['uploadedVideo']!.split('/').last}",
-                                                  softWrap: true,
-                                                ),
-                                              ],
-                                            ),
-                                            IconButton(
-                                              icon: const Icon(Icons.delete,
-                                                  color: Colors.red),
-                                              onPressed: () => _deleteVideo(i),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    )
-                                  : const SizedBox(),
-                            ],
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Course Chapters',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1976D2),
+                            letterSpacing: 0.5,
                           ),
                         ),
-                      ),
-                    ],
-                    ElevatedButton(
-                      onPressed: _addChapter,
-                      style: ButtonStyle(
-                        backgroundColor:
-                            WidgetStateProperty.all(Colors.deepPurple),
-                        foregroundColor: WidgetStateProperty.all(Colors.white),
-                      ),
-                      child: const Text("Add New Chapter"),
+                        ElevatedButton.icon(
+                          onPressed: _addChapter,
+                          icon: const Icon(Icons.add,
+                              size: 20, color: Colors.white),
+                          label: const Text('Add Chapter'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF1976D2),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-      ),
-      if (_isLoading)
-        Positioned.fill(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-            child: Container(
-              color: Colors.black.withOpacity(0.5),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(),
+                    const SizedBox(height: 24),
+                    ...List.generate(_chapters.length, (index) {
+                      return _buildChapterCard(index);
+                    }),
+                    const SizedBox(height: 32),
+                    Center(
+                      child: ElevatedButton(
+                        onPressed: _isUploadingFiles || _isUploadingVideo
+                            ? null
+                            : _saveChapters,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1976D2),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 40, vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 2,
+                        ),
+                        child: _isUploadingFiles || _isUploadingVideo
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white),
+                                ),
+                              )
+                            : const Text(
+                                'Save Changes',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),
             ),
+    );
+  }
+
+  Widget _buildChapterCard(int index) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: const BoxDecoration(
+              color: Color(0xFF1976D2),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    'Chapter ${index + 1}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.white),
+                  onPressed: () => _deleteChapter(index),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildTextField(
+                  controller: _titleControllers[index],
+                  label: 'Chapter Title',
+                  hint: 'Enter chapter title',
+                ),
+                const SizedBox(height: 16),
+                _buildTextField(
+                  controller: _descriptionControllers[index],
+                  label: 'Chapter Description',
+                  hint: 'Enter chapter description',
+                  maxLines: 3,
+                ),
+                const SizedBox(height: 24),
+                _buildLearningPointsSection(index),
+                const SizedBox(height: 24),
+                _buildFileUploadSection(index),
+                const SizedBox(height: 24),
+                _buildVideoUploadSection(index),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    int maxLines = 1,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1976D2),
           ),
         ),
-    ]);
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey[300]!),
+          ),
+          child: TextFormField(
+            controller: controller,
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: TextStyle(color: Colors.grey[400]),
+              border: InputBorder.none,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+            maxLines: maxLines,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLearningPointsSection(int chapterIndex) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Learning Points',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1976D2),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[300]!),
+                ),
+                child: TextFormField(
+                  controller: _learningPointControllers[chapterIndex],
+                  decoration: InputDecoration(
+                    hintText: 'Add learning point',
+                    hintStyle: TextStyle(color: Colors.grey[400]),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.add_circle,
+                          color: Color(0xFF1976D2), size: 28),
+                      onPressed: () => _addLearningPoint(chapterIndex),
+                    ),
+                  ),
+                  onFieldSubmitted: (_) => _addLearningPoint(chapterIndex),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: (_chapters[chapterIndex]['learningPoints'] as List<String>)
+              .asMap()
+              .entries
+              .map((entry) => Chip(
+                    label: Text(entry.value),
+                    backgroundColor: const Color(0xFF1976D2).withOpacity(0.1),
+                    labelStyle: const TextStyle(color: Color(0xFF1976D2)),
+                    deleteIconColor: const Color(0xFF1976D2),
+                    onDeleted: () =>
+                        _deleteLearningPoint(chapterIndex, entry.key),
+                  ))
+              .toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFileUploadSection(int chapterIndex) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Supporting Files',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1976D2),
+          ),
+        ),
+        const SizedBox(height: 12),
+        ElevatedButton.icon(
+          onPressed: _isUploadingFiles ? null : () => _uploadFile(chapterIndex),
+          icon: const Icon(Icons.upload_file, color: Colors.white),
+          label: const Text('Upload Files'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF1976D2),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+        if (_chapters[chapterIndex]['uploadedFiles'].isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey[300]!),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Uploaded Files:',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1976D2),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ...(_chapters[chapterIndex]['uploadedFiles'] as List<String>)
+                    .map((file) {
+                  final fileName = file.split('/').last;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.insert_drive_file,
+                            size: 16, color: Color(0xFF1976D2)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            fileName,
+                            style: const TextStyle(fontSize: 14),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildVideoUploadSection(int chapterIndex) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Chapter Video',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1976D2),
+          ),
+        ),
+        const SizedBox(height: 12),
+        ElevatedButton.icon(
+          onPressed:
+              _isUploadingVideo ? null : () => _uploadVideo(chapterIndex),
+          icon: const Icon(Icons.video_library, color: Colors.white),
+          label: const Text('Upload Video'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF1976D2),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+        if (_chapters[chapterIndex]['uploadedVideo'] != null) ...[
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey[300]!),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.video_file,
+                    size: 16, color: Color(0xFF1976D2)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _chapters[chapterIndex]['videoFileName'] ??
+                        _chapters[chapterIndex]['uploadedVideo']
+                            .split('/')
+                            .last,
+                    style: const TextStyle(fontSize: 14),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (_chapters[chapterIndex]['videoDuration'] != null)
+                  Text(
+                    ' (${_formatDuration((_chapters[chapterIndex]['videoDuration'] as num).toDouble())})',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  String _formatDuration(double seconds) {
+    final int totalSeconds = seconds.round();
+    final int hours = totalSeconds ~/ 3600;
+    final int minutes = (totalSeconds % 3600) ~/ 60;
+    final int secs = totalSeconds % 60;
+    if (hours > 0) {
+      return '${hours}h ${minutes}m';
+    } else if (minutes > 0) {
+      return '${minutes}m ${secs}s';
+    } else {
+      return '${secs}s';
+    }
   }
 }
